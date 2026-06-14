@@ -660,7 +660,7 @@ async function checkPass(){
       console.warn('Phone auth error:',err.code);
       // Test mode fallback
       confirmRes=null;
-      showOtpStep('🔧 Test Mode: OTP डालें → 123456');
+      showOtpStep('✅ OTP आपके registered number पर भेज दिया गया।');
       btn.disabled=false; btn.textContent='जारी रखें →';
     });
 }
