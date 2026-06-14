@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#0F1B35"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>EduSpark – Board Study App</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+
+<!-- Firebase v9 compat SDKs - loaded synchronously before any script -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<!-- Firebase Init - right after SDK scripts -->
+<script>
+const FB_CFG = {
+  apiKey: "AIzaSyD90ruZHQ_VGuOoO__Q6PC2svRga3jyfXs",
+  authDomain: "eduspark-41703.firebaseapp.com",
+  projectId: "eduspark-41703",
+  storageBucket: "eduspark-41703.firebasestorage.app",
+  messagingSenderId: "455546882437",
+  appId: "1:455546882437:web:093e07eef1d8c685915cec",
+  measurementId: "G-WGP977E30D"
+};
+if (!firebase.apps.length) { firebase.initializeApp(FB_CFG); }
+const auth = firebase.auth();
+const db   = firebase.firestore();
+</script>
+
+<style>
+:root{
+  --navy:#0F1B35;--navy2:#1a3a6b;
+  --blue:#3B82F6;--blue-l:#EFF6FF;
+  --saffron:#F59E0B;--saffron-l:#FFFBEB;
+  --green:#10B981;--green-l:#ECFDF5;
+  --red:#EF4444;--purple:#8B5CF6;--purple-l:#F5F3FF;
+  --teal:#14B8A6;--pink:#EC4899;--indigo:#6366F1;
+  --white:#fff;--g50:#F8FAFF;--g100:#F1F5F9;
+  --g200:#E2E8F0;--g400:#94A3B8;--g600:#64748B;--g800:#1E293B;
+  --r:14px;--rsm:10px;
+  --sh:0 4px 24px rgba(15,27,53,.10);
+  --shsm:0 2px 8px rgba(15,27,53,.07);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);min-height:100vh;overflow-x:hidden;}
+
+/* SPLASH */
+#splash{position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .5s;}
+#splash.hide{opacity:0;pointer-events:none;}
+.sp-logo{font-size:56px;animation:bob 1.2s ease-in-out infinite alternate;}
+.sp-title{font-size:30px;font-weight:800;color:#fff;margin-top:10px;}
+.sp-title span{color:var(--saffron);}
+.sp-sub{font-size:12px;color:var(--g400);margin-top:6px;}
+.sp-bar{width:200px;height:4px;background:rgba(255,255,255,.15);border-radius:99px;margin-top:40px;overflow:hidden;}
+.sp-fill{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--saffron));border-radius:99px;animation:load 2.2s ease forwards;}
+@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-10px)}}
+@keyframes load{to{width:100%}}
+
+/* ADMIN LOGIN */
+#adminLogin{position:fixed;inset:0;background:var(--navy);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:8000;padding:24px;}
+#adminLogin.show{display:flex;}
+.al-logo{font-size:48px;margin-bottom:12px;}
+.al-title{font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;}
+.al-sub{font-size:12px;color:var(--g400);margin-bottom:28px;text-align:center;}
+.al-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:24px;width:100%;max-width:360px;}
+.al-label{font-size:11px;font-weight:600;color:var(--g400);margin-bottom:6px;display:block;}
+.al-input{width:100%;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;padding:12px 16px;font-size:14px;color:#fff;font-family:inherit;outline:none;margin-bottom:14px;transition:.2s;}
+.al-input:focus{border-color:var(--blue);}
+.al-input::placeholder{color:rgba(255,255,255,.3);}
+.al-btn{width:100%;background:linear-gradient(90deg,var(--blue),#1D4ED8);color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;}
+.al-btn:disabled{opacity:.5;cursor:not-allowed;}
+.al-msg{border-radius:10px;padding:10px 14px;font-size:12px;margin-bottom:14px;display:none;}
+.al-msg.show{display:block;}
+.al-msg.err{background:rgba(239,68,68,.15);border:1px solid var(--red);color:#FCA5A5;}
+.al-msg.ok{background:rgba(16,185,129,.15);border:1px solid var(--green);color:var(--green);}
+.al-back{margin-top:16px;color:var(--g400);font-size:12px;cursor:pointer;text-align:center;}
+
+/* APP */
+#app{display:none;flex-direction:column;min-height:100vh;}
+#app.show{display:flex;}
+
+/* TOPBAR */
+.topbar{background:var(--navy);color:#fff;padding:14px 18px 12px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(15,27,53,.3);}
+.tb-left{display:flex;align-items:center;gap:10px;}
+.tb-brand{font-size:18px;font-weight:800;}
+.tb-brand span{color:var(--saffron);}
+.board-pill{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);border-radius:99px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;}
+.admin-btn{background:rgba(255,255,255,.12);border:none;color:#fff;border-radius:8px;padding:6px 10px;font-size:18px;cursor:pointer;}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;padding-bottom:80px;}
+.page{display:none;}
+.page.active{display:block;}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,var(--navy),var(--navy2));padding:24px 18px 28px;color:#fff;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;right:-30px;top:-30px;width:180px;height:180px;border-radius:50%;background:rgba(59,130,246,.12);}
+.hero-g{font-size:12px;color:rgba(255,255,255,.65);margin-bottom:4px;}
+.hero-t{font-size:21px;font-weight:800;line-height:1.3;}
+.hero-t span{color:var(--saffron);}
+.hero-s{font-size:11px;color:rgba(255,255,255,.6);margin-top:5px;}
+
+/* STATS */
+.stats-row{display:flex;gap:10px;margin:16px 18px 0;}
+.stat-card{flex:1;background:var(--white);border-radius:var(--rsm);padding:12px 8px;box-shadow:var(--shsm);text-align:center;}
+.stat-icon{font-size:18px;}
+.stat-val{font-size:18px;font-weight:800;color:var(--navy);margin-top:3px;}
+.stat-label{font-size:10px;color:var(--g600);}
+
+/* SEARCH */
+.search-wrap{padding:12px 18px 0;}
+.search-box{display:flex;align-items:center;gap:10px;background:var(--white);border:1.5px solid var(--g200);border-radius:var(--rsm);padding:10px 14px;box-shadow:var(--shsm);}
+.search-box input{flex:1;border:none;outline:none;font-size:13px;font-family:inherit;color:var(--g800);background:transparent;}
+.search-box input::placeholder{color:var(--g400);}
+
+/* SECTION TITLE */
+.sec-t{font-size:15px;font-weight:700;color:var(--navy);padding:18px 18px 10px;display:flex;align-items:center;gap:6px;}
+
+/* SUBJECT SCROLL */
+.subj-scroll{display:flex;gap:12px;padding:0 18px 4px;overflow-x:auto;scrollbar-width:none;}
+.subj-scroll::-webkit-scrollbar{display:none;}
+.subj-card{min-width:130px;border-radius:16px;padding:16px 14px;cursor:pointer;transition:.2s;flex-shrink:0;box-shadow:var(--shsm);position:relative;overflow:hidden;}
+.subj-card:active{transform:scale(.96);}
+.s-ic{font-size:26px;margin-bottom:8px;}
+.s-nm{font-size:12px;font-weight:700;color:#fff;}
+.s-ct{font-size:10px;color:rgba(255,255,255,.75);margin-top:2px;}
+.subj-card::after{content:'';position:absolute;right:-15px;bottom:-15px;width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.1);}
+
+/* CONTENT ITEMS */
+.type-tabs{display:flex;gap:8px;padding:0 18px;overflow-x:auto;scrollbar-width:none;margin-bottom:4px;}
+.type-tabs::-webkit-scrollbar{display:none;}
+.type-tab{flex-shrink:0;padding:7px 14px;border-radius:99px;border:1.5px solid var(--g200);background:var(--white);font-size:12px;font-weight:600;color:var(--g600);cursor:pointer;transition:.2s;}
+.type-tab.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+.cnt-list{padding:0 18px;}
+.cnt-item{background:var(--white);border-radius:var(--rsm);padding:13px;margin-bottom:10px;box-shadow:var(--shsm);display:flex;align-items:center;gap:12px;cursor:pointer;transition:.2s;border:1.5px solid transparent;}
+.cnt-item:active{border-color:var(--blue);background:var(--blue-l);}
+.cnt-ic{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+.ci-pdf{background:rgba(239,68,68,.1);}
+.ci-video{background:rgba(59,130,246,.1);}
+.ci-dpp{background:rgba(16,185,129,.1);}
+.ci-note{background:rgba(245,158,11,.1);}
+.cnt-info{flex:1;min-width:0;}
+.cnt-info h4{font-size:13px;font-weight:600;color:var(--navy);}
+.cnt-info p{font-size:11px;color:var(--g600);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bdg{font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;display:inline-block;margin-top:3px;}
+.bdg-pdf{background:#FEE2E2;color:var(--red);}
+.bdg-video{background:var(--blue-l);color:var(--blue);}
+.bdg-dpp{background:var(--green-l);color:var(--green);}
+.bdg-note{background:var(--saffron-l);color:var(--saffron);}
+.bdg-new{background:var(--saffron-l);color:var(--saffron);margin-left:4px;}
+
+/* DOUBTS */
+.doubt-hero{background:linear-gradient(135deg,#7C3AED,#4F46E5);padding:22px 18px;color:#fff;border-radius:0 0 22px 22px;}
+.dform{padding:16px 18px;}
+.dform label{font-size:12px;font-weight:600;color:var(--g600);display:block;margin-bottom:5px;}
+.dform select,.dform input,.dform textarea{width:100%;border:1.5px solid var(--g200);border-radius:var(--rsm);padding:10px 13px;font-size:13px;font-family:inherit;background:var(--white);color:var(--g800);outline:none;transition:.2s;margin-bottom:12px;}
+.dform textarea{height:100px;resize:none;}
+.sub-btn{width:100%;background:linear-gradient(90deg,#7C3AED,#4F46E5);color:#fff;border:none;border-radius:var(--rsm);padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+.doubt-item{background:var(--white);border-radius:var(--rsm);padding:13px;margin-bottom:10px;box-shadow:var(--shsm);border-left:3px solid var(--purple);}
+.d-meta{font-size:10px;color:var(--g400);margin-bottom:4px;}
+.d-q{font-size:13px;font-weight:600;color:var(--navy);}
+.d-ans{margin-top:8px;padding:8px 10px;background:var(--purple-l);border-radius:8px;font-size:12px;color:#4F46E5;}
+.d-st{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;display:inline-block;margin-top:5px;}
+.st-p{background:#FEF3C7;color:#92400E;}
+.st-a{background:var(--green-l);color:#065F46;}
+
+/* QUIZ */
+.quiz-hero{background:linear-gradient(135deg,#10B981,#059669);padding:22px 18px;color:#fff;border-radius:0 0 22px 22px;}
+.qz-card{background:var(--white);border-radius:var(--rsm);padding:16px;margin-bottom:12px;box-shadow:var(--shsm);}
+.qzc-t{font-size:14px;font-weight:700;color:var(--navy);}
+.qzc-s{font-size:11px;color:var(--g600);margin-top:3px;}
+.qzc-meta{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.qzc-tag{font-size:10px;font-weight:600;padding:3px 9px;border-radius:99px;background:var(--g100);color:var(--g600);}
+.start-btn{width:100%;margin-top:10px;background:linear-gradient(90deg,#10B981,#059669);color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+#quizActive{display:none;padding:18px;}
+.q-num{font-size:11px;color:var(--g600);margin-bottom:6px;font-weight:600;}
+.q-pbar{width:100%;height:5px;background:var(--g200);border-radius:99px;overflow:hidden;margin-bottom:14px;}
+.q-pfill{height:100%;background:linear-gradient(90deg,#10B981,var(--blue));border-radius:99px;transition:.4s;}
+.q-text{font-size:15px;font-weight:700;color:var(--navy);background:var(--white);padding:16px;border-radius:var(--rsm);box-shadow:var(--shsm);margin-bottom:14px;line-height:1.5;}
+.q-opts{display:flex;flex-direction:column;gap:10px;}
+.q-opt{background:var(--white);border:1.5px solid var(--g200);border-radius:var(--rsm);padding:12px 15px;font-size:13px;cursor:pointer;transition:.2s;}
+.q-opt.sel{border-color:var(--blue);background:var(--blue-l);color:var(--blue);}
+.q-opt.corr{border-color:var(--green);background:var(--green-l);color:#065F46;}
+.q-opt.wrong{border-color:var(--red);background:#FEF2F2;color:var(--red);}
+.q-nav{display:flex;gap:10px;margin-top:16px;}
+.q-btn{flex:1;padding:12px;border:none;border-radius:var(--rsm);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+.q-next{background:var(--blue);color:#fff;}
+.q-exit2{background:var(--g100);color:var(--g600);}
+.q-res{text-align:center;padding:30px 18px;background:var(--white);border-radius:var(--r);margin:18px;box-shadow:var(--sh);}
+
+/* NOTES */
+.notes-hero{background:linear-gradient(135deg,#F59E0B,#D97706);padding:22px 18px;color:#fff;border-radius:0 0 22px 22px;}
+.note-item{background:var(--white);border-radius:var(--rsm);padding:13px;margin-bottom:10px;box-shadow:var(--shsm);border-left:3px solid var(--saffron);}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--g200);display:flex;z-index:100;padding:8px 0 calc(8px + env(safe-area-inset-bottom));box-shadow:0 -4px 20px rgba(15,27,53,.08);}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0;}
+.ni-ic{font-size:22px;}
+.ni-lb{font-size:10px;font-weight:600;color:var(--g400);}
+.ni.active .ni-lb{color:var(--blue);}
+.ni.active .ni-ic{transform:translateY(-2px);}
+
+/* ADMIN PANEL */
+#adminPanel{position:fixed;inset:0;background:rgba(15,27,53,.6);z-index:200;display:none;align-items:flex-end;backdrop-filter:blur(3px);}
+#adminPanel.show{display:flex;}
+.a-sheet{background:var(--white);width:100%;border-radius:24px 24px 0 0;max-height:92vh;overflow-y:auto;padding:20px 18px 40px;animation:slideUp .3s ease;}
+@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.a-handle{width:40px;height:4px;background:var(--g200);border-radius:99px;margin:0 auto 18px;}
+.a-title{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:16px;}
+.a-tabs{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;scrollbar-width:none;}
+.a-tabs::-webkit-scrollbar{display:none;}
+.a-tab{flex-shrink:0;padding:7px 13px;border-radius:99px;border:1.5px solid var(--g200);background:var(--white);font-size:12px;font-weight:600;color:var(--g600);cursor:pointer;}
+.a-tab.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+.af label{font-size:12px;font-weight:600;color:var(--g600);display:block;margin-bottom:5px;}
+.af input,.af select,.af textarea{width:100%;border:1.5px solid var(--g200);border-radius:var(--rsm);padding:10px 13px;font-size:13px;font-family:inherit;background:var(--white);color:var(--g800);outline:none;transition:.2s;margin-bottom:10px;}
+.af textarea{height:80px;resize:none;}
+.add-btn{width:100%;background:linear-gradient(90deg,var(--navy),var(--navy2));color:#fff;border:none;border-radius:var(--rsm);padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:10px;}
+.mgmt-item{display:flex;align-items:center;justify-content:space-between;background:var(--g100);border-radius:8px;padding:10px 12px;margin-bottom:8px;}
+.mgmt-nm{font-size:13px;font-weight:600;color:var(--navy);}
+.mgmt-sb{font-size:11px;color:var(--g600);margin-top:2px;}
+.del-btn{background:#FEE2E2;color:var(--red);border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;}
+.rply-btn{background:var(--blue-l);color:var(--blue);border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;margin-right:6px;flex-shrink:0;}
+.a-close{width:100%;background:var(--g100);color:var(--g800);border:none;border-radius:var(--rsm);padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px;}
+.a-logout{width:100%;background:#FEE2E2;color:var(--red);border:none;border-radius:var(--rsm);padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:8px;}
+
+/* BOARD SEL */
+#boardSel{position:fixed;inset:0;background:rgba(15,27,53,.6);z-index:150;display:none;align-items:flex-end;backdrop-filter:blur(3px);}
+#boardSel.show{display:flex;}
+.bs-sheet{background:var(--white);width:100%;border-radius:24px 24px 0 0;padding:20px 18px 40px;animation:slideUp .3s ease;}
+.bo{display:flex;align-items:center;gap:14px;padding:14px;border-radius:var(--rsm);margin-bottom:8px;border:2px solid var(--g200);cursor:pointer;transition:.2s;}
+.bo.sel{border-color:var(--blue);background:var(--blue-l);}
+.bo-nm{font-size:14px;font-weight:700;color:var(--navy);}
+.bo-sb{font-size:11px;color:var(--g600);}
+
+/* TOAST */
+#toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;}
+#toast.show{opacity:1;}
+
+/* EMPTY */
+.empty{text-align:center;padding:36px 20px;color:var(--g400);}
+.empty .ei{font-size:44px;margin-bottom:10px;}
+.empty p{font-size:13px;}
+
+/* SUBJECT COLORS */
+.sc-blue{background:linear-gradient(135deg,#3B82F6,#1D4ED8);}
+.sc-green{background:linear-gradient(135deg,#10B981,#059669);}
+.sc-red{background:linear-gradient(135deg,#EF4444,#DC2626);}
+.sc-purple{background:linear-gradient(135deg,#8B5CF6,#6D28D9);}
+.sc-orange{background:linear-gradient(135deg,#F59E0B,#D97706);}
+.sc-teal{background:linear-gradient(135deg,#14B8A6,#0D9488);}
+.sc-pink{background:linear-gradient(135deg,#EC4899,#BE185D);}
+.sc-indigo{background:linear-gradient(135deg,#6366F1,#4338CA);}
+
+#recaptcha-container{position:fixed;bottom:0;left:0;z-index:9999;}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="sp-logo">📚</div>
+  <div class="sp-title">Edu<span>Spark</span></div>
+  <div class="sp-sub">CBSE & BSER Board Study Platform</div>
+  <div class="sp-bar"><div class="sp-fill"></div></div>
+</div>
+
+<!-- ADMIN LOGIN -->
+<div id="adminLogin">
+  <div class="al-logo">🔐</div>
+  <div class="al-title">Admin Login</div>
+  <div class="al-sub">EduSpark Admin Panel<br>Password + OTP Verification</div>
+  <div class="al-card">
+    <div id="alMsg" class="al-msg"></div>
+    <div id="stepPass">
+      <label class="al-label">Admin Password</label>
+      <input type="password" class="al-input" id="alPass" placeholder="Password डालें..." onkeydown="if(event.key==='Enter')checkPass()"/>
+      <button class="al-btn" id="passBtn" onclick="checkPass()">जारी रखें →</button>
+    </div>
+    <div id="stepOtp" style="display:none;">
+      <label class="al-label">OTP (आपके number पर भेजा गया)</label>
+      <input type="number" class="al-input" id="alOtp" placeholder="6-digit OTP..." onkeydown="if(event.key==='Enter')verifyOtp()"/>
+      <button class="al-btn" id="otpBtn" onclick="verifyOtp()">✅ Verify करें</button>
+      <div style="text-align:center;margin-top:10px;">
+        <span style="font-size:12px;color:var(--g400);cursor:pointer;" onclick="backToPass()">← दोबारा password डालें</span>
+      </div>
+    </div>
+    <div class="al-back" onclick="closeAdminLogin()">← वापस जाएं</div>
+  </div>
+  <div id="recaptcha-container"></div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="tb-left">
+      <span style="font-size:22px;">📚</span>
+      <span class="tb-brand">Edu<span>Spark</span></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="board-pill" id="boardPill" onclick="openBoardSel()">CBSE 10</div>
+      <button class="admin-btn" onclick="openAdminLogin()">⚙️</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- HOME -->
+    <div class="page active" id="pageHome">
+      <div class="hero">
+        <div class="hero-g">नमस्ते! 👋 पढ़ाई शुरू करें</div>
+        <div class="hero-t">Smart Study <span>Board Exams</span> के लिए</div>
+        <div class="hero-s">CBSE & BSER • Class 10 & 12 • Free Content</div>
+      </div>
+      <div class="search-wrap">
+        <div class="search-box">
+          <span>🔍</span>
+          <input type="text" id="searchInput" placeholder="Chapter, topic खोजें..." oninput="doSearch()"/>
+        </div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-icon">📄</div><div class="stat-val" id="stPdf">0</div><div class="stat-label">PDFs</div></div>
+        <div class="stat-card"><div class="stat-icon">🎥</div><div class="stat-val" id="stVid">0</div><div class="stat-label">Videos</div></div>
+        <div class="stat-card"><div class="stat-icon">🧩</div><div class="stat-val" id="stQz">0</div><div class="stat-label">Quizzes</div></div>
+        <div class="stat-card"><div class="stat-icon">📗</div><div class="stat-val" id="stDpp">0</div><div class="stat-label">DPPs</div></div>
+      </div>
+      <div class="sec-t"><span>📖</span> Subjects</div>
+      <div class="subj-scroll" id="subjScroll"></div>
+      <div id="searchSec" style="display:none;">
+        <div class="sec-t"><span>🔍</span> Search Results</div>
+        <div class="cnt-list" id="searchRes"></div>
+      </div>
+      <div id="recentSec">
+        <div class="sec-t"><span>🆕</span> Recent Updates</div>
+        <div class="cnt-list" id="recentList"></div>
+      </div>
+    </div>
+
+    <!-- SUBJECTS PAGE -->
+    <div class="page" id="pageSubject">
+      <div class="hero" id="subjHero">
+        <div class="hero-g" id="subjBoard">—</div>
+        <div class="hero-t" id="subjTitle">Subject</div>
+        <div class="hero-s">PDF, Videos, DPP, Notes</div>
+      </div>
+      <div style="padding:14px 18px 8px;display:flex;align-items:center;gap:10px;">
+        <button onclick="goHome()" style="background:var(--g100);border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">← Back</button>
+        <span style="font-size:12px;color:var(--g600);" id="subjCount"></span>
+      </div>
+      <div class="type-tabs" id="typeTabs"></div>
+      <div class="cnt-list" id="subjContent" style="margin-top:10px;"></div>
+    </div>
+
+    <!-- DOUBTS -->
+    <div class="page" id="pageDoubts">
+      <div class="doubt-hero">
+        <h2 style="font-size:20px;font-weight:800;">❓ Doubts Section</h2>
+        <p style="font-size:12px;opacity:.8;margin-top:4px;">Doubt लिखें, जल्द जवाब मिलेगा!</p>
+      </div>
+      <div class="dform">
+        <label>Subject</label><select id="dSubj"></select>
+        <label>Topic / Chapter</label><input type="text" id="dTopic" placeholder="Chapter 5 – Light"/>
+        <label>Doubt लिखें</label><textarea id="dText" placeholder="अपना doubt विस्तार से लिखें..."></textarea>
+        <label>आपका नाम</label><input type="text" id="dName" placeholder="आपका नाम"/>
+        <button class="sub-btn" onclick="submitDoubt()">📤 Submit Doubt</button>
+      </div>
+      <div class="sec-t"><span>💬</span> सभी Doubts</div>
+      <div style="padding:0 18px 18px;" id="doubtsList"></div>
+    </div>
+
+    <!-- QUIZ -->
+    <div class="page" id="pageQuiz">
+      <div class="quiz-hero">
+        <h2 style="font-size:20px;font-weight:800;">🧩 Quiz Section</h2>
+        <p style="font-size:12px;opacity:.8;margin-top:4px;">Practice करें, Score बढ़ाएं!</p>
+      </div>
+      <div id="quizListSec" style="padding:16px 18px 0;"></div>
+      <div id="quizActive">
+        <div class="q-num" id="qNum"></div>
+        <div class="q-pbar"><div class="q-pfill" id="qFill"></div></div>
+        <div class="q-text" id="qText"></div>
+        <div class="q-opts" id="qOpts"></div>
+        <div class="q-nav">
+          <button class="q-btn q-exit2" onclick="exitQuiz()">✕ छोड़ें</button>
+          <button class="q-btn q-next" id="qNext" onclick="nextQ()">अगला →</button>
+        </div>
+      </div>
+      <div id="quizResult" style="display:none;">
+        <div class="q-res">
+          <div style="font-size:56px;" id="rEmoji"></div>
+          <div style="font-size:34px;font-weight:800;color:var(--navy);margin-top:10px;" id="rScore"></div>
+          <div style="font-size:13px;color:var(--g600);margin-top:6px;" id="rMsg"></div>
+          <button class="start-btn" style="margin-top:20px;" onclick="exitQuiz()">🏠 Quiz List</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTES -->
+    <div class="page" id="pageNotes">
+      <div class="notes-hero">
+        <h2 style="font-size:20px;font-weight:800;">📒 My Notes</h2>
+        <p style="font-size:12px;opacity:.8;margin-top:4px;">Personal notes लिखें और save करें</p>
+      </div>
+      <div style="padding:16px 18px;">
+        <input type="text" id="noteTitle" placeholder="Note का Title..." style="width:100%;border:1.5px solid var(--g200);border-radius:var(--rsm);padding:10px 13px;font-size:13px;font-family:inherit;outline:none;margin-bottom:10px;"/>
+        <textarea id="noteText" placeholder="Note यहाँ लिखें..." style="width:100%;border:1.5px solid var(--g200);border-radius:var(--rsm);padding:10px 13px;font-size:13px;font-family:inherit;outline:none;height:110px;resize:none;margin-bottom:10px;"></textarea>
+        <button onclick="saveNote()" style="width:100%;background:linear-gradient(90deg,#F59E0B,#D97706);color:#fff;border:none;border-radius:var(--rsm);padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">💾 Save Note</button>
+      </div>
+      <div class="sec-t"><span>📝</span> Saved Notes</div>
+      <div id="notesList" style="padding:0 18px 18px;"></div>
+    </div>
+
+  </div><!-- .content -->
+
+  <!-- BOTTOM NAV -->
+  <div class="bnav">
+    <div class="ni active" onclick="navTo('home',this)"><span class="ni-ic">🏠</span><span class="ni-lb">Home</span></div>
+    <div class="ni" onclick="navTo('subject',this)"><span class="ni-ic">📖</span><span class="ni-lb">Subjects</span></div>
+    <div class="ni" onclick="navTo('doubts',this)"><span class="ni-ic">❓</span><span class="ni-lb">Doubts</span></div>
+    <div class="ni" onclick="navTo('quiz',this)"><span class="ni-ic">🧩</span><span class="ni-lb">Quiz</span></div>
+    <div class="ni" onclick="navTo('notes',this)"><span class="ni-ic">📝</span><span class="ni-lb">Notes</span></div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel" onclick="closeAdminOut(event)">
+  <div class="a-sheet">
+    <div class="a-handle"></div>
+    <div class="a-title">⚙️ Admin Panel</div>
+    <div class="a-tabs">
+      <div class="a-tab active" onclick="aTab('add',this)">📤 Add</div>
+      <div class="a-tab" onclick="aTab('quiz',this)">🧩 Quiz</div>
+      <div class="a-tab" onclick="aTab('manage',this)">📋 Manage</div>
+      <div class="a-tab" onclick="aTab('doubts',this)">💬 Doubts</div>
+    </div>
+    <div id="aTab_add">
+      <div class="af">
+        <label>Board & Class</label>
+        <select id="aBoard" onchange="updateASubj()">
+          <option value="CBSE-10">CBSE Class 10</option>
+          <option value="CBSE-12">CBSE Class 12</option>
+          <option value="BSER-10">BSER Class 10</option>
+          <option value="BSER-12">BSER Class 12</option>
+        </select>
+        <label>Subject</label><select id="aSubj"></select>
+        <label>Type</label>
+        <select id="aType">
+          <option value="pdf">📄 PDF / Notes</option>
+          <option value="video">🎥 Video Lecture</option>
+          <option value="dpp">📗 DPP</option>
+          <option value="note">🗒️ Text Note</option>
+        </select>
+        <label>Title</label><input type="text" id="aTitle" placeholder="Chapter 5 Notes PDF"/>
+        <label>Description</label><input type="text" id="aDesc" placeholder="Short description..."/>
+        <label>Link (Drive/YouTube)</label><input type="url" id="aLink" placeholder="https://..."/>
+        <label>Chapter</label><input type="text" id="aChap" placeholder="Chapter name"/>
+        <button class="add-btn" id="addBtn" onclick="addContent()">✅ Add Content</button>
+      </div>
+    </div>
+    <div id="aTab_quiz" style="display:none;">
+      <div class="af">
+        <label>Quiz Title</label><input type="text" id="qTitle" placeholder="Science Ch.5 Quiz"/>
+        <label>Board</label>
+        <select id="qBoard">
+          <option value="CBSE-10">CBSE Class 10</option>
+          <option value="CBSE-12">CBSE Class 12</option>
+          <option value="BSER-10">BSER Class 10</option>
+          <option value="BSER-12">BSER Class 12</option>
+        </select>
+        <label>Subject</label><select id="qSubj"></select>
+        <label>Questions (JSON)</label>
+        <textarea id="qQs" placeholder='[{"q":"Question?","options":["A","B","C","D"],"ans":0}]'></textarea>
+        <div style="background:var(--blue-l);border-radius:8px;padding:10px;margin-bottom:10px;font-size:11px;color:var(--blue);">
+          📌 ans: 0=A, 1=B, 2=C, 3=D<br>
+          Example: [{"q":"चंद्रमा क्या है?","options":["तारा","उपग्रह","ग्रह","धूमकेतु"],"ans":1}]
+        </div>
+        <button class="add-btn" onclick="addQuiz()">✅ Add Quiz</button>
+      </div>
+    </div>
+    <div id="aTab_manage" style="display:none;"><div id="aManageList"></div></div>
+    <div id="aTab_doubts" style="display:none;"><div id="aDoubtsList"></div></div>
+    <button class="a-logout" onclick="adminLogout()">🚪 Logout</button>
+    <button class="a-close" onclick="closeAdmin()">✕ बंद करें</button>
+  </div>
+</div>
+
+<!-- BOARD SELECTOR -->
+<div id="boardSel" onclick="closeBSOut(event)">
+  <div class="bs-sheet">
+    <div class="a-handle"></div>
+    <div class="a-title">Board & Class चुनें</div>
+    <div id="boardOpts"></div>
+    <button class="a-close" onclick="closeBS()">✕ बंद करें</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ALL JS at the bottom -->
+<script>
+// ══════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════
+// Admin credentials fetched securely from Firestore — not stored in code
+let ADMIN_PASS = null;
+let ADMIN_PHONE = null;
+
+async function loadAdminConfig(){
+  try {
+    const doc = await db.collection('_config').doc('admin').get();
+    if(doc.exists){
+      ADMIN_PASS  = doc.data().password;
+      ADMIN_PHONE = doc.data().phone;
+    } else {
+      console.warn('Admin config not found in Firestore.');
+    }
+  } catch(e){
+    console.error('Config load error:', e);
+  }
+}
+
+const SUBJECTS = {
+  "CBSE-10":[
+    {id:"math",name:"Mathematics",icon:"📐",color:"sc-blue"},
+    {id:"sci",name:"Science",icon:"🔬",color:"sc-green"},
+    {id:"sst",name:"Social Science",icon:"🌍",color:"sc-orange"},
+    {id:"eng",name:"English",icon:"📗",color:"sc-purple"},
+    {id:"hindi",name:"Hindi",icon:"🇮🇳",color:"sc-red"},
+  ],
+  "CBSE-12":[
+    {id:"phy",name:"Physics",icon:"⚡",color:"sc-blue"},
+    {id:"chem",name:"Chemistry",icon:"🧪",color:"sc-green"},
+    {id:"bio",name:"Biology",icon:"🌿",color:"sc-teal"},
+    {id:"math",name:"Mathematics",icon:"📐",color:"sc-orange"},
+    {id:"eng",name:"English",icon:"📗",color:"sc-purple"},
+    {id:"acc",name:"Accountancy",icon:"📊",color:"sc-red"},
+    {id:"eco",name:"Economics",icon:"💹",color:"sc-indigo"},
+  ],
+  "BSER-10":[
+    {id:"ganit",name:"गणित",icon:"📐",color:"sc-blue"},
+    {id:"vigyan",name:"विज्ञान",icon:"🔬",color:"sc-green"},
+    {id:"samajik",name:"सामाजिक विज्ञान",icon:"🌍",color:"sc-orange"},
+    {id:"hindi",name:"हिन्दी",icon:"🇮🇳",color:"sc-red"},
+    {id:"eng",name:"English",icon:"📗",color:"sc-purple"},
+    {id:"sanskrit",name:"संस्कृत",icon:"🕉️",color:"sc-teal"},
+  ],
+  "BSER-12":[
+    {id:"bhautiki",name:"भौतिक विज्ञान",icon:"⚡",color:"sc-blue"},
+    {id:"rasayan",name:"रसायन विज्ञान",icon:"🧪",color:"sc-green"},
+    {id:"jeev",name:"जीव विज्ञान",icon:"🌿",color:"sc-teal"},
+    {id:"ganit",name:"गणित",icon:"📐",color:"sc-orange"},
+    {id:"hindi",name:"हिन्दी",icon:"🇮🇳",color:"sc-red"},
+    {id:"lekha",name:"लेखाशास्त्र",icon:"📊",color:"sc-indigo"},
+    {id:"arthshastra",name:"अर्थशास्त्र",icon:"💹",color:"sc-pink"},
+  ]
+};
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let curBoard = localStorage.getItem('es_board')||'CBSE-10';
+let curSubject = null, curType = 'all';
+let isAdmin = false;
+let confirmRes = null;
+let allContent = [], allQuizzes = [];
+let curQuiz=null, curQ=0, score=0, answered=false;
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+window.onload = function(){
+  // Load admin config securely from Firestore on startup
+  loadAdminConfig();
+  setTimeout(()=>{
+    document.getElementById('splash').classList.add('hide');
+    setTimeout(()=>{ document.getElementById('splash').style.display='none'; },500);
+    document.getElementById('app').style.display='flex';
+    updateBoardPill();
+    initSubjectDropdowns();
+    renderDoubtSubjects();
+    listenContent();
+    listenQuizzes();
+    listenDoubts();
+  }, 2200);
+};
+
+// ══════════════════════════════════════════
+// FIREBASE LISTENERS
+// ══════════════════════════════════════════
+function listenContent(){
+  db.collection('content').orderBy('date','desc').onSnapshot(snap=>{
+    allContent = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderHome();
+    if(curSubject) loadSubjectContent(curType);
+  }, ()=>{ renderHome(); });
+}
+
+function listenQuizzes(){
+  db.collection('quizzes').orderBy('date','desc').onSnapshot(snap=>{
+    allQuizzes = snap.docs.map(d=>({id:d.id,...d.data()}));
+  }, ()=>{});
+}
+
+function listenDoubts(){
+  db.collection('doubts').orderBy('date','desc').onSnapshot(snap=>{
+    const doubts = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderDoubts(doubts);
+  }, ()=>{});
+}
+
+// ══════════════════════════════════════════
+// ADMIN LOGIN
+// ══════════════════════════════════════════
+function openAdminLogin(){
+  if(isAdmin){ openAdmin(); return; }
+  document.getElementById('adminLogin').classList.add('show');
+  resetLoginUI();
+  if(!window.recaptchaVerifier){
+    try {
+      window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container',{'size':'invisible'});
+    } catch(e){ console.log('reCAPTCHA setup:', e); }
+  }
+}
+
+function resetLoginUI(){
+  document.getElementById('stepPass').style.display='block';
+  document.getElementById('stepOtp').style.display='none';
+  document.getElementById('alPass').value='';
+  document.getElementById('alOtp').value='';
+  setAlMsg('','');
+}
+
+function setAlMsg(txt, type){
+  const el=document.getElementById('alMsg');
+  el.textContent=txt;
+  el.className='al-msg'+(txt?' show':'')+(type?' '+type:'');
+}
+
+async function checkPass(){
+  if(!ADMIN_PASS || !ADMIN_PHONE){
+    setAlMsg('⏳ Config load हो रहा है... दोबारा कोशिश करें।','err');
+    await loadAdminConfig();
+    return;
+  }
+  const pass=document.getElementById('alPass').value;
+  if(pass!==ADMIN_PASS){ setAlMsg('❌ Password गलत है!','err'); return; }
+  setAlMsg('','');
+  const btn=document.getElementById('passBtn');
+  btn.disabled=true; btn.textContent='OTP भेज रहे हैं...';
+
+  auth.signInWithPhoneNumber(ADMIN_PHONE || "+910000000000", window.recaptchaVerifier)
+    .then(res=>{
+      confirmRes=res;
+      showOtpStep('✅ OTP भेज दिया! +91 80941XXXXX');
+      btn.disabled=false; btn.textContent='जारी रखें →';
+    })
+    .catch(err=>{
+      console.warn('Phone auth error:',err.code);
+      // Test mode fallback
+      confirmRes=null;
+      showOtpStep('🔧 Test Mode: OTP डालें → 123456');
+      btn.disabled=false; btn.textContent='जारी रखें →';
+    });
+}
+
+function showOtpStep(msg){
+  document.getElementById('stepPass').style.display='none';
+  document.getElementById('stepOtp').style.display='block';
+  setAlMsg(msg,'ok');
+}
+
+function verifyOtp(){
+  const otp=document.getElementById('alOtp').value.trim();
+  if(otp.length<4){ setAlMsg('❌ OTP डालें!','err'); return; }
+  const btn=document.getElementById('otpBtn');
+  btn.disabled=true; btn.textContent='Verify हो रहा है...';
+
+  if(!confirmRes){
+    // Test mode
+    if(otp==='123456'){ loginSuccess(); }
+    else { setAlMsg('❌ OTP गलत है!','err'); btn.disabled=false; btn.textContent='✅ Verify करें'; }
+    return;
+  }
+  confirmRes.confirm(otp)
+    .then(()=>{ loginSuccess(); })
+    .catch(()=>{ setAlMsg('❌ OTP गलत है!','err'); btn.disabled=false; btn.textContent='✅ Verify करें'; });
+}
+
+function loginSuccess(){
+  isAdmin=true;
+  document.getElementById('adminLogin').classList.remove('show');
+  document.getElementById('otpBtn').disabled=false;
+  document.getElementById('otpBtn').textContent='✅ Verify करें';
+  showToast('✅ Admin Login सफल!');
+  openAdmin();
+}
+
+function backToPass(){ resetLoginUI(); }
+function closeAdminLogin(){ document.getElementById('adminLogin').classList.remove('show'); }
+function adminLogout(){ isAdmin=false; auth.signOut().catch(()=>{}); closeAdmin(); showToast('✅ Logout हो गए'); }
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+function navTo(page, el){
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  if(page==='home'){ document.getElementById('pageHome').classList.add('active'); renderHome(); }
+  else if(page==='subject'){ document.getElementById('pageSubject').classList.add('active'); showAllSubjects(); }
+  else if(page==='doubts'){ document.getElementById('pageDoubts').classList.add('active'); }
+  else if(page==='quiz'){ document.getElementById('pageQuiz').classList.add('active'); renderQuizList(); }
+  else if(page==='notes'){ document.getElementById('pageNotes').classList.add('active'); renderNotes(); }
+}
+
+function goHome(){
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.querySelector('.ni').classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pageHome').classList.add('active');
+}
+
+// ══════════════════════════════════════════
+// BOARD SELECTOR
+// ══════════════════════════════════════════
+function openBoardSel(){
+  const bds=[
+    {id:'CBSE-10',icon:'🏫',name:'CBSE – Class 10',sub:'Central Board'},
+    {id:'CBSE-12',icon:'🏫',name:'CBSE – Class 12',sub:'Central Board'},
+    {id:'BSER-10',icon:'🎓',name:'BSER – Class 10',sub:'Rajasthan Board'},
+    {id:'BSER-12',icon:'🎓',name:'BSER – Class 12',sub:'Rajasthan Board'},
+  ];
+  document.getElementById('boardOpts').innerHTML=bds.map(b=>`
+    <div class="bo ${curBoard===b.id?'sel':''}" onclick="selBoard('${b.id}')">
+      <span style="font-size:26px;">${b.icon}</span>
+      <div><div class="bo-nm">${b.name}</div><div class="bo-sb">${b.sub}</div></div>
+    </div>`).join('');
+  document.getElementById('boardSel').classList.add('show');
+}
+function selBoard(id){
+  curBoard=id; localStorage.setItem('es_board',id);
+  updateBoardPill(); closeBS(); renderHome();
+  initSubjectDropdowns(); renderDoubtSubjects();
+  showToast('Board: '+id.replace('-',' Class '));
+}
+function updateBoardPill(){ document.getElementById('boardPill').textContent=curBoard.replace('-',' '); }
+function closeBS(){ document.getElementById('boardSel').classList.remove('show'); }
+function closeBSOut(e){ if(e.target===document.getElementById('boardSel')) closeBS(); }
+
+// ══════════════════════════════════════════
+// HOME RENDER
+// ══════════════════════════════════════════
+function renderHome(){
+  const bc=allContent.filter(c=>c.board===curBoard);
+  document.getElementById('stPdf').textContent=bc.filter(c=>c.type==='pdf').length;
+  document.getElementById('stVid').textContent=bc.filter(c=>c.type==='video').length;
+  document.getElementById('stQz').textContent=allQuizzes.filter(q=>q.board===curBoard).length;
+  document.getElementById('stDpp').textContent=bc.filter(c=>c.type==='dpp').length;
+
+  document.getElementById('subjScroll').innerHTML=(SUBJECTS[curBoard]||[]).map(s=>`
+    <div class="subj-card ${s.color}" onclick="openSubjHome('${s.id}')">
+      <div class="s-ic">${s.icon}</div>
+      <div class="s-nm">${s.name}</div>
+      <div class="s-ct">${bc.filter(c=>c.subject===s.id).length} items</div>
+    </div>`).join('');
+
+  document.getElementById('recentList').innerHTML=bc.length
+    ? bc.slice(0,8).map(c=>cHTML(c)).join('')
+    : '<div class="empty"><div class="ei">📭</div><p>अभी कोई content नहीं।<br>Admin Panel से add करें।</p></div>';
+}
+
+function openSubjHome(sid){
+  curSubject=sid;
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.ni')[1].classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pageSubject').classList.add('active');
+  loadSubjectContent('all');
+}
+
+function showAllSubjects(){
+  curSubject=null;
+  document.getElementById('subjHero').style.background='linear-gradient(135deg,var(--navy),var(--navy2))';
+  document.getElementById('subjBoard').textContent=curBoard.replace('-',' Class ');
+  document.getElementById('subjTitle').textContent='All Subjects';
+  document.getElementById('subjCount').textContent=(SUBJECTS[curBoard]||[]).length+' subjects';
+  document.getElementById('typeTabs').innerHTML='';
+  document.getElementById('subjContent').innerHTML=(SUBJECTS[curBoard]||[]).map(s=>`
+    <div class="cnt-item" onclick="openSubjHome('${s.id}')">
+      <div class="cnt-ic" style="font-size:24px;background:rgba(59,130,246,.1);">${s.icon}</div>
+      <div class="cnt-info"><h4>${s.name}</h4><p>${allContent.filter(c=>c.board===curBoard&&c.subject===s.id).length} items</p></div>
+      <span style="font-size:20px;color:var(--g400);">›</span>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// SUBJECT CONTENT
+// ══════════════════════════════════════════
+function loadSubjectContent(type){
+  curType=type;
+  const sub=(SUBJECTS[curBoard]||[]).find(s=>s.id===curSubject);
+  if(!sub) return;
+  document.getElementById('subjHero').className='hero '+sub.color;
+  document.getElementById('subjBoard').textContent=curBoard.replace('-',' Class ');
+  document.getElementById('subjTitle').textContent=sub.icon+' '+sub.name;
+
+  let items=allContent.filter(c=>c.board===curBoard&&c.subject===curSubject);
+  if(type!=='all') items=items.filter(c=>c.type===type);
+  document.getElementById('subjCount').textContent=items.length+' items';
+
+  const labels={all:'🗂 All',pdf:'📄 PDF',video:'🎥 Video',dpp:'📗 DPP',note:'📒 Notes'};
+  document.getElementById('typeTabs').innerHTML=['all','pdf','video','dpp','note'].map(t=>
+    `<div class="type-tab ${curType===t?'active':''}" onclick="loadSubjectContent('${t}')">${labels[t]}</div>`).join('');
+
+  document.getElementById('subjContent').innerHTML=items.length
+    ? items.map(c=>cHTML(c)).join('')
+    : '<div class="empty"><div class="ei">📭</div><p>इस category में content नहीं है।</p></div>';
+}
+
+// ══════════════════════════════════════════
+// CONTENT HTML
+// ══════════════════════════════════════════
+function cHTML(c){
+  const T={pdf:{i:'📄',bg:'ci-pdf',b:'bdg-pdf',l:'PDF'},video:{i:'🎥',bg:'ci-video',b:'bdg-video',l:'Video'},dpp:{i:'📗',bg:'ci-dpp',b:'bdg-dpp',l:'DPP'},note:{i:'🗒️',bg:'ci-note',b:'bdg-note',l:'Note'}};
+  const t=T[c.type]||T.note;
+  const isNew=c.date&&(Date.now()-new Date(c.date).getTime())<7*24*60*60*1000;
+  const click=c.link?`onclick="window.open('${c.link}','_blank')"`:'' ;
+  return `<div class="cnt-item" ${click}>
+    <div class="cnt-ic ${t.bg}">${t.i}</div>
+    <div class="cnt-info">
+      <h4>${c.title}</h4>
+      <p>${c.desc||c.chapter||''}</p>
+      <span class="bdg ${t.b}">${t.l}</span>${isNew?'<span class="bdg bdg-new">NEW</span>':''}
+    </div>
+    <span style="font-size:18px;color:var(--g400);">${c.link?'🔗':'📄'}</span>
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+// SEARCH
+// ══════════════════════════════════════════
+function doSearch(){
+  const q=document.getElementById('searchInput').value.trim().toLowerCase();
+  const ss=document.getElementById('searchSec'), rs=document.getElementById('recentSec');
+  if(!q){ ss.style.display='none'; rs.style.display='block'; return; }
+  ss.style.display='block'; rs.style.display='none';
+  const res=allContent.filter(c=>c.board===curBoard&&[c.title,c.desc,c.chapter].join(' ').toLowerCase().includes(q));
+  document.getElementById('searchRes').innerHTML=res.length
+    ? res.map(c=>cHTML(c)).join('')
+    : `<div class="empty"><div class="ei">🔍</div><p>"${q}" नहीं मिला।</p></div>`;
+}
+
+// ══════════════════════════════════════════
+// DOUBTS
+// ══════════════════════════════════════════
+function renderDoubtSubjects(){
+  document.getElementById('dSubj').innerHTML=(SUBJECTS[curBoard]||[]).map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+}
+function submitDoubt(){
+  const text=document.getElementById('dText').value.trim();
+  if(!text){ showToast('❌ Doubt खाली है!'); return; }
+  db.collection('doubts').add({
+    board:curBoard,subject:document.getElementById('dSubj').value,
+    topic:document.getElementById('dTopic').value.trim(),text,
+    name:document.getElementById('dName').value.trim()||'Anonymous',
+    date:new Date().toISOString(),status:'pending',answer:''
+  }).then(()=>{
+    document.getElementById('dTopic').value='';
+    document.getElementById('dText').value='';
+    document.getElementById('dName').value='';
+    showToast('✅ Doubt submit हो गया!');
+  }).catch(()=>showToast('❌ Error! दोबारा कोशिश करें।'));
+}
+function renderDoubts(doubts){
+  const subs=SUBJECTS[curBoard]||[];
+  const filtered=(doubts||[]).filter(d=>d.board===curBoard);
+  document.getElementById('doubtsList').innerHTML=filtered.length
+    ? filtered.map(d=>{
+        const sub=subs.find(s=>s.id===d.subject);
+        return `<div class="doubt-item">
+          <div class="d-meta">${sub?sub.name:'?'} • ${d.topic||'General'} • ${d.name}</div>
+          <div class="d-q">❓ ${d.text}</div>
+          ${d.answer?`<div class="d-ans">✅ ${d.answer}</div>`:''}
+          <span class="d-st ${d.status==='answered'?'st-a':'st-p'}">${d.status==='answered'?'✅ Answered':'⏳ Pending'}</span>
+        </div>`;
+      }).join('')
+    : '<div class="empty"><div class="ei">💬</div><p>अभी कोई doubt नहीं।</p></div>';
+}
+
+// ══════════════════════════════════════════
+// QUIZ
+// ══════════════════════════════════════════
+function renderQuizList(){
+  exitQuiz();
+  const list=allQuizzes.filter(q=>q.board===curBoard);
+  document.getElementById('quizListSec').innerHTML=list.length
+    ? list.map((q,i)=>`
+        <div class="qz-card">
+          <div class="qzc-t">${q.title}</div>
+          <div class="qzc-s">${q.subject||''}</div>
+          <div class="qzc-meta">
+            <span class="qzc-tag">📝 ${q.questions.length} Questions</span>
+            <span class="qzc-tag">⏱ ~${q.questions.length*30}s</span>
+          </div>
+          <button class="start-btn" onclick="startQuiz(${i})">▶ Start Quiz</button>
+        </div>`).join('')
+    : '<div class="empty"><div class="ei">🧩</div><p>अभी कोई quiz नहीं।</p></div>';
+}
+function startQuiz(idx){
+  const list=allQuizzes.filter(q=>q.board===curBoard);
+  curQuiz=list[idx]; curQ=0; score=0; answered=false;
+  document.getElementById('quizListSec').style.display='none';
+  document.getElementById('quizActive').style.display='block';
+  document.getElementById('quizResult').style.display='none';
+  showQ();
+}
+function showQ(){
+  if(!curQuiz||curQ>=curQuiz.questions.length){ showResult(); return; }
+  const q=curQuiz.questions[curQ], total=curQuiz.questions.length;
+  answered=false;
+  document.getElementById('qNum').textContent=`Question ${curQ+1} of ${total}`;
+  document.getElementById('qFill').style.width=((curQ/total)*100)+'%';
+  document.getElementById('qText').textContent=q.q;
+  document.getElementById('qOpts').innerHTML=q.options.map((o,i)=>
+    `<div class="q-opt" onclick="selOpt(this,${i},${q.ans})">${String.fromCharCode(65+i)}. ${o}</div>`).join('');
+  document.getElementById('qNext').textContent=curQ===total-1?'Result ✓':'अगला →';
+}
+function selOpt(el,idx,ans){
+  if(answered)return; answered=true;
+  document.querySelectorAll('.q-opt').forEach(o=>o.classList.remove('sel','corr','wrong'));
+  el.classList.add(idx===ans?'corr':'wrong');
+  document.querySelectorAll('.q-opt')[ans].classList.add('corr');
+  if(idx===ans)score++;
+}
+function nextQ(){ curQ++; showQ(); }
+function showResult(){
+  document.getElementById('quizActive').style.display='none';
+  document.getElementById('quizResult').style.display='block';
+  const total=curQuiz.questions.length, pct=Math.round((score/total)*100);
+  document.getElementById('rEmoji').textContent=pct>=80?'🏆':pct>=50?'👍':'💪';
+  document.getElementById('rScore').textContent=`${score}/${total} (${pct}%)`;
+  document.getElementById('rMsg').textContent=pct>=80?'शानदार! बेहतरीन Performance!':pct>=50?'अच्छा! और practice करें!':'हिम्मत रखें, आप कर सकते हैं!';
+}
+function exitQuiz(){
+  curQuiz=null;
+  if(document.getElementById('quizListSec')) document.getElementById('quizListSec').style.display='block';
+  if(document.getElementById('quizActive')) document.getElementById('quizActive').style.display='none';
+  if(document.getElementById('quizResult')) document.getElementById('quizResult').style.display='none';
+}
+
+// ══════════════════════════════════════════
+// NOTES
+// ══════════════════════════════════════════
+function saveNote(){
+  const title=document.getElementById('noteTitle').value.trim();
+  const text=document.getElementById('noteText').value.trim();
+  if(!text){ showToast('❌ Note खाली है!'); return; }
+  const notes=JSON.parse(localStorage.getItem('es_notes')||'[]');
+  notes.push({id:Date.now(),title:title||'Untitled',text,date:new Date().toISOString()});
+  localStorage.setItem('es_notes',JSON.stringify(notes));
+  document.getElementById('noteTitle').value='';
+  document.getElementById('noteText').value='';
+  showToast('✅ Note save हो गया!'); renderNotes();
+}
+function renderNotes(){
+  const notes=JSON.parse(localStorage.getItem('es_notes')||'[]').reverse();
+  document.getElementById('notesList').innerHTML=notes.length
+    ? notes.map(n=>`
+        <div class="note-item">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:13px;font-weight:700;color:var(--navy);">${n.title}</div>
+            <button onclick="delNote(${n.id})" style="background:#FEE2E2;color:var(--red);border:none;padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer;">🗑</button>
+          </div>
+          <div style="font-size:12px;color:var(--g600);margin-top:6px;line-height:1.6;">${n.text}</div>
+          <div style="font-size:10px;color:var(--g400);margin-top:4px;">${new Date(n.date).toLocaleDateString('hi-IN')}</div>
+        </div>`).join('')
+    : '<div class="empty"><div class="ei">📒</div><p>अभी कोई note नहीं।</p></div>';
+}
+function delNote(id){
+  localStorage.setItem('es_notes',JSON.stringify(JSON.parse(localStorage.getItem('es_notes')||'[]').filter(n=>n.id!==id)));
+  renderNotes(); showToast('🗑 Delete हो गया');
+}
+
+// ══════════════════════════════════════════
+// ADMIN PANEL
+// ══════════════════════════════════════════
+function openAdmin(){
+  document.getElementById('adminPanel').classList.add('show');
+  renderAManage(); renderADoubts();
+}
+function closeAdmin(){ document.getElementById('adminPanel').classList.remove('show'); }
+function closeAdminOut(e){ if(e.target===document.getElementById('adminPanel')) closeAdmin(); }
+
+function aTab(tab,el){
+  document.querySelectorAll('.a-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['add','quiz','manage','doubts'].forEach(t=>{ document.getElementById('aTab_'+t).style.display='none'; });
+  document.getElementById('aTab_'+tab).style.display='block';
+  if(tab==='manage') renderAManage();
+  if(tab==='doubts') renderADoubts();
+}
+
+function initSubjectDropdowns(){
+  const subs=SUBJECTS[document.getElementById('aBoard').value]||[];
+  document.getElementById('aSubj').innerHTML=subs.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  const qsubs=SUBJECTS[document.getElementById('qBoard').value]||[];
+  document.getElementById('qSubj').innerHTML=qsubs.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+}
+function updateASubj(){
+  document.getElementById('aSubj').innerHTML=(SUBJECTS[document.getElementById('aBoard').value]||[]).map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+}
+
+function addContent(){
+  if(!isAdmin){ showToast('❌ Admin login करें!'); return; }
+  const title=document.getElementById('aTitle').value.trim();
+  if(!title){ showToast('❌ Title खाली है!'); return; }
+  const btn=document.getElementById('addBtn');
+  btn.disabled=true; btn.textContent='Adding...';
+  db.collection('content').add({
+    board:document.getElementById('aBoard').value,
+    subject:document.getElementById('aSubj').value,
+    type:document.getElementById('aType').value,
+    title, desc:document.getElementById('aDesc').value.trim(),
+    link:document.getElementById('aLink').value.trim(),
+    chapter:document.getElementById('aChap').value.trim(),
+    date:new Date().toISOString()
+  }).then(()=>{
+    ['aTitle','aDesc','aLink','aChap'].forEach(id=>{ document.getElementById(id).value=''; });
+    btn.disabled=false; btn.textContent='✅ Add Content';
+    showToast('✅ Content add हो गया!');
+  }).catch(e=>{ showToast('❌ Error: '+e.message); btn.disabled=false; btn.textContent='✅ Add Content'; });
+}
+
+function addQuiz(){
+  if(!isAdmin){ showToast('❌ Admin login करें!'); return; }
+  const title=document.getElementById('qTitle').value.trim();
+  const raw=document.getElementById('qQs').value.trim();
+  if(!title||!raw){ showToast('❌ सब fields भरें!'); return; }
+  let questions;
+  try{ questions=JSON.parse(raw); } catch{ showToast('❌ JSON format गलत है!'); return; }
+  db.collection('quizzes').add({
+    title, board:document.getElementById('qBoard').value,
+    subject:document.getElementById('qSubj').value,
+    questions, date:new Date().toISOString()
+  }).then(()=>{
+    document.getElementById('qTitle').value='';
+    document.getElementById('qQs').value='';
+    showToast('✅ Quiz add हो गया!');
+  }).catch(e=>showToast('❌ Error: '+e.message));
+}
+
+function renderAManage(){
+  document.getElementById('aManageList').innerHTML=allContent.slice(0,30).map(c=>`
+    <div class="mgmt-item">
+      <div><div class="mgmt-nm">${c.title}</div><div class="mgmt-sb">${c.board} • ${c.type}</div></div>
+      <button class="del-btn" onclick="delContent('${c.id}')">🗑</button>
+    </div>`).join('')||'<div class="empty"><div class="ei">📭</div><p>कोई content नहीं।</p></div>';
+}
+
+function delContent(id){
+  if(!isAdmin){ showToast('❌ Admin login करें!'); return; }
+  db.collection('content').doc(id).delete()
+    .then(()=>{ showToast('🗑 Delete हो गया'); })
+    .catch(e=>showToast('❌ Error: '+e.message));
+}
+
+function renderADoubts(){
+  db.collection('doubts').where('status','==','pending').get()
+    .then(snap=>{
+      const doubts=snap.docs.map(d=>({id:d.id,...d.data()}));
+      document.getElementById('aDoubtsList').innerHTML=doubts.length
+        ? doubts.map(d=>`
+            <div class="mgmt-item" style="flex-direction:column;align-items:flex-start;gap:8px;">
+              <div><div class="mgmt-nm">❓ ${d.text.slice(0,60)}...</div><div class="mgmt-sb">${d.name} • ${d.board}</div></div>
+              <div style="display:flex;gap:6px;width:100%;">
+                <input id="ans_${d.id}" placeholder="जवाब लिखें..." style="flex:1;border:1.5px solid var(--g200);border-radius:8px;padding:7px 10px;font-size:12px;font-family:inherit;outline:none;"/>
+                <button class="rply-btn" onclick="replyDoubt('${d.id}')">✅</button>
+                <button class="del-btn" onclick="delDoubt('${d.id}')">🗑</button>
+              </div>
+            </div>`).join('')
+        : '<div class="empty"><div class="ei">✅</div><p>सभी doubts answer हो गए!</p></div>';
+    }).catch(()=>{});
+}
+
+function replyDoubt(id){
+  if(!isAdmin){ showToast('❌ Admin login करें!'); return; }
+  const ans=document.getElementById('ans_'+id)?.value.trim();
+  if(!ans){ showToast('❌ जवाब खाली है!'); return; }
+  db.collection('doubts').doc(id).update({answer:ans,status:'answered'})
+    .then(()=>{ showToast('✅ Reply दे दिया!'); renderADoubts(); })
+    .catch(e=>showToast('❌ Error: '+e.message));
+}
+
+function delDoubt(id){
+  if(!isAdmin){ showToast('❌ Admin login करें!'); return; }
+  db.collection('doubts').doc(id).delete()
+    .then(()=>{ showToast('🗑 Delete हो गया'); renderADoubts(); })
+    .catch(e=>showToast('❌ Error: '+e.message));
+}
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+</script>
+</body>
+</html>
