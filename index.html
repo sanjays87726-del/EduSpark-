@@ -331,6 +331,32 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
         <div class="sec-t"><span>🔍</span> Search Results</div>
         <div class="cnt-list" id="searchRes"></div>
       </div>
+      
+
+<div class="sec-t"><span>📜</span> PYQ Papers</div>
+<div class="subj-scroll">
+  <div class="subj-card sc-orange" onclick="navTo('pyq',document.querySelectorAll('.ni')[2])">
+    <div class="s-ic">📜</div>
+    <div class="s-nm">Previous Year</div>
+    <div class="s-ct">Questions</div>
+  </div>
+  <div class="subj-card sc-red" onclick="navTo('pyq',document.querySelectorAll('.ni')[2])">
+    <div class="s-ic">📋</div>
+    <div class="s-nm">Sample Papers</div>
+    <div class="s-ct">Board Pattern</div>
+  </div>
+  <div class="subj-card sc-purple" onclick="navTo('pyq',document.querySelectorAll('.ni')[2])">
+    <div class="s-ic">📝</div>
+    <div class="s-nm">Model Papers</div>
+    <div class="s-ct">Practice Set</div>
+  </div>
+  <div class="subj-card sc-teal" onclick="navTo('pyq',document.querySelectorAll('.ni')[2])">
+    <div class="s-ic">🎯</div>
+    <div class="s-nm">Pre-Board</div>
+    <div class="s-ct">Exam Papers</div>
+  </div>
+</div>
+
       <div id="recentSec">
         <div class="sec-t"><span>🆕</span> Recent Updates</div>
         <div class="cnt-list" id="recentList"></div>
@@ -690,6 +716,7 @@ function verifyOtp(){
 
 function loginSuccess(){
   isAdmin=true;
+  sessionStorage.setItem('es_admin','true');
   document.getElementById('adminLogin').classList.remove('show');
   document.getElementById('otpBtn').disabled=false;
   document.getElementById('otpBtn').textContent='✅ Verify करें';
@@ -699,7 +726,8 @@ function loginSuccess(){
 
 function backToPass(){ resetLoginUI(); }
 function closeAdminLogin(){ document.getElementById('adminLogin').classList.remove('show'); }
-function adminLogout(){ isAdmin=false; auth.signOut().catch(()=>{}); closeAdmin(); showToast('✅ Logout हो गए'); }
+function adminLogout(){ isAdmin=false;
+sessionStorage.removeItem('es_admin'); auth.signOut().catch(()=>{}); closeAdmin(); showToast('✅ Logout हो गए'); }
 
 // ══════════════════════════════════════════
 // NAVIGATION
@@ -1108,6 +1136,22 @@ function showToast(msg){
   t.textContent=msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2500);
 }
+window.onload = function(){
+  if(sessionStorage.getItem('es_admin')==='true'){isAdmin=true;}
+  loadAdminConfig();
+  setTimeout(()=>{
+    document.getElementById('splash').classList.add('hide');
+    setTimeout(()=>{ document.getElementById('splash').style.display='none'; },500);
+    document.getElementById('app').style.display='flex';
+    updateBoardPill();
+    initSubjectDropdowns();
+    renderDoubtSubjects();
+    listenContent();
+    listenQuizzes();
+    listenDoubts();
+    listenPYQ();
+  }, 2200);
+};
 </script>
 </body>
 </html>
