@@ -312,6 +312,16 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
         <div class="hero-g">नमस्ते! 👋 पढ़ाई शुरू करें</div>
         <div class="hero-t">Smart Study <span>Board Exams</span> के लिए</div>
         <div class="hero-s">CBSE & BSER • Class 10 & 12 • Free Content</div>
+    <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+    <a href="https://instagram.com/bhupesh_jatav_02" target="_blank"
+       style="display:flex;align-items:center;gap:6px;background:linear-gradient(90deg,#E1306C,#833AB4);color:#fff;padding:7px 14px;border-radius:99px;font-size:12px;font-weight:700;text-decoration:none;">
+      📸 @bhupesh_jatav_02
+    </a>
+    <button onclick="shareApp()"
+       style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);color:#fff;padding:7px 14px;border-radius:99px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
+      🔗 App Share करें
+    </button>
+  </div>
       </div>
       <div class="search-wrap">
         <div class="search-box">
@@ -1189,7 +1199,20 @@ function delDoubt(id){
     .catch(e=>showToast('❌ Error: '+e.message));
 }
 
-// ══════════════════════════════════════════
+function shareApp(){
+  if(navigator.share){
+    navigator.share({
+      title: 'EduSpark — Free Board Study App',
+      text: 'CBSE & BSER Class 10 & 12 ke liye free study app — PDF, Videos, Quiz, PYQ sab free!',
+      url: 'https://sanjays87726-del.github.io/EduSpark-/'
+    }).then(()=>showToast('✅ Share ho gaya!'))
+    .catch(()=>{});
+  } else {
+    navigator.clipboard.writeText('https://sanjays87726-del.github.io/EduSpark-/')
+      .then(()=>showToast('✅ Link copy ho gaya!'))
+      .catch(()=>showToast('🔗 https://sanjays87726-del.github.io/EduSpark-/'));
+  }
+}
 // TOAST
 // ══════════════════════════════════════════
 function showToast(msg){
