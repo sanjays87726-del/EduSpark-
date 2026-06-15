@@ -456,9 +456,10 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
     <div class="a-title">⚙️ Admin Panel</div>
     <div class="a-tabs">
       <div class="a-tab active" onclick="aTab('add',this)">📤 Add</div>
-      <div class="a-tab" onclick="aTab('quiz',this)">🧩 Quiz</div>
-      <div class="a-tab" onclick="aTab('manage',this)">📋 Manage</div>
-      <div class="a-tab" onclick="aTab('doubts',this)">💬 Doubts</div>
+<div class="a-tab" onclick="aTab('quiz',this)">🧩 Quiz</div>
+<div class="a-tab" onclick="aTab('pyq',this)">📜 PYQ</div>
+<div class="a-tab" onclick="aTab('manage',this)">📋 Manage</div>
+<div class="a-tab" onclick="aTab('doubts',this)">💬 Doubts</div>
     </div>
     <div id="aTab_add">
       <div class="af">
@@ -504,7 +505,52 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
         <button class="add-btn" onclick="addQuiz()">✅ Add Quiz</button>
       </div>
     </div>
-    <div id="aTab_manage" style="display:none;"><div id="aManageList"></div></div>
+  <div id="aTab_pyq" style="display:none;">
+  <div class="af">
+    <label>Board & Class</label>
+    <select id="pyqBoard" onchange="updatePYQSubj()">
+      <option value="CBSE-10">CBSE Class 10</option>
+      <option value="CBSE-12">CBSE Class 12</option>
+      <option value="BSER-10">BSER Class 10</option>
+      <option value="BSER-12">BSER Class 12</option>
+    </select>
+    <label>Subject</label>
+    <select id="pyqSubjAdmin"></select>
+    <label>Year</label>
+    <select id="pyqYear">
+      <option value="2024">2024</option>
+      <option value="2023">2023</option>
+      <option value="2022">2022</option>
+      <option value="2021">2021</option>
+      <option value="2020">2020</option>
+      <option value="2019">2019</option>
+      <option value="2018">2018</option>
+    </select>
+    <label>Exam Type</label>
+    <select id="pyqExamType">
+      <option value="Board Exam">Board Exam</option>
+      <option value="Pre-Board">Pre-Board</option>
+      <option value="Sample Paper">Sample Paper</option>
+      <option value="Model Paper">Model Paper</option>
+    </select>
+    <label>Title</label>
+    <input type="text" id="pyqTitle" placeholder="Science 2024 Board Paper"/>
+    <label>Description</label>
+    <input type="text" id="pyqDesc" placeholder="Full paper with solutions..."/>
+    <label>PDF Link (Google Drive)</label>
+    <input type="url" id="pyqLink" placeholder="https://drive.google.com/..."/>
+    <button class="add-btn" id="pyqAddBtn" onclick="addPYQ()">✅ PYQ Add करें</button>
+    <div style="margin-top:10px;">
+      <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px;">📋 Added PYQs</div>
+      <div id="pyqManageList"></div>
+    </div>
+  </div>
+</div>
+  <div id="aTab_manage" style="display:none;">
+  <div id="aManageList">
+    <div style="text-align:center;padding:20px;color:var(--g400);">⏳ Loading...</div>
+  </div>
+</div>
     <div id="aTab_doubts" style="display:none;"><div id="aDoubtsList"></div></div>
     <button class="a-logout" onclick="adminLogout()">🚪 Logout</button>
     <button class="a-close" onclick="closeAdmin()">✕ बंद करें</button>
@@ -1081,11 +1127,17 @@ function addQuiz(){
 }
 
 function renderAManage(){
-  document.getElementById('aManageList').innerHTML=allContent.slice(0,30).map(c=>`
-    <div class="mgmt-item">
-      <div><div class="mgmt-nm">${c.title}</div><div class="mgmt-sb">${c.board} • ${c.type}</div></div>
-      <button class="del-btn" onclick="delContent('${c.id}')">🗑</button>
-    </div>`).join('')||'<div class="empty"><div class="ei">📭</div><p>कोई content नहीं।</p></div>';
+  db.collection('content').orderBy('date','desc').limit(30).get()
+    .then(snap=>{
+      const items=snap.docs.map(d=>({id:d.id,...d.data()}));
+      document.getElementById('aManageList').innerHTML=items.length
+        ? items.map(c=>`
+            <div class="mgmt-item">
+              <div><div class="mgmt-nm">${c.title}</div><div class="mgmt-sb">${c.board} • ${c.type}</div></div>
+              <button class="del-btn" onclick="delContent('${c.id}')">🗑</button>
+            </div>`).join('')
+        : '<div class="empty"><div class="ei">📭</div><p>कोई content नहीं।</p></div>';
+    }).catch(()=>showToast('❌ Load error!'));
 }
 
 function delContent(id){
