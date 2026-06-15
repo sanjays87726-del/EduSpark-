@@ -1024,10 +1024,11 @@ function closeAdminOut(e){ if(e.target===document.getElementById('adminPanel')) 
 function aTab(tab,el){
   document.querySelectorAll('.a-tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  ['add','quiz','manage','doubts'].forEach(t=>{ document.getElementById('aTab_'+t).style.display='none'; });
+  ['add','quiz','pyq','manage','doubts'].forEach(t=>{ document.getElementById('aTab_'+t).style.display='none'; });
   document.getElementById('aTab_'+tab).style.display='block';
   if(tab==='manage') renderAManage();
   if(tab==='doubts') renderADoubts();
+  if(tab==='pyq') renderPYQManage();
 }
 
 function initSubjectDropdowns(){
@@ -1089,8 +1090,16 @@ function renderAManage(){
 
 function delContent(id){
   if(!isAdmin){ showToast('❌ Admin login करें!'); return; }
+  if(!confirm('क्या आप sure हैं? यह content delete हो जाएगा!')) return;
   db.collection('content').doc(id).delete()
     .then(()=>{ showToast('🗑 Delete हो गया'); })
+    .catch(e=>showToast('❌ Error: '+e.message));
+}
+function delPYQ(id){
+  if(!isAdmin){ showToast('❌ Admin login करें!'); return; }
+  if(!confirm('क्या आप sure हैं? यह PYQ delete हो जाएगा!')) return;
+  db.collection('pyq').doc(id).delete()
+    .then(()=>{ showToast('🗑 PYQ delete हो गया'); renderPYQManage(); })
     .catch(e=>showToast('❌ Error: '+e.message));
 }
 
