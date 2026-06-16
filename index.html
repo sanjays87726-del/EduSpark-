@@ -692,6 +692,21 @@ function listenDoubts(){
   }, ()=>{});
 }
 
+
+function listenPYQ(){
+  db.collection('pyq').orderBy('year','desc').onSnapshot(snap=>{
+    allPYQ = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderPYQ();
+    buildPYQSubjTabs();
+  }, err=>{
+    db.collection('pyq').get().then(snap=>{
+      allPYQ = snap.docs.map(d=>({id:d.id,...d.data()}));
+      renderPYQ();
+      buildPYQSubjTabs();
+    }).catch(()=>{});
+  });
+}
+
 // ══════════════════════════════════════════
 // ADMIN LOGIN
 // ══════════════════════════════════════════
@@ -1092,6 +1107,7 @@ function initSubjectDropdowns(){
   document.getElementById('aSubj').innerHTML=subs.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
   const qsubs=SUBJECTS[document.getElementById('qBoard').value]||[];
   document.getElementById('qSubj').innerHTML=qsubs.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  updatePYQSubj();
 }
 function updateASubj(){
   document.getElementById('aSubj').innerHTML=(SUBJECTS[document.getElementById('aBoard').value]||[]).map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
@@ -1246,6 +1262,12 @@ function delDoubt(id){
   db.collection('doubts').doc(id).delete()
     .then(()=>{ showToast('🗑 Delete हो गया'); renderADoubts(); })
     .catch(e=>showToast('❌ Error: '+e.message));
+}
+
+function openAdmin(){
+  document.getElementById('adminPanel').classList.add('show');
+  renderAManage(); renderADoubts();
+  updatePYQSubj();
 }
 
 function shareApp(){
