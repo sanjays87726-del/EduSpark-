@@ -1050,6 +1050,7 @@ function filterPYQSubj(subj, el){
 
 function renderPYQ(){
   let items = allPYQ.filter(p=>p.board===curBoard);
+alert("PYQ Count: " + items.length);
   if(pyqYearFilter!=='all') items = items.filter(p=>String(p.year)===pyqYearFilter);
   if(pyqSubjFilter!=='all') items = items.filter(p=>p.subject===pyqSubjFilter);
   const subData = SUBJECTS[curBoard]||[];
@@ -1077,8 +1078,8 @@ function renderPYQ(){
         const sub = subData.find(s=>s.id===p.subject);
         return `<div class="pyq-item">
           <span class="pyq-year">${p.year}</span>
-          <span class="pyq-board-tag">${p.board.replace('-',' ')}</span>
-          <div class="pyq-title">📜 ${p.title}</div>
+          <span class="pyq-board-tag">${(p.board || '').replace('-',' ')}</span>
+          <div class="pyq-title">📜 ${p.title || 'Untitled PYQ'}</div>
           <div class="pyq-sub">${sub?sub.icon+' '+sub.name:''} ${p.desc?'• '+p.desc:''}</div>
           <div class="pyq-footer">
             <span style="font-size:10px;color:var(--g400);">${p.examType||'Board Exam'}</span>
