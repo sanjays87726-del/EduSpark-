@@ -1135,7 +1135,56 @@ function addQuiz(){
     showToast('✅ Quiz add हो गया!');
   }).catch(e=>showToast('❌ Error: '+e.message));
 }
+function updatePYQSubj(){
+  const board = document.getElementById('pyqBoard').value;
+  const subs = SUBJECTS[board]||[];
+  document.getElementById('pyqSubjAdmin').innerHTML = subs.map(s=>`<option value="${s.id}">${s.icon} ${s.name}</option>`).join('');
+}
 
+function addPYQ(){
+  if(!isAdmin){ showToast('❌ Admin login करें!'); return; }
+  const title = document.getElementById('pyqTitle').value.trim();
+  const link  = document.getElementById('pyqLink').value.trim();
+  if(!title){ showToast('❌ Title खाली है!'); return; }
+  const btn = document.getElementById('pyqAddBtn');
+  btn.disabled=true; btn.textContent='Adding...';
+  db.collection('pyq').add({
+    board:    document.getElementById('pyqBoard').value,
+    subject:  document.getElementById('pyqSubjAdmin').value,
+    year:     parseInt(document.getElementById('pyqYear').value),
+    examType: document.getElementById('pyqExamType').value,
+    title,
+    desc:     document.getElementById('pyqDesc').value.trim(),
+    link,
+    date:     new Date().toISOString()
+  }).then(()=>{
+    document.getElementById('pyqTitle').value='';
+    document.getElementById('pyqDesc').value='';
+    document.getElementById('pyqLink').value='';
+    btn.disabled=false; btn.textContent='✅ PYQ Add करें';
+    showToast('✅ PYQ add हो गया!');
+    renderPYQManage();
+  }).catch(e=>{
+    showToast('❌ Error: '+e.message);
+    btn.disabled=false; btn.textContent='✅ PYQ Add करें';
+  });
+}
+
+function renderPYQManage(){
+  db.collection('pyq').orderBy('year','desc').get().then(snap=>{
+    const items = snap.docs.map(d=>({id:d.id,...d.data()}));
+    document.getElementById('pyqManageList').innerHTML = items.length
+      ? items.map(p=>`
+          <div class="mgmt-item">
+            <div>
+              <div class="mgmt-nm">${p.year} — ${p.title}</div>
+              <div class="mgmt-sb">${p.board} • ${p.subject} • ${p.examType||''}</div>
+            </div>
+            <button class="del-btn" onclick="delPYQ('${p.id}')">🗑</button>
+          </div>`).join('')
+      : '<div class="empty"><div class="ei">📜</div><p>कोई PYQ नहीं।</p></div>';
+  }).catch(()=>{});
+}
 function renderAManage(){
   db.collection('content').orderBy('date','desc').limit(30).get()
     .then(snap=>{
