@@ -1035,6 +1035,9 @@ function buildPYQSubjTabs(){
 }
 
 function filterPYQ(year, el){
+
+alert("Clicked: " + year);
+
   pyqYearFilter = year;
   document.querySelectorAll('#pyqBoardTabs .type-tab').forEach(t=>t.classList.remove('active'));
   if(el) el.classList.add('active');
