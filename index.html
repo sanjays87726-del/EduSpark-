@@ -1053,10 +1053,24 @@ function renderPYQ(){
   if(pyqYearFilter!=='all') items = items.filter(p=>String(p.year)===pyqYearFilter);
   if(pyqSubjFilter!=='all') items = items.filter(p=>p.subject===pyqSubjFilter);
   const subData = SUBJECTS[curBoard]||[];
-  document.getElementById('pyqCount').textContent = items.length+' PYQ Papers';
-  document.getElementById('pyqBoard').textContent = curBoard.replace('-',' Class ');
-  document.getElementById('pyqFilteredList')||document.getElementById('pyqList');
-  const listEl = document.getElementById('pyqFilteredList') || document.getElementById('pyqList');
+
+  if(document.getElementById('pyqCount'))
+    document.getElementById('pyqCount').textContent = items.length+' PYQ Papers';
+  if(document.getElementById('pyqBoard'))
+    document.getElementById('pyqBoard').textContent = curBoard.replace('-',' Class ');
+
+  // Tiles hide/show based on filter
+  const tilesGrid = document.querySelector('#pyqList div[style*="grid"]');
+  const tilesTitle = document.querySelector('#pyqList .sec-t');
+  if(pyqYearFilter!=='all'||pyqSubjFilter!=='all'){
+    if(tilesGrid) tilesGrid.style.display='none';
+    if(tilesTitle) tilesTitle.style.display='none';
+  } else {
+    if(tilesGrid) tilesGrid.style.display='';
+    if(tilesTitle) tilesTitle.style.display='';
+  }
+
+  const listEl = document.getElementById('pyqFilteredList');
   if(!listEl) return;
   listEl.innerHTML = items.length
     ? items.map(p=>{
@@ -1072,7 +1086,9 @@ function renderPYQ(){
           </div>
         </div>`;
       }).join('')
-    : '<div class="empty"><div class="ei">📜</div><p>अभी कोई PYQ नहीं है।<br>Admin Panel से add करें।</p></div>';
+    : pyqYearFilter!=='all'
+      ? `<div class="empty"><div class="ei">📜</div><p>${pyqYearFilter} mein koi PYQ nahi hai।</p></div>`
+      : '';
 }
 
 // ══════════════════════════════════════════
