@@ -1049,6 +1049,9 @@ function filterPYQSubj(subj, el){
 }
 
 function renderPYQ(){
+
+alert("TEST 123");
+
   let items = allPYQ.filter(p=>p.board===curBoard);
   if(pyqYearFilter!=='all') items = items.filter(p=>String(p.year)===pyqYearFilter);
   if(pyqSubjFilter!=='all') items = items.filter(p=>p.subject===pyqSubjFilter);
@@ -1074,9 +1077,6 @@ function renderPYQ(){
   if(!listEl) return;
   listEl.innerHTML = items.length
     ? items.map(p=>{
-
-alert("PYQ Count: " + items.length);
-
         const sub = subData.find(s=>s.id===p.subject);
         return `<div class="pyq-item">
           <span class="pyq-year">${p.year}</span>
