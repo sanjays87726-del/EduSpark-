@@ -388,6 +388,72 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
       <div class="cnt-list" id="subjContent" style="margin-top:10px;"></div>
     </div>
 
+   <!-- PYQ PAGE -->
+    <div class="page" id="pagePYQ">
+      <div style="background:linear-gradient(135deg,#0F1B35,#1a3a6b);padding:22px 18px 28px;color:#fff;">
+        <div style="font-size:12px;color:rgba(255,255,255,.65);margin-bottom:4px;">Board Exams</div>
+        <div style="font-size:21px;font-weight:800;">📜 Previous Year <span style="color:#F59E0B;">Questions</span></div>
+        <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:5px;">Year-wise PYQ Papers</div>
+      </div>
+      <div style="padding:14px 18px 0;">
+        <div style="display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;" id="pyqBoardTabs">
+          <div class="type-tab active" onclick="filterPYQ('all',this)">🗂 All</div>
+          <div class="type-tab" onclick="filterPYQ('2025',this)">2025</div>
+          <div class="type-tab" onclick="filterPYQ('2024',this)">2024</div>
+          <div class="type-tab" onclick="filterPYQ('2023',this)">2023</div>
+          <div class="type-tab" onclick="filterPYQ('2022',this)">2022</div>
+          <div class="type-tab" onclick="filterPYQ('2021',this)">2021</div>
+          <div class="type-tab" onclick="filterPYQ('2020',this)">2020</div>
+          <div class="type-tab" onclick="filterPYQ('2019',this)">2019</div>
+          <div class="type-tab" onclick="filterPYQ('2018',this)">2018</div>
+        </div>
+      </div>
+      <div style="padding:10px 18px 0;">
+        <div style="display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;" id="pyqSubjTabs">
+          <div class="type-tab active" onclick="filterPYQSubj('all',this)">📚 All Subjects</div>
+        </div>
+      </div>
+      <div style="padding:14px 18px 0;">
+        <div style="background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 2px 8px rgba(15,27,53,.07);display:flex;align-items:center;gap:10px;">
+          <span style="font-size:24px;">📜</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#0F1B35;" id="pyqCount">0 PYQ Papers</div>
+            <div style="font-size:11px;color:#64748B;" id="pyqBoard">CBSE & BSER</div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:0 18px 18px;" id="pyqList">
+        <div class="sec-t"><span>📅</span> Year wise Papers</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div class="subj-card sc-orange" style="min-width:unset;" onclick="filterPYQ('2025',this)">
+            <div class="s-ic">📜</div><div class="s-nm">2025</div><div class="s-ct">Board Papers</div>
+          </div>
+          <div class="subj-card sc-blue" style="min-width:unset;" onclick="filterPYQ('2024',this)">
+            <div class="s-ic">📜</div><div class="s-nm">2024</div><div class="s-ct">Board Papers</div>
+          </div>
+          <div class="subj-card sc-green" style="min-width:unset;" onclick="filterPYQ('2023',this)">
+            <div class="s-ic">📜</div><div class="s-nm">2023</div><div class="s-ct">Board Papers</div>
+          </div>
+          <div class="subj-card sc-red" style="min-width:unset;" onclick="filterPYQ('2022',this)">
+            <div class="s-ic">📜</div><div class="s-nm">2022</div><div class="s-ct">Board Papers</div>
+          </div>
+          <div class="subj-card sc-purple" style="min-width:unset;" onclick="filterPYQ('2021',this)">
+            <div class="s-ic">📜</div><div class="s-nm">2021</div><div class="s-ct">Board Papers</div>
+          </div>
+          <div class="subj-card sc-teal" style="min-width:unset;" onclick="filterPYQ('2020',this)">
+            <div class="s-ic">📜</div><div class="s-nm">2020</div><div class="s-ct">Board Papers</div>
+          </div>
+          <div class="subj-card sc-indigo" style="min-width:unset;" onclick="filterPYQ('2019',this)">
+            <div class="s-ic">📜</div><div class="s-nm">2019</div><div class="s-ct">Board Papers</div>
+          </div>
+          <div class="subj-card sc-pink" style="min-width:unset;" onclick="filterPYQ('2018',this)">
+            <div class="s-ic">📜</div><div class="s-nm">2018</div><div class="s-ct">Board Papers</div>
+          </div>
+        </div>
+        <div style="margin-top:16px;" id="pyqFilteredList"></div>
+      </div>
+    </div>
+
     <!-- DOUBTS -->
     <div class="page" id="pageDoubts">
       <div class="doubt-hero">
@@ -949,6 +1015,64 @@ function doSearch(){
   document.getElementById('searchRes').innerHTML=res.length
     ? res.map(c=>cHTML(c)).join('')
     : `<div class="empty"><div class="ei">🔍</div><p>"${q}" नहीं मिला।</p></div>`;
+}
+
+// ══════════════════════════════════════════
+// PYQ
+// ══════════════════════════════════════════
+let pyqYearFilter = 'all';
+let pyqSubjFilter = 'all';
+
+function buildPYQSubjTabs(){
+  const subs = [...new Set(allPYQ.filter(p=>p.board===curBoard).map(p=>p.subject))];
+  const subData = SUBJECTS[curBoard]||[];
+  let html = '<div class="type-tab active" onclick="filterPYQSubj(\'all\',this)">📚 All</div>';
+  subs.forEach(sid=>{
+    const s = subData.find(x=>x.id===sid);
+    if(s) html += `<div class="type-tab" onclick="filterPYQSubj('${sid}',this)">${s.icon} ${s.name}</div>`;
+  });
+  document.getElementById('pyqSubjTabs').innerHTML = html;
+}
+
+function filterPYQ(year, el){
+  pyqYearFilter = year;
+  document.querySelectorAll('#pyqBoardTabs .type-tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderPYQ();
+}
+
+function filterPYQSubj(subj, el){
+  pyqSubjFilter = subj;
+  document.querySelectorAll('#pyqSubjTabs .type-tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderPYQ();
+}
+
+function renderPYQ(){
+  let items = allPYQ.filter(p=>p.board===curBoard);
+  if(pyqYearFilter!=='all') items = items.filter(p=>String(p.year)===pyqYearFilter);
+  if(pyqSubjFilter!=='all') items = items.filter(p=>p.subject===pyqSubjFilter);
+  const subData = SUBJECTS[curBoard]||[];
+  document.getElementById('pyqCount').textContent = items.length+' PYQ Papers';
+  document.getElementById('pyqBoard').textContent = curBoard.replace('-',' Class ');
+  document.getElementById('pyqFilteredList')||document.getElementById('pyqList');
+  const listEl = document.getElementById('pyqFilteredList') || document.getElementById('pyqList');
+  if(!listEl) return;
+  listEl.innerHTML = items.length
+    ? items.map(p=>{
+        const sub = subData.find(s=>s.id===p.subject);
+        return `<div class="pyq-item">
+          <span class="pyq-year">${p.year}</span>
+          <span class="pyq-board-tag">${p.board.replace('-',' ')}</span>
+          <div class="pyq-title">📜 ${p.title}</div>
+          <div class="pyq-sub">${sub?sub.icon+' '+sub.name:''} ${p.desc?'• '+p.desc:''}</div>
+          <div class="pyq-footer">
+            <span style="font-size:10px;color:var(--g400);">${p.examType||'Board Exam'}</span>
+            ${p.link?`<button class="pyq-dl" onclick="window.open('${p.link}','_blank')">📥 Download</button>`:'<span style="font-size:11px;color:var(--g400);">Link coming soon</span>'}
+          </div>
+        </div>`;
+      }).join('')
+    : '<div class="empty"><div class="ei">📜</div><p>अभी कोई PYQ नहीं है।<br>Admin Panel से add करें।</p></div>';
 }
 
 // ══════════════════════════════════════════
