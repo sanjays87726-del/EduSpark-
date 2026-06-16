@@ -1050,9 +1050,9 @@ function filterPYQSubj(subj, el){
 
 function renderPYQ(){
 
-alert(JSON.stringify(allPYQ));
-
-  let items = allPYQ.filter(p=>p.board===curBoard);
+let items = allPYQ.filter(
+  p => String(p.board).toLowerCase() === String(curBoard).toLowerCase()
+);
   if(pyqYearFilter!=='all') items = items.filter(p=>String(p.year)===pyqYearFilter);
   if(pyqSubjFilter!=='all') items = items.filter(p=>p.subject===pyqSubjFilter);
   const subData = SUBJECTS[curBoard]||[];
