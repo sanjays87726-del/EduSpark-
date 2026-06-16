@@ -1050,7 +1050,7 @@ function filterPYQSubj(subj, el){
 
 function renderPYQ(){
 
-alert("TEST 123");
+alert(JSON.stringify(allPYQ));
 
   let items = allPYQ.filter(p=>p.board===curBoard);
   if(pyqYearFilter!=='all') items = items.filter(p=>String(p.year)===pyqYearFilter);
