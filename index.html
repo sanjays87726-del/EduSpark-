@@ -521,6 +521,7 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
     <div class="ni" onclick="navTo('subject',this)"><span class="ni-ic">📖</span><span class="ni-lb">Subjects</span></div>
     <div class="ni" onclick="navTo('doubts',this)"><span class="ni-ic">❓</span><span class="ni-lb">Doubts</span></div>
     <div class="ni" onclick="navTo('quiz',this)"><span class="ni-ic">🧩</span><span class="ni-lb">Quiz</span></div>
+    <div class="ni" onclick="navTo('pyq',this)"><span class="ni-ic">📜</span><span class="ni-lb">PYQ</span></div>
     <div class="ni" onclick="navTo('notes',this)"><span class="ni-ic">📝</span><span class="ni-lb">Notes</span></div>
   </div>
 </div>
@@ -877,6 +878,7 @@ function navTo(page, el){
   else if(page==='subject'){ document.getElementById('pageSubject').classList.add('active'); showAllSubjects(); }
   else if(page==='doubts'){ document.getElementById('pageDoubts').classList.add('active'); }
   else if(page==='quiz'){ document.getElementById('pageQuiz').classList.add('active'); renderQuizList(); }
+  else if(page==='pyq'){ document.getElementById('pagePYQ').classList.add('active'); pyqYearFilter='all'; pyqSubjFilter='all'; renderPYQ(); buildPYQSubjTabs(); }
   else if(page==='notes'){ document.getElementById('pageNotes').classList.add('active'); renderNotes(); }
 }
 
