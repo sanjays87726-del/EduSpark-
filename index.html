@@ -595,7 +595,7 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
   <div id="aTab_pyq" style="display:none;">
   <div class="af">
     <label>Board & Class</label>
-    <select id="pyqBoard" onchange="updatePYQSubj()">
+    <select id="pyqBoardAdmin" onchange="updatePYQSubj()">
       <option value="CBSE-10">CBSE Class 10</option>
       <option value="CBSE-12">CBSE Class 12</option>
       <option value="BSER-10">BSER Class 10</option>
@@ -1327,7 +1327,8 @@ function addQuiz(){
   }).catch(e=>showToast('❌ Error: '+e.message));
 }
 function updatePYQSubj(){
-  const board = document.getElementById('pyqBoard').value;
+  const board = document.getElementById('pyqBoardAdmin') ? 
+    document.getElementById('pyqBoardAdmin').value : 'CBSE-10';
   const subs = SUBJECTS[board]||[];
   document.getElementById('pyqSubjAdmin').innerHTML = subs.map(s=>`<option value="${s.id}">${s.icon} ${s.name}</option>`).join('');
 }
