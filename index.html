@@ -1588,5 +1588,10 @@ window.onload = function(){
   }, 2800);
 };
 </script>
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/EduSpark-/sw.js');
+}
+</script>
 </body>
 </html>
