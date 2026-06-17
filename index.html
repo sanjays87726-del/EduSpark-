@@ -1577,6 +1577,13 @@ window.onload = function(){
     listenDoubts();
     listenPYQ();
   }, 2200);
+  // Student setup - splash ke baad
+  setTimeout(()=>{
+    const profile = JSON.parse(localStorage.getItem('es_student')||'null');
+    if(!profile){
+      document.getElementById('studentSetup').style.display='flex';
+    }
+  }, 2800);
 };
 </script>
 </body>
