@@ -3,11 +3,12 @@
   "short_name": "EduSpark",
   "description": "CBSE & BSER Class 10 & 12 Free Study App",
   "start_url": "https://sanjays87726-del.github.io/EduSpark-/",
-"id": "https://sanjays87726-del.github.io/EduSpark-/",
+  "id": "https://sanjays87726-del.github.io/EduSpark-/",
   "display": "standalone",
   "background_color": "#0F1B35",
   "theme_color": "#0F1B35",
   "orientation": "portrait",
+  "dir": "auto",
   "icons": [
     {
       "src": "https://raw.githubusercontent.com/sanjays87726-del/EduSpark-/main/icon-192.png",
