@@ -728,6 +728,8 @@ function getStudentName(){
 }
 
 function checkStudentProfile(){
+  // Force show for testing - remove 'es_student' to test
+  localStorage.removeItem('es_student'); //
   const profile = JSON.parse(localStorage.getItem('es_student')||'null');
   if(!profile){
     setTimeout(()=>{
