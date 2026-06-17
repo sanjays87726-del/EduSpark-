@@ -280,7 +280,7 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
 </div>
 
 <!-- STUDENT SETUP -->
-<div id="studentSetup" style="display:flex;position:fixed;inset:0;background:#0F1B35;z-index:9500;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
+<div id="studentSetup" style="display:none;position:fixed;inset:0;background:#0F1B35;z-index:9500;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
   <div class="ss-logo">👋</div>
   <div class="ss-title">EduSpark में स्वागत है!</div>
   <div class="ss-sub">एक बार details भरें — फिर याद रहेगा!</div>
@@ -732,8 +732,9 @@ function checkStudentProfile(){
   if(!el) { console.log('studentSetup element nahi mila!'); return; }
   const profile = JSON.parse(localStorage.getItem('es_student')||'null');
   if(!profile){
-    el.style.display = 'flex';
-    el.style.zIndex = '9000';
+    setTimeout(()=>{
+      el.style.display = 'flex';
+    },500);
   } else {
     curBoard = profile.board;
     localStorage.setItem('es_board', profile.board);
