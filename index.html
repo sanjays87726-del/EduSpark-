@@ -738,9 +738,9 @@ function checkStudentProfile(){
   if(!el) return;
   // Version check — purana data clear karo
   const version = localStorage.getItem('es_version');
-  if(version !== 'v2'){
+  if(version !== 'v3'){
     localStorage.removeItem('es_student');
-    localStorage.setItem('es_version','v2');
+    localStorage.setItem('es_version','v3');
   }
   const profile = JSON.parse(localStorage.getItem('es_student')||'null');
   if(!profile){
