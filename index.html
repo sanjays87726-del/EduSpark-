@@ -727,6 +727,19 @@ function getStudentName(){
   return profile ? profile.name : 'Student';
 }
 
+function checkStudentProfile(){
+  const profile = JSON.parse(localStorage.getItem('es_student')||'null');
+  if(!profile){
+    setTimeout(()=>{
+      document.getElementById('studentSetup').classList.add('show');
+    }, 500);
+  } else {
+    curBoard = profile.board;
+    localStorage.setItem('es_board', profile.board);
+    updateBoardPill();
+  }
+}
+
 // ══════════════════════════════════════════
 // CONSTANTS
 // ══════════════════════════════════════════
@@ -807,7 +820,6 @@ window.onload = function(){
   });
   // Load admin config securely from Firestore on startup
   loadAdminConfig();
-  checkStudentProfile();
   setTimeout(()=>{
 
      // Initial state set karo
@@ -821,6 +833,8 @@ window.onload = function(){
     listenContent();
     listenQuizzes();
     listenDoubts();
+    listenPYQ();
+    checkStudentProfile();
   }, 2200);
 };
 
