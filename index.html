@@ -413,6 +413,15 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
           <div class="type-tab active" onclick="filterPYQSubj('all',this)">📚 All Subjects</div>
         </div>
       </div>
+      <div style="padding:8px 18px 0;">
+        <div style="display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;" id="pyqExamTabs">
+          <div class="type-tab active" onclick="filterPYQExam('all',this)">🗂 All</div>
+          <div class="type-tab" onclick="filterPYQExam('Board Exam',this)">📜 Board Exam</div>
+          <div class="type-tab" onclick="filterPYQExam('Pre-Board',this)">📋 Pre-Board</div>
+          <div class="type-tab" onclick="filterPYQExam('Sample Paper',this)">📝 Sample Paper</div>
+          <div class="type-tab" onclick="filterPYQExam('Model Paper',this)">🎯 Model Paper</div>
+        </div>
+      </div>
       <div style="padding:14px 18px 0;">
         <div style="background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 2px 8px rgba(15,27,53,.07);display:flex;align-items:center;gap:10px;">
           <span style="font-size:24px;">📜</span>
@@ -1024,6 +1033,7 @@ function doSearch(){
 // ══════════════════════════════════════════
 let pyqYearFilter = 'all';
 let pyqSubjFilter = 'all';
+let pyqExamFilter = 'all';
 
 function buildPYQSubjTabs(){
   const subs = [...new Set(allPYQ.filter(p=>p.board===curBoard).map(p=>p.subject))];
@@ -1043,6 +1053,13 @@ function filterPYQ(year, el){
   renderPYQ();
 }
 
+function filterPYQExam(examType, el){
+  pyqExamFilter = examType;
+  document.querySelectorAll('#pyqExamTabs .type-tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderPYQ();
+}
+
 function filterPYQSubj(subj, el){
   pyqSubjFilter = subj;
   document.querySelectorAll('#pyqSubjTabs .type-tab').forEach(t=>t.classList.remove('active'));
@@ -1057,6 +1074,7 @@ let items = allPYQ.filter(
 );
   if(pyqYearFilter!=='all') items = items.filter(p=>String(p.year)===pyqYearFilter);
   if(pyqSubjFilter!=='all') items = items.filter(p=>p.subject===pyqSubjFilter);
+  if(pyqExamFilter!=='all') items = items.filter(p=>p.examType===pyqExamFilter);
   const subData = SUBJECTS[curBoard]||[];
 
   if(document.getElementById('pyqCount'))
