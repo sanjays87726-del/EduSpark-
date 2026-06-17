@@ -391,6 +391,7 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
    <!-- PYQ PAGE -->
     <div class="page" id="pagePYQ">
       <div style="background:linear-gradient(135deg,#0F1B35,#1a3a6b);padding:22px 18px 28px;color:#fff;">
+  <button onclick="navTo('home',document.querySelector('.ni'))" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;margin-bottom:10px;font-family:inherit;">← Back</button>
         <div style="font-size:12px;color:rgba(255,255,255,.65);margin-bottom:4px;">Board Exams</div>
         <div style="font-size:21px;font-weight:800;">📜 Previous Year <span style="color:#F59E0B;">Questions</span></div>
         <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:5px;">Year-wise PYQ Papers</div>
@@ -739,7 +740,10 @@ window.onload = function(){
   // Load admin config securely from Firestore on startup
   loadAdminConfig();
   setTimeout(()=>{
-    document.getElementById('splash').classList.add('hide');
+
+     // Initial state set karo
+      history.replaceState({page:'home'}, '', '#home');
+ document.getElementById('splash').classList.add('hide');
     setTimeout(()=>{ document.getElementById('splash').style.display='none'; },500);
     document.getElementById('app').style.display='flex';
     updateBoardPill();
