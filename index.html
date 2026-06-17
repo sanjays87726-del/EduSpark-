@@ -253,6 +253,19 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
 .sc-pink{background:linear-gradient(135deg,#EC4899,#BE185D);}
 .sc-indigo{background:linear-gradient(135deg,#6366F1,#4338CA);}
 
+/* STUDENT PROFILE */
+#studentSetup{position:fixed;inset:0;background:var(--navy);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:7000;padding:24px;}
+#studentSetup.show{display:flex;}
+.ss-logo{font-size:48px;margin-bottom:12px;}
+.ss-title{font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;}
+.ss-sub{font-size:12px;color:var(--g400);margin-bottom:28px;text-align:center;}
+.ss-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:24px;width:100%;max-width:360px;}
+.ss-label{font-size:11px;font-weight:600;color:var(--g400);margin-bottom:6px;display:block;}
+.ss-input{width:100%;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;padding:12px 16px;font-size:14px;color:#fff;font-family:inherit;outline:none;margin-bottom:14px;transition:.2s;}
+.ss-input:focus{border-color:var(--saffron);}
+.ss-input::placeholder{color:rgba(255,255,255,.3);}
+.ss-btn{width:100%;background:linear-gradient(90deg,var(--saffron),#D97706);color:var(--navy);border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;}
+
 #recaptcha-container{position:fixed;bottom:0;left:0;z-index:9999;}
 </style>
 </head>
@@ -264,6 +277,25 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
   <div class="sp-title">Edu<span>Spark</span></div>
   <div class="sp-sub">CBSE & BSER Board Study Platform</div>
   <div class="sp-bar"><div class="sp-fill"></div></div>
+</div>
+
+<!-- STUDENT SETUP -->
+<div id="studentSetup">
+  <div class="ss-logo">👋</div>
+  <div class="ss-title">EduSpark में स्वागत है!</div>
+  <div class="ss-sub">एक बार details भरें — फिर याद रहेगा!</div>
+  <div class="ss-card">
+    <label class="ss-label">आपका नाम</label>
+    <input type="text" class="ss-input" id="ssName" placeholder="अपना नाम लिखें..."/>
+    <label class="ss-label">Board चुनें</label>
+    <select class="ss-input" id="ssBoard">
+      <option value="CBSE-10">CBSE Class 10</option>
+      <option value="CBSE-12">CBSE Class 12</option>
+      <option value="BSER-10">BSER Class 10</option>
+      <option value="BSER-12">BSER Class 12</option>
+    </select>
+    <button class="ss-btn" onclick="saveStudentProfile()">✅ शुरू करें →</button>
+  </div>
 </div>
 
 <!-- ADMIN LOGIN -->
@@ -309,7 +341,7 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
     <!-- HOME -->
     <div class="page active" id="pageHome">
       <div class="hero">
-        <div class="hero-g">नमस्ते! 👋 पढ़ाई शुरू करें</div>
+        <div class="hero-g" id="heroGreeting">नमस्ते! 👋 पढ़ाई शुरू करें</div>
         <div class="hero-t">Smart Study <span>Board Exams</span> के लिए</div>
         <div class="hero-s">CBSE & BSER • Class 10 & 12 • Free Content</div>
     <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
@@ -659,6 +691,42 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
 
 <!-- ALL JS at the bottom -->
 <script>
+
+// ══════════════════════════════════════════
+// STUDENT PROFILE
+// ══════════════════════════════════════════
+function checkStudentProfile(){
+  const profile = JSON.parse(localStorage.getItem('es_student')||'null');
+  if(!profile){
+    document.getElementById('studentSetup').classList.add('show');
+  } else {
+    curBoard = profile.board;
+    localStorage.setItem('es_board', profile.board);
+    updateBoardPill();
+  }
+}
+
+function saveStudentProfile(){
+  const name = document.getElementById('ssName').value.trim();
+  const board = document.getElementById('ssBoard').value;
+  if(!name){ alert('कृपया अपना नाम लिखें!'); return; }
+  const profile = {name, board, date: new Date().toISOString()};
+  localStorage.setItem('es_student', JSON.stringify(profile));
+  curBoard = board;
+  localStorage.setItem('es_board', board);
+  document.getElementById('studentSetup').classList.remove('show');
+  updateBoardPill();
+  renderHome();
+  initSubjectDropdowns();
+  renderDoubtSubjects();
+  showToast('✅ Welcome '+name+'! 🎉');
+}
+
+function getStudentName(){
+  const profile = JSON.parse(localStorage.getItem('es_student')||'null');
+  return profile ? profile.name : 'Student';
+}
+
 // ══════════════════════════════════════════
 // CONSTANTS
 // ══════════════════════════════════════════
@@ -739,6 +807,7 @@ window.onload = function(){
   });
   // Load admin config securely from Firestore on startup
   loadAdminConfig();
+  checkStudentProfile();
   setTimeout(()=>{
 
      // Initial state set karo
@@ -941,6 +1010,10 @@ function closeBSOut(e){ if(e.target===document.getElementById('boardSel')) close
 // HOME RENDER
 // ══════════════════════════════════════════
 function renderHome(){
+const profile = JSON.parse(localStorage.getItem('es_student')||'null');
+if(profile && document.getElementById('heroGreeting')){
+  document.getElementById('heroGreeting').textContent = 'नमस्ते '+profile.name+'! 👋 पढ़ाई शुरू करें';
+}
   const bc=allContent.filter(c=>c.board===curBoard);
   document.getElementById('stPdf').textContent=bc.filter(c=>c.type==='pdf').length;
   document.getElementById('stVid').textContent=bc.filter(c=>c.type==='video').length;
