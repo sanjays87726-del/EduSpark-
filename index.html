@@ -714,7 +714,7 @@ function saveStudentProfile(){
   localStorage.setItem('es_student', JSON.stringify(profile));
   curBoard = board;
   localStorage.setItem('es_board', board);
-  document.getElementById('studentSetup').classList.remove('show');
+  document.getElementById('studentSetup').style.display='none';
   updateBoardPill();
   renderHome();
   initSubjectDropdowns();
