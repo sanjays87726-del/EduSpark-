@@ -729,6 +729,13 @@ let curQuiz=null, curQ=0, score=0, answered=false;
 // INIT
 // ══════════════════════════════════════════
 window.onload = function(){
+  // Back button handle karo
+  window.addEventListener('popstate', function(e){
+    if(e.state && e.state.page){
+      const navItem = document.querySelector(`.ni[onclick*="'${e.state.page}'"]`);
+      if(navItem) navTo(e.state.page, navItem);
+    }
+  });
   // Load admin config securely from Firestore on startup
   loadAdminConfig();
   setTimeout(()=>{
@@ -883,6 +890,7 @@ function navTo(page, el){
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   el.classList.add('active');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+history.pushState({page}, '', '#'+page);
   if(page==='home'){ document.getElementById('pageHome').classList.add('active'); renderHome(); }
   else if(page==='subject'){ document.getElementById('pageSubject').classList.add('active'); showAllSubjects(); }
   else if(page==='doubts'){ document.getElementById('pageDoubts').classList.add('active'); }
