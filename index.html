@@ -728,13 +728,12 @@ function getStudentName(){
 }
 
 function checkStudentProfile(){
-  // Force show for testing - remove 'es_student' to test
-  localStorage.removeItem('es_student'); //
+  const el = document.getElementById('studentSetup');
+  if(!el) { console.log('studentSetup element nahi mila!'); return; }
   const profile = JSON.parse(localStorage.getItem('es_student')||'null');
   if(!profile){
-    setTimeout(()=>{
-      document.getElementById('studentSetup').classList.add('show');
-    }, 500);
+    el.style.display = 'flex';
+    el.style.zIndex = '9000';
   } else {
     curBoard = profile.board;
     localStorage.setItem('es_board', profile.board);
