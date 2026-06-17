@@ -1341,7 +1341,7 @@ function addPYQ(){
   const btn = document.getElementById('pyqAddBtn');
   btn.disabled=true; btn.textContent='Adding...';
   db.collection('pyq').add({
-    board:    document.getElementById('pyqBoard').value,
+    board:    document.getElementById('pyqBoardAdmin').value,
     subject:  document.getElementById('pyqSubjAdmin').value,
     year:     parseInt(document.getElementById('pyqYear').value),
     examType: document.getElementById('pyqExamType').value,
