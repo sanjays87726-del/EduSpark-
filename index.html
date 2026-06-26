@@ -242,6 +242,13 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
 .bo-nm{font-size:14px;font-weight:700;color:var(--navy);}
 .bo-sb{font-size:11px;color:var(--g600);}
 
+/* VIDEO MODAL */
+#videoModal{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9000;display:none;align-items:center;justify-content:center;padding:18px;}
+#videoModal.show{display:flex;}
+.vm-close{position:absolute;top:20px;right:20px;background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;z-index:10;}
+.vm-frame{width:100%;max-width:600px;aspect-ratio:16/9;border-radius:12px;overflow:hidden;}
+.vm-frame iframe{width:100%;height:100%;border:none;}
+
 /* TOAST */
 #toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;}
 #toast.show{opacity:1;}
@@ -694,6 +701,12 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
   </div>
 </div>
 
+<!-- VIDEO MODAL -->
+<div id="videoModal">
+  <button class="vm-close" onclick="closeVideo()">✕</button>
+  <div class="vm-frame" id="vmFrame"></div>
+</div>
+
 <!-- TOAST -->
 <div id="toast"></div>
 
@@ -1111,7 +1124,14 @@ function cHTML(c){
   const T={pdf:{i:'📄',bg:'ci-pdf',b:'bdg-pdf',l:'PDF'},video:{i:'🎥',bg:'ci-video',b:'bdg-video',l:'Video'},dpp:{i:'📗',bg:'ci-dpp',b:'bdg-dpp',l:'DPP'},note:{i:'🗒️',bg:'ci-note',b:'bdg-note',l:'Note'}};
   const t=T[c.type]||T.note;
   const isNew=c.date&&(Date.now()-new Date(c.date).getTime())<7*24*60*60*1000;
-  const click=c.link?`onclick="window.open('${c.link}','_blank')"`:'' ;
+  let click='';
+  if(c.link){
+    if(c.type==='video'){
+      click=`onclick="playVideo('${c.link}')"`;
+    } else {
+      click=`onclick="window.open('${c.link}','_blank')"`;
+    }
+  }
   return `<div class="cnt-item" ${click}>
     <div class="cnt-ic ${t.bg}">${t.i}</div>
     <div class="cnt-info">
@@ -1557,8 +1577,29 @@ function shareApp(){
       .catch(()=>showToast('🔗 https://sanjays87726-del.github.io/EduSpark-/'));
   }
 }
+
+// ══════════════════════════════════════════
 // TOAST
 // ══════════════════════════════════════════
+function getYouTubeId(url){
+  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+}
+
+function playVideo(url){
+  const videoId = getYouTubeId(url);
+  if(videoId){
+    document.getElementById('vmFrame').innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+    document.getElementById('videoModal').classList.add('show');
+  } else {
+    window.open(url, '_blank');
+  }
+}
+
+function closeVideo(){
+  document.getElementById('videoModal').classList.remove('show');
+  document.getElementById('vmFrame').innerHTML = '';
+}
 function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
