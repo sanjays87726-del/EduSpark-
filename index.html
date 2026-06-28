@@ -242,6 +242,17 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
 .bo-nm{font-size:14px;font-weight:700;color:var(--navy);}
 .bo-sb{font-size:11px;color:var(--g600);}
 
+/* LIVE CLASS BANNER */
+.live-banner{margin:14px 18px 0;background:linear-gradient(135deg,#DC2626,#991B1B);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;position:relative;overflow:hidden;animation:pulse-glow 2s infinite;}
+@keyframes pulse-glow{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.4)}50%{box-shadow:0 0 0 8px rgba(220,38,38,0)}}
+.live-dot{width:10px;height:10px;background:#fff;border-radius:50%;animation:blink 1s infinite;flex-shrink:0;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.live-info{flex:1;color:#fff;}
+.live-tag{font-size:10px;font-weight:800;letter-spacing:1px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:99px;display:inline-block;margin-bottom:4px;}
+.live-title{font-size:13px;font-weight:700;}
+.live-time{font-size:11px;opacity:.85;margin-top:2px;}
+.live-btn{background:#fff;color:#DC2626;font-size:11px;font-weight:800;padding:7px 14px;border-radius:8px;flex-shrink:0;}
+
 /* VIDEO MODAL */
 #videoModal{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9000;display:none;align-items:center;justify-content:center;padding:18px;}
 #videoModal.show{display:flex;}
@@ -384,6 +395,17 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
       </div>
       <div class="sec-t"><span>📖</span> Subjects</div>
       <div class="subj-scroll" id="subjScroll"></div>
+        <div id="liveBannerSec" style="display:none;">
+  <div class="live-banner" onclick="openLiveClass()">
+    <div class="live-dot"></div>
+    <div class="live-info">
+      <span class="live-tag" id="liveTag">🔴 LIVE NOW</span>
+      <div class="live-title" id="liveTitle">Live Class Title</div>
+      <div class="live-time" id="liveTime"></div>
+    </div>
+    <div class="live-btn">Join →</div>
+  </div>
+</div>
       <div id="searchSec" style="display:none;">
         <div class="sec-t"><span>🔍</span> Search Results</div>
         <div class="cnt-list" id="searchRes"></div>
@@ -592,6 +614,7 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
       <div class="a-tab active" onclick="aTab('add',this)">📤 Add</div>
 <div class="a-tab" onclick="aTab('quiz',this)">🧩 Quiz</div>
 <div class="a-tab" onclick="aTab('pyq',this)">📜 PYQ</div>
+<div class="a-tab" onclick="aTab('live',this)">🔴 Live</div>
 <div class="a-tab" onclick="aTab('manage',this)">📋 Manage</div>
 <div class="a-tab" onclick="aTab('doubts',this)">💬 Doubts</div>
     </div>
@@ -680,7 +703,34 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
     </div>
   </div>
 </div>
-  <div id="aTab_manage" style="display:none;">
+
+<div id="aTab_live" style="display:none;">
+  <div class="af">
+    <label>Status</label>
+    <select id="liveStatus">
+      <option value="off">❌ Off (No banner)</option>
+      <option value="live">🔴 Live Now</option>
+      <option value="upcoming">⏰ Upcoming</option>
+    </select>
+    <label>Board & Class</label>
+    <select id="liveBoard">
+      <option value="CBSE-10">CBSE Class 10</option>
+      <option value="CBSE-12">CBSE Class 12</option>
+      <option value="BSER-10">BSER Class 10</option>
+      <option value="BSER-12">BSER Class 12</option>
+      <option value="ALL">All Boards</option>
+    </select>
+    <label>Class Title</label>
+    <input type="text" id="liveTitleInput" placeholder="Physics Ch.5 Live Class"/>
+    <label>Time Text (jo dikhana hai)</label>
+    <input type="text" id="liveTimeInput" placeholder="Aaj शाम 5:00 PM"/>
+    <label>YouTube Link (Live ya Video)</label>
+    <input type="url" id="liveLinkInput" placeholder="https://youtube.com/..."/>
+    <button class="add-btn" onclick="saveLiveClass()">✅ Live Class Update करें</button>
+  </div>
+</div>
+
+<div id="aTab_manage" style="display:none;">
   <div id="aManageList">
     <div style="text-align:center;padding:20px;color:var(--g400);">⏳ Loading...</div>
   </div>
@@ -1387,7 +1437,7 @@ function closeAdminOut(e){ if(e.target===document.getElementById('adminPanel')) 
 function aTab(tab,el){
   document.querySelectorAll('.a-tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  ['add','quiz','pyq','manage','doubts'].forEach(t=>{ document.getElementById('aTab_'+t).style.display='none'; });
+  ['add','quiz','pyq','live','manage','doubts'].forEach(t=>{ document.getElementById('aTab_'+t).style.display='none'; });
   document.getElementById('aTab_'+tab).style.display='block';
   if(tab==='manage') renderAManage();
   if(tab==='doubts') renderADoubts();
@@ -1600,6 +1650,49 @@ function closeVideo(){
   document.getElementById('videoModal').classList.remove('show');
   document.getElementById('vmFrame').innerHTML = '';
 }
+
+// ══════════════════════════════════════════
+// LIVE CLASS
+// ══════════════════════════════════════════
+function listenLiveClass(){
+  db.collection('_config').doc('liveClass').onSnapshot(doc=>{
+    if(doc.exists){
+      const data = doc.data();
+      renderLiveBanner(data);
+    }
+  }, ()=>{});
+}
+
+function renderLiveBanner(data){
+  const sec = document.getElementById('liveBannerSec');
+  if(!sec) return;
+  if(!data || data.status==='off'){ sec.style.display='none'; return; }
+  if(data.board && data.board!=='ALL' && data.board!==curBoard){ sec.style.display='none'; return; }
+  sec.style.display='block';
+  document.getElementById('liveTag').textContent = data.status==='live' ? '🔴 LIVE NOW' : '⏰ UPCOMING';
+  document.getElementById('liveTitle').textContent = data.title || 'Live Class';
+  document.getElementById('liveTime').textContent = data.timeText || '';
+  window._liveClassLink = data.link || '';
+}
+
+function openLiveClass(){
+  if(window._liveClassLink) playVideo(window._liveClassLink);
+}
+
+function saveLiveClass(){
+  if(!isAdmin){ showToast('❌ Admin login करें!'); return; }
+  const status = document.getElementById('liveStatus').value;
+  const board = document.getElementById('liveBoard').value;
+  const title = document.getElementById('liveTitleInput').value.trim();
+  const timeText = document.getElementById('liveTimeInput').value.trim();
+  const link = document.getElementById('liveLinkInput').value.trim();
+  db.collection('_config').doc('liveClass').set({
+    status, board, title, timeText, link, updated: new Date().toISOString()
+  }).then(()=>{
+    showToast('✅ Live Class update हो गया!');
+  }).catch(e=>showToast('❌ Error: '+e.message));
+}
+
 function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
@@ -1619,6 +1712,7 @@ window.onload = function(){
     listenQuizzes();
     listenDoubts();
     listenPYQ();
+    listenLiveClass();
   }, 2200);
   // Student setup - splash ke baad
   setTimeout(()=>{
