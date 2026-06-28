@@ -258,6 +258,9 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
 #videoModal.show{display:flex;}
 .vm-close{position:absolute;top:20px;right:20px;background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;z-index:10;}
 .vm-frame{width:100%;max-width:600px;aspect-ratio:16/9;border-radius:12px;overflow:hidden;}
+.vm-frame iframe{width:100%;height:100%;}
+#videoModal:fullscreen .vm-frame,
+#videoModal:-webkit-full-screen .vm-frame{width:100vw;height:100vh;max-width:100vw;border-radius:0;}
 .vm-frame iframe{width:100%;height:100%;border:none;}
 
 /* TOAST */
