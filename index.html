@@ -1639,7 +1639,7 @@ function getYouTubeId(url){
 function playVideo(url){
   const videoId = getYouTubeId(url);
   if(videoId){
-    document.getElementById('vmFrame').innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+    document.getElementById('vmFrame').innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" allow="autoplay; encrypted-media; fullscreen" allowfullscreen webkitallowfullscreen mozallowfullscreen></iframe>`;
     document.getElementById('videoModal').classList.add('show');
   } else {
     window.open(url, '_blank');
