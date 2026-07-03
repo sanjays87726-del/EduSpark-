@@ -378,6 +378,10 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
        style="display:flex;align-items:center;gap:6px;background:linear-gradient(90deg,#E1306C,#833AB4);color:#fff;padding:7px 14px;border-radius:99px;font-size:12px;font-weight:700;text-decoration:none;">
       📸 @bhupesh_jatav_02
     </a>
+    <button id="installBtn" onclick="installApp()" style="display:none;align-items:center;gap:6px;background:linear-gradient(90deg,#10B981,#059669);color:#fff;padding:7px 14px;border-radius:99px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;border:none;">
+  📲 App Install करें
+</button>
+    
     <button onclick="shareApp()"
        style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);color:#fff;padding:7px 14px;border-radius:99px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
       🔗 App Share करें
@@ -1707,6 +1711,22 @@ function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2500);
+}
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBtn').style.display = 'flex';
+});
+
+function installApp(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(()=>{ 
+      deferredPrompt = null;
+      document.getElementById('installBtn').style.display = 'none';
+    });
+  }
 }
 window.onload = function(){
   if(sessionStorage.getItem('es_admin')==='true'){isAdmin=true;}
