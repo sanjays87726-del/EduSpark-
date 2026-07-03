@@ -1717,6 +1717,10 @@ window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
   document.getElementById('installBtn').style.display = 'flex';
+  // Flash message dikhao
+  setTimeout(()=>{
+    showInstallToast();
+  }, 3000);
 });
 
 function installApp(){
@@ -1728,6 +1732,15 @@ function installApp(){
     });
   }
 }
+function showInstallToast(){
+  const toast = document.createElement('div');
+  toast.innerHTML = `📲 <b>EduSpark App Install करें!</b> — Home screen par add karo`;
+  toast.style.cssText = `position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#10B981,#059669);color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:9999;white-space:nowrap;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.3);animation:slideUp .3s ease;`;
+  toast.onclick = ()=>{ installApp(); toast.remove(); };
+  document.body.appendChild(toast);
+  setTimeout(()=>{ if(toast.parentNode) toast.remove(); }, 5000);
+}
+
 window.onload = function(){
   if(sessionStorage.getItem('es_admin')==='true'){isAdmin=true;}
   loadAdminConfig();
