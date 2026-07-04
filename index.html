@@ -1350,7 +1350,9 @@ function submitDoubt(){
     board:curBoard,subject:document.getElementById('dSubj').value,
     topic:document.getElementById('dTopic').value.trim(),text,
     name:document.getElementById('dName').value.trim()||'Anonymous',
-    date:new Date().toISOString(),status:'pending',answer:''
+    date:new Date().toISOString(),status:'pending',answer:'',
+    deviceId: DEVICE_ID
+  })
   }).then(()=>{
     document.getElementById('dTopic').value='';
     document.getElementById('dText').value='';
@@ -1360,7 +1362,7 @@ function submitDoubt(){
 }
 function renderDoubts(doubts){
   const subs=SUBJECTS[curBoard]||[];
-  const filtered=(doubts||[]).filter(d=>d.board===curBoard);
+  const filtered=(doubts||[]).filter(d=>d.board===curBoard && d.deviceId===DEVICE_ID);
   document.getElementById('doubtsList').innerHTML=filtered.length
     ? filtered.map(d=>{
         const sub=subs.find(s=>s.id===d.subject);
