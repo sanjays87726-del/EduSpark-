@@ -267,6 +267,14 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
 #toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;}
 #toast.show{opacity:1;}
 
+/* PAGE TRANSITIONS */
+.page{display:none;animation:none;}
+.page.active{display:block;}
+.page.slide-in-right{animation:slideInRight .3s ease forwards;}
+.page.slide-in-left{animation:slideInLeft .3s ease forwards;}
+@keyframes slideInRight{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slideInLeft{from{transform:translateX(-100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
 /* EMPTY */
 .empty{text-align:center;padding:36px 20px;color:var(--g400);}
 .empty .ei{font-size:44px;margin-bottom:10px;}
@@ -1059,17 +1067,30 @@ sessionStorage.removeItem('es_admin'); auth.signOut().catch(()=>{}); closeAdmin(
 // ══════════════════════════════════════════
 // NAVIGATION
 // ══════════════════════════════════════════
+const pages = ['home','subject','pyq','doubts','quiz','notes'];
 function navTo(page, el){
+  const currentPage = document.querySelector('.page.active');
+  const currentIndex = pages.indexOf(currentPage ? currentPage.id.replace('page','').toLowerCase() : 'home');
+  const newIndex = pages.indexOf(page);
+  const direction = newIndex > currentIndex ? 'slide-in-right' : 'slide-in-left';
+  
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   el.classList.add('active');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-history.pushState({page}, '', '#'+page);
-  if(page==='home'){ document.getElementById('pageHome').classList.add('active'); renderHome(); }
-  else if(page==='subject'){ document.getElementById('pageSubject').classList.add('active'); showAllSubjects(); }
-  else if(page==='doubts'){ document.getElementById('pageDoubts').classList.add('active'); }
-  else if(page==='quiz'){ document.getElementById('pageQuiz').classList.add('active'); renderQuizList(); }
-  else if(page==='pyq'){ document.getElementById('pagePYQ').classList.add('active'); pyqYearFilter='all'; pyqSubjFilter='all'; renderPYQ(); buildPYQSubjTabs(); }
-  else if(page==='notes'){ document.getElementById('pageNotes').classList.add('active'); renderNotes(); }
+  history.pushState({page}, '', '#'+page);
+  
+  let newPage;
+  if(page==='home'){ newPage=document.getElementById('pageHome'); renderHome(); }
+  else if(page==='subject'){ newPage=document.getElementById('pageSubject'); showAllSubjects(); }
+  else if(page==='pyq'){ newPage=document.getElementById('pagePYQ'); pyqYearFilter='all'; pyqSubjFilter='all'; renderPYQ(); buildPYQSubjTabs(); }
+  else if(page==='doubts'){ newPage=document.getElementById('pageDoubts'); }
+  else if(page==='quiz'){ newPage=document.getElementById('pageQuiz'); renderQuizList(); }
+  else if(page==='notes'){ newPage=document.getElementById('pageNotes'); renderNotes(); }
+  
+  if(newPage){
+    newPage.classList.add('active', direction);
+    setTimeout(()=>newPage.classList.remove('slide-in-right','slide-in-left'), 300);
+  }
 }
 
 function goHome(){
