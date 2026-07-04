@@ -915,6 +915,12 @@ window.onload = function(){
     listenDoubts();
     listenPYQ();
     checkStudentProfile();
+    // Install toast
+    setTimeout(()=>{
+      if(!window.matchMedia('(display-mode: standalone)').matches){
+        showInstallToast();
+      }
+    }, 4000);
   }, 2200);
 };
 
