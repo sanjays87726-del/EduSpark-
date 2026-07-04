@@ -904,8 +904,14 @@ window.onload = function(){
     if(e.state && e.state.page){
       const navItem = document.querySelector(`.ni[onclick*="'${e.state.page}'"]`);
       if(navItem) navTo(e.state.page, navItem);
+    } else {
+      // Back gesture pe home par jaao
+      const homeNav = document.querySelector('.ni');
+      if(homeNav) navTo('home', homeNav);
+      history.pushState({page:'home'}, '', '#home');
     }
   });
+
   // Load admin config securely from Firestore on startup
   loadAdminConfig();
   setTimeout(()=>{
@@ -1098,6 +1104,7 @@ function goHome(){
   document.querySelector('.ni').classList.add('active');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('pageHome').classList.add('active');
+  history.pushState({page:'home'}, '', '#home');
 }
 
 // ══════════════════════════════════════════
