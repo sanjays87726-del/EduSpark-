@@ -918,6 +918,9 @@ window.onload = function(){
 
      // Initial state set karo
       history.replaceState({page:'home'}, '', '#home');
+    // Extra history entries taaki back gesture app se bahar na jaaye
+    history.pushState({page:'home'}, '', '#home');
+    history.pushState({page:'home'}, '', '#home');
  document.getElementById('splash').classList.add('hide');
     setTimeout(()=>{ document.getElementById('splash').style.display='none'; },500);
     document.getElementById('app').style.display='flex';
