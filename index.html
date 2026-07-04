@@ -1739,12 +1739,25 @@ function installApp(){
   }
 }
 function showInstallToast(){
+  const existing = document.getElementById('installToast');
+  if(existing) existing.remove();
+  
   const toast = document.createElement('div');
-  toast.innerHTML = `📲 <b>EduSpark App Install करें!</b> — Home screen par add karo`;
-  toast.style.cssText = `position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#10B981,#059669);color:#fff;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:600;z-index:9999;white-space:nowrap;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,.3);animation:slideUp .3s ease;`;
-  toast.onclick = ()=>{ installApp(); toast.remove(); };
+  toast.id = 'installToast';
+  toast.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div style="width:44px;height:44px;background:linear-gradient(135deg,#0F1B35,#1a3a6b);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">📚</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:700;color:#0F1B35;">EduSpark App Install करें</div>
+        <div style="font-size:11px;color:#64748B;margin-top:2px;">Free • Fast • Offline Support</div>
+      </div>
+      <button onclick="installApp();document.getElementById('installToast').remove();" style="background:#0F1B35;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">Install</button>
+    </div>
+    <button onclick="document.getElementById('installToast').remove();" style="position:absolute;top:8px;right:10px;background:none;border:none;font-size:16px;cursor:pointer;color:#94A3B8;">✕</button>
+  `;
+  toast.style.cssText = `position:fixed;bottom:80px;left:12px;right:12px;background:#fff;border-radius:16px;padding:14px 16px;box-shadow:0 8px 32px rgba(15,27,53,.2);z-index:9998;animation:slideUp .4s ease;border:1.5px solid #E2E8F0;position:fixed;`;
   document.body.appendChild(toast);
-  setTimeout(()=>{ if(toast.parentNode) toast.remove(); }, 5000);
+  setTimeout(()=>{ if(document.getElementById('installToast')) document.getElementById('installToast').remove(); }, 8000);
 }
 
 window.onload = function(){
