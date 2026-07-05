@@ -835,6 +835,11 @@ function checkStudentProfile(){
 // CONSTANTS
 // ══════════════════════════════════════════
 // Admin credentials fetched securely from Firestore — not stored in code
+const DEVICE_ID = localStorage.getItem('es_device') || (()=>{ 
+  const id='dev_'+Date.now(); 
+  localStorage.setItem('es_device',id); 
+  return id; 
+})();
 let ADMIN_PASS = null;
 let ADMIN_PHONE = null;
 
