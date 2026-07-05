@@ -1359,8 +1359,7 @@ function submitDoubt(){
     topic:document.getElementById('dTopic').value.trim(),text,
     name:document.getElementById('dName').value.trim()||'Anonymous',
     date:new Date().toISOString(),status:'pending',answer:'',
-    deviceId: DEVICE_ID
-  })
+ 
   }).then(()=>{
     document.getElementById('dTopic').value='';
     document.getElementById('dText').value='';
