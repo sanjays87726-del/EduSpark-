@@ -1367,7 +1367,7 @@ function submitDoubt(){
   }).catch(()=>showToast('❌ Error! दोबारा कोशिश करें।'));
 }
 function renderDoubts(doubts){
-  const filtered=(doubts||[]).filter(d=>d.board===curBoard&&(d.deviceId===DEVICE_ID||!d.deviceId));
+  const filtered=(doubts||[]).filter(d=>d.board===curBoard);
   document.getElementById('doubtsList').innerHTML=filtered.length
     ? filtered.map(d=>{
         const sub=subs.find(s=>s.id===d.subject);
