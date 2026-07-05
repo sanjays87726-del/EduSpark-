@@ -1359,7 +1359,6 @@ function submitDoubt(){
     topic:document.getElementById('dTopic').value.trim(),text,
     name:document.getElementById('dName').value.trim()||'Anonymous',
     date:new Date().toISOString(),status:'pending',answer:'',
- 
   }).then(()=>{
     document.getElementById('dTopic').value='';
     document.getElementById('dText').value='';
