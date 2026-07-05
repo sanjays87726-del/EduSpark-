@@ -744,10 +744,13 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
     <button class="add-btn" onclick="saveLiveClass()">✅ Live Class Update करें</button>
   </div>
 </div>
-
-<div id="aTab_manage" style="display:none;">
+ <div id="aTab_manage" style="display:none;">
   <div id="aManageList">
     <div style="text-align:center;padding:20px;color:var(--g400);">⏳ Loading...</div>
+  </div>
+  <div style="margin-top:16px;">
+    <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px;">🧩 Quizzes</div>
+    <div id="aQuizManageList"></div>
   </div>
 </div>
     <div id="aTab_doubts" style="display:none;"><div id="aDoubtsList"></div></div>
@@ -1485,7 +1488,7 @@ function aTab(tab,el){
   el.classList.add('active');
   ['add','quiz','pyq','live','manage','doubts'].forEach(t=>{ document.getElementById('aTab_'+t).style.display='none'; });
   document.getElementById('aTab_'+tab).style.display='block';
-  if(tab==='manage') renderAManage();
+  if(tab==='manage'){ renderAManage(); renderQuizManage(); }
   if(tab==='doubts') renderADoubts();
   if(tab==='pyq') renderPYQManage();
 }
@@ -1602,6 +1605,27 @@ function renderAManage(){
             </div>`).join('')
         : '<div class="empty"><div class="ei">📭</div><p>कोई content नहीं।</p></div>';
     }).catch(()=>showToast('❌ Load error!'));
+}
+function renderQuizManage(){
+  db.collection('quizzes').orderBy('date','desc').get()
+    .then(snap=>{
+      const items = snap.docs.map(d=>({id:d.id,...d.data()}));
+      document.getElementById('aQuizManageList').innerHTML = items.length
+        ? items.map(q=>`
+            <div class="mgmt-item">
+              <div><div class="mgmt-nm">${q.title}</div><div class="mgmt-sb">${q.board} • ${q.questions.length} Questions</div></div>
+              <button class="del-btn" onclick="delQuiz('${q.id}')">🗑</button>
+            </div>`).join('')
+        : '<div class="empty"><div class="ei">🧩</div><p>कोई quiz नहीं।</p></div>';
+    }).catch(()=>{});
+}
+
+function delQuiz(id){
+  if(!isAdmin){ showToast('❌ Admin login करें!'); return; }
+  if(!confirm('क्या आप sure हैं? यह Quiz delete हो जाएगी!')) return;
+  db.collection('quizzes').doc(id).delete()
+    .then(()=>{ showToast('🗑 Quiz delete हो गई'); renderQuizManage(); })
+    .catch(e=>showToast('❌ Error: '+e.message));
 }
 
 function delContent(id){
