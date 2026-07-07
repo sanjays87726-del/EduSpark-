@@ -1358,7 +1358,7 @@ function submitDoubt(){
     board:curBoard,subject:document.getElementById('dSubj').value,
     topic:document.getElementById('dTopic').value.trim(),text,
     name:document.getElementById('dName').value.trim()||'Anonymous',
-    date:new Date().toISOString(),status:'pending',answer:'',
+    date:new Date().toISOString(),status:'pending',answer:'',deviceId:DEVICE_ID,
   }).then(()=>{
     document.getElementById('dTopic').value='';
     document.getElementById('dText').value='';
@@ -1367,7 +1367,7 @@ function submitDoubt(){
   }).catch(()=>showToast('❌ Error! दोबारा कोशिश करें।'));
 }
 function renderDoubts(doubts){
-const filtered=(doubts||[]).filter(d=>d.board===curBoard);
+const filtered=(doubts||[]).filter(d=>d.board===curBoard&&(d.deviceId===DEVICE_ID||!d.deviceId));
   document.getElementById('doubtsList').innerHTML=filtered.length
     ? filtered.map(d=>{
         const sub=subs.find(s=>s.id===d.subject);
