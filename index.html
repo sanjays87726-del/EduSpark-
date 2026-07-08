@@ -1890,6 +1890,12 @@ window.onload = function(){
     }
   }, 2800);
 };
+
+window.addEventListener("appinstalled", () => {
+  firebase.analytics().logEvent("app_installed");
+  showToast("🎉 EduSpark Installed Successfully!");
+});
+
 </script>
 <script>
 if('serviceWorker' in navigator){
