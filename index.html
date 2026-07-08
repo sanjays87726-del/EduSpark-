@@ -1154,6 +1154,8 @@ function openBoardSel(){
     {id:'CBSE-12',icon:'🏫',name:'CBSE – Class 12',sub:'Central Board'},
     {id:'BSER-10',icon:'🎓',name:'BSER – Class 10',sub:'Rajasthan Board'},
     {id:'BSER-12',icon:'🎓',name:'BSER – Class 12',sub:'Rajasthan Board'},
+    {id:'SSC-CHSL',icon:'📋',name:'SSC – CHSL',sub:'Staff Selection Commission'}
+,{id:'SSC-CGL',icon:'📋',name:'SSC – CGL',sub:'Staff Selection Commission'}
   ];
   document.getElementById('boardOpts').innerHTML=bds.map(b=>`
     <div class="bo ${curBoard===b.id?'sel':''}" onclick="selBoard('${b.id}')">
