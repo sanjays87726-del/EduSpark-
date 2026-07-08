@@ -22,6 +22,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <!-- Firebase Init - right after SDK scripts -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
 <script>
 const FB_CFG = {
   apiKey: "AIzaSyD90ruZHQ_VGuOoO__Q6PC2svRga3jyfXs",
@@ -33,6 +34,9 @@ const FB_CFG = {
   measurementId: "G-WGP977E30D"
 };
 if (!firebase.apps.length) { firebase.initializeApp(FB_CFG); }
+
+firebase.analytics();
+
 const auth = firebase.auth();
 const db   = firebase.firestore();
 </script>
