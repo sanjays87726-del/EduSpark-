@@ -381,6 +381,14 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
         <div class="hero-g" id="heroGreeting">नमस्ते! 👋 पढ़ाई शुरू करें</div>
         <div class="hero-t">Smart Study <span>Board Exams</span> के लिए</div>
         <div class="hero-s">CBSE & BSER • Class 10 & 12 • Free Content</div>
+<div style="margin-top:15px;">
+  <button id="googleLoginBtn"
+    style="display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#333;border:none;border-radius:10px;padding:12px 18px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+         width="20" height="20" alt="Google">
+    Google से Sign In
+  </button>
+</div>
     <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
     <a href="https://instagram.com/bhupesh_jatav_02" target="_blank"
        style="display:flex;align-items:center;gap:6px;background:linear-gradient(90deg,#E1306C,#833AB4);color:#fff;padding:7px 14px;border-radius:99px;font-size:12px;font-weight:700;text-decoration:none;">
@@ -1830,6 +1838,29 @@ function showInstallToast(){
   document.body.appendChild(toast);
   setTimeout(()=>{ if(document.getElementById('installToast')) document.getElementById('installToast').remove(); }, 8000);
 }
+
+const provider = new firebase.auth.GoogleAuthProvider();
+
+document.addEventListener("DOMContentLoaded", function () {
+  const btn = document.getElementById("googleLoginBtn");
+
+  if (btn) {
+    btn.addEventListener("click", function () {
+      auth.signInWithRedirect(provider);
+    });
+  }
+
+  auth.getRedirectResult()
+    .then((result) => {
+      if (result.user) {
+        showToast("👋 Welcome " + result.user.displayName);
+        console.log(result.user);
+      }
+    })
+    .catch((error) => {
+      showToast("❌ " + error.message);
+    });
+});
 
 window.onload = function(){
   if(sessionStorage.getItem('es_admin')==='true'){isAdmin=true;}
