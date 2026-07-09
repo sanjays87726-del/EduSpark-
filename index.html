@@ -1893,6 +1893,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
 window.onload = function(){
   if(sessionStorage.getItem('es_admin')==='true'){isAdmin=true;}
+  // Version check — purana data clear karo
+  if(localStorage.getItem('es_app_version')!=='v5'){
+    localStorage.removeItem('es_student');
+    localStorage.removeItem('es_board');
+    localStorage.setItem('es_app_version','v5');
+  }
   loadAdminConfig();
   setTimeout(()=>{
     document.getElementById('splash').classList.add('hide');
