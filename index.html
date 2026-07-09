@@ -374,7 +374,9 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
       <span class="tb-brand">Edu<span>Spark</span></span>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
-      <div class="board-pill" id="boardPill" onclick="openBoardSel()">CBSE 10</div>
+      <div class="board-pill" id="boardPill" onclick="openCategorySel()">
+📚 Select Category
+</div>
       <button class="admin-btn" onclick="openAdminLogin()">⚙️</button>
     </div>
   </div>
@@ -1158,7 +1160,7 @@ function goHome(){
 // ══════════════════════════════════════════
 // BOARD SELECTOR
 // ══════════════════════════════════════════
-function openBoardSel(){
+function openCategorySel(){
   const bds=[
     {id:'CBSE-10',icon:'🏫',name:'CBSE – Class 10',sub:'Central Board'},
     {id:'CBSE-12',icon:'🏫',name:'CBSE – Class 12',sub:'Central Board'},
