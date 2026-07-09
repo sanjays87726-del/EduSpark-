@@ -1,4 +1,4 @@
-const CACHE_NAME = 'eduspark-v1';
+const CACHE_NAME = 'eduspark-v2';
 const ASSETS = [
   '/EduSpark-/',
   '/EduSpark-/index.html',
