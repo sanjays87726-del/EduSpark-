@@ -659,6 +659,10 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
           <option value="BSER-12">BSER Class 12</option>
           <option value="SSC-CHSL">SSC CHSL</option>
 <option value="SSC-CGL">SSC CGL</option>
+<option value="SSC-CHSL">SSC CHSL</option>
+<option value="SSC-CGL">SSC CGL</option>
+<option value="BSTC">BSTC / D.El.Ed</option>
+<option value="REET">REET</option>
         </select>
         <label>Subject</label><select id="aSubj"></select>
         <label>Type</label>
@@ -686,6 +690,10 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
           <option value="BSER-12">BSER Class 12</option>
           <option value="SSC-CHSL">SSC CHSL</option>
 <option value="SSC-CGL">SSC CGL</option>
+<option value="SSC-CHSL">SSC CHSL</option>
+<option value="SSC-CGL">SSC CGL</option>
+<option value="BSTC">BSTC / D.El.Ed</option>
+<option value="REET">REET</option>
         </select>
         <label>Subject</label><select id="qSubj"></select>
         <label>Questions (JSON)</label>
@@ -707,6 +715,10 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
       <option value="BSER-12">BSER Class 12</option>
       <option value="SSC-CHSL">SSC CHSL</option>
 <option value="SSC-CGL">SSC CGL</option>
+<option value="SSC-CHSL">SSC CHSL</option>
+<option value="SSC-CGL">SSC CGL</option>
+<option value="BSTC">BSTC / D.El.Ed</option>
+<option value="REET">REET</option>
     </select>
     <label>Subject</label>
     <select id="pyqSubjAdmin"></select>
@@ -757,6 +769,10 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
       <option value="BSER-12">BSER Class 12</option>
       <option value="SSC-CHSL">SSC CHSL</option>
 <option value="SSC-CGL">SSC CGL</option>
+<option value="SSC-CHSL">SSC CHSL</option>
+<option value="SSC-CGL">SSC CGL</option>
+<option value="BSTC">BSTC / D.El.Ed</option>
+<option value="REET">REET</option>
       <option value="ALL">All Boards</option>
     </select>
     <label>Class Title</label>
@@ -929,6 +945,22 @@ const SUBJECTS = {
   {id:"english",name:"English",icon:"📗",color:"sc-orange"},
   {id:"hindi",name:"Hindi",icon:"🇮🇳",color:"sc-red"},
   {id:"finance",name:"Finance & Economics",icon:"💹",color:"sc-indigo"}
+]
+,"BSTC":[
+  {id:"gk",name:"General Knowledge",icon:"🌍",color:"sc-blue"},
+  {id:"reasoning",name:"Reasoning",icon:"🧠",color:"sc-purple"},
+  {id:"hindi",name:"Hindi",icon:"🇮🇳",color:"sc-red"},
+  {id:"english",name:"English",icon:"📗",color:"sc-orange"},
+  {id:"teaching",name:"Teaching Aptitude",icon:"👨‍🏫",color:"sc-green"}
+]
+,"REET":[
+  {id:"gk",name:"General Knowledge",icon:"🌍",color:"sc-blue"},
+  {id:"reasoning",name:"Reasoning",icon:"🧠",color:"sc-purple"},
+  {id:"hindi",name:"Hindi",icon:"🇮🇳",color:"sc-red"},
+  {id:"english",name:"English",icon:"📗",color:"sc-orange"},
+  {id:"math",name:"Mathematics",icon:"📐",color:"sc-green"},
+  {id:"science",name:"Science",icon:"🔬",color:"sc-teal"},
+  {id:"sst",name:"Social Studies",icon:"🌏",color:"sc-indigo"}
 ]
 };
 
@@ -1161,30 +1193,41 @@ function goHome(){
 // BOARD SELECTOR
 // ══════════════════════════════════════════
 function openCategorySel(){
-  const bds=[
-    {id:'CBSE-10',icon:'🏫',name:'CBSE – Class 10',sub:'Central Board'},
-    {id:'CBSE-12',icon:'🏫',name:'CBSE – Class 12',sub:'Central Board'},
-    {id:'BSER-10',icon:'🎓',name:'BSER – Class 10',sub:'Rajasthan Board'},
-    {id:'BSER-12',icon:'🎓',name:'BSER – Class 12',sub:'Rajasthan Board'},
-    {id:'SSC-CHSL',icon:'📋',name:'SSC – CHSL',sub:'Staff Selection Commission'}
-,{id:'SSC-CGL',icon:'📋',name:'SSC – CGL',sub:'Staff Selection Commission'}
-  ];
-  document.getElementById('boardOpts').innerHTML=bds.map(b=>`
-    <div class="bo ${curBoard===b.id?'sel':''}" onclick="selBoard('${b.id}')">
-      <span style="font-size:26px;">${b.icon}</span>
-      <div><div class="bo-nm">${b.name}</div><div class="bo-sb">${b.sub}</div></div>
-    </div>`).join('');
+  document.getElementById('boardOpts').innerHTML=`
+    <div style="margin-bottom:12px;">
+      <div style="font-size:13px;font-weight:700;color:var(--g600);margin-bottom:8px;">🏫 Board Exams</div>
+      <div class="bo ${curBoard==='CBSE-10'?'sel':''}" onclick="selBoard('CBSE-10')">
+        <span style="font-size:26px;">🏫</span><div><div class="bo-nm">CBSE – Class 10</div><div class="bo-sb">Central Board</div></div>
+      </div>
+      <div class="bo ${curBoard==='CBSE-12'?'sel':''}" onclick="selBoard('CBSE-12')">
+        <span style="font-size:26px;">🏫</span><div><div class="bo-nm">CBSE – Class 12</div><div class="bo-sb">Central Board</div></div>
+      </div>
+      <div class="bo ${curBoard==='BSER-10'?'sel':''}" onclick="selBoard('BSER-10')">
+        <span style="font-size:26px;">🎓</span><div><div class="bo-nm">BSER – Class 10</div><div class="bo-sb">Rajasthan Board</div></div>
+      </div>
+      <div class="bo ${curBoard==='BSER-12'?'sel':''}" onclick="selBoard('BSER-12')">
+        <span style="font-size:26px;">🎓</span><div><div class="bo-nm">BSER – Class 12</div><div class="bo-sb">Rajasthan Board</div></div>
+      </div>
+    </div>
+    <div style="border-top:1.5px solid var(--g200);padding-top:12px;">
+      <div style="font-size:13px;font-weight:700;color:var(--g600);margin-bottom:8px;">📋 Competition Exams</div>
+      <div class="bo ${curBoard==='SSC-CHSL'?'sel':''}" onclick="selBoard('SSC-CHSL')">
+        <span style="font-size:26px;">📋</span><div><div class="bo-nm">SSC – CHSL</div><div class="bo-sb">Staff Selection Commission</div></div>
+      </div>
+      <div class="bo ${curBoard==='SSC-CGL'?'sel':''}" onclick="selBoard('SSC-CGL')">
+        <span style="font-size:26px;">📋</span><div><div class="bo-nm">SSC – CGL</div><div class="bo-sb">Staff Selection Commission</div></div>
+      </div>
+      <div class="bo ${curBoard==='BSTC'?'sel':''}" onclick="selBoard('BSTC')">
+        <span style="font-size:26px;">✏️</span><div><div class="bo-nm">BSTC / D.El.Ed</div><div class="bo-sb">Rajasthan</div></div>
+      </div>
+      <div class="bo ${curBoard==='REET'?'sel':''}" onclick="selBoard('REET')">
+        <span style="font-size:26px;">👨‍🏫</span><div><div class="bo-nm">REET</div><div class="bo-sb">Rajasthan Eligibility Test</div></div>
+      </div>
+    </div>
+  `;
+  
   document.getElementById('boardSel').classList.add('show');
 }
-function selBoard(id){
-  curBoard=id; localStorage.setItem('es_board',id);
-  updateBoardPill(); closeBS(); renderHome();
-  initSubjectDropdowns(); renderDoubtSubjects();
-  showToast('Board: '+id.replace('-',' Class '));
-}
-function updateBoardPill(){ document.getElementById('boardPill').textContent=curBoard.replace('-',' '); }
-function closeBS(){ document.getElementById('boardSel').classList.remove('show'); }
-function closeBSOut(e){ if(e.target===document.getElementById('boardSel')) closeBS(); }
 
 // ══════════════════════════════════════════
 // HOME RENDER
