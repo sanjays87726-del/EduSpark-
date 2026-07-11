@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="robots" content="noindex, nofollow"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#0F1B35"/>
+<title>EduSpark – Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+
+<!-- Firebase v9 compat SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<script>
+const FB_CFG = {
+  apiKey: "AIzaSyD90ruZHQ_VGuOoO__Q6PC2svRga3jyfXs",
+  authDomain: "eduspark-41703.firebaseapp.com",
+  projectId: "eduspark-41703",
+  storageBucket: "eduspark-41703.firebasestorage.app",
+  messagingSenderId: "455546882437",
+  appId: "1:455546882437:web:093e07eef1d8c685915cec",
+  measurementId: "G-WGP977E30D"
+};
+if (!firebase.apps.length) { firebase.initializeApp(FB_CFG); }
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+// 🔒 Sirf ye email hi Admin Panel access kar sakta hai
+const ADMIN_EMAIL = "bhupeshkumar36882@gmail.com";
+</script>
+
+<style>
+:root{
+  --navy:#0F1B35;--navy2:#1a3a6b;
+  --blue:#3B82F6;--blue-l:#EFF6FF;
+  --red:#EF4444;--green:#10B981;
+  --white:#fff;--g50:#F8FAFF;--g100:#F1F5F9;
+  --g200:#E2E8F0;--g400:#94A3B8;--g600:#64748B;--g800:#1E293B;
+  --r:14px;--rsm:10px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);min-height:100vh;}
+
+/* GATE SCREEN */
+#gate{position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;z-index:9999;}
+.g-logo{font-size:48px;margin-bottom:10px;}
+.g-title{font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;}
+.g-sub{font-size:12px;color:var(--g400);margin-bottom:28px;text-align:center;}
+.g-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:24px;width:100%;max-width:360px;text-align:center;}
+.g-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#333;border:none;border-radius:10px;padding:13px 18px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+.g-denied{color:#FCA5A5;background:rgba(239,68,68,.15);border:1px solid var(--red);border-radius:10px;padding:12px 14px;font-size:13px;margin-top:16px;display:none;}
+.g-denied.show{display:block;}
+.g-msg{color:var(--g400);font-size:12px;margin-top:14px;}
+
+/* ADMIN APP */
+#adminApp{display:none;max-width:520px;margin:0 auto;padding:16px 16px 60px;}
+.topbar{background:var(--navy);color:#fff;padding:16px 18px;border-radius:16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.tb-t{font-size:16px;font-weight:800;}
+.tb-e{font-size:11px;color:var(--g400);margin-top:2px;}
+.logout-btn{background:rgba(255,255,255,.12);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;}
+
+.a-tabs{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;scrollbar-width:none;}
+.a-tabs::-webkit-scrollbar{display:none;}
+.a-tab{flex-shrink:0;padding:8px 14px;border-radius:99px;border:1.5px solid var(--g200);background:var(--white);font-size:12px;font-weight:600;color:var(--g600);cursor:pointer;}
+.a-tab.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+.af{background:var(--white);border-radius:16px;padding:16px;box-shadow:0 4px 24px rgba(15,27,53,.08);}
+.af label{font-size:12px;font-weight:600;color:var(--g600);display:block;margin-bottom:5px;}
+.af input,.af select,.af textarea{width:100%;border:1.5px solid var(--g200);border-radius:var(--rsm);padding:10px 13px;font-size:13px;font-family:inherit;background:var(--white);color:var(--g800);outline:none;margin-bottom:10px;}
+.af textarea{height:80px;resize:none;}
+.add-btn{width:100%;background:linear-gradient(90deg,var(--navy),var(--navy2));color:#fff;border:none;border-radius:var(--rsm);padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px;}
+.mgmt-item{display:flex;align-items:center;justify-content:space-between;background:var(--g100);border-radius:8px;padding:10px 12px;margin-bottom:8px;}
+.mgmt-nm{font-size:13px;font-weight:600;color:var(--navy);}
+.mgmt-sb{font-size:11px;color:var(--g600);margin-top:2px;}
+.del-btn{background:#FEE2E2;color:var(--red);border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;}
+.rply-btn{background:var(--blue-l);color:var(--blue);border:none;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;margin-right:6px;flex-shrink:0;}
+.empty{text-align:center;padding:36px 20px;color:var(--g400);}
+.empty .ei{font-size:40px;margin-bottom:8px;}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--navy);color:#fff;padding:12px 20px;border-radius:99px;font-size:13px;font-weight:600;transition:.3s;z-index:99999;}
+#toast.show{transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- GATE -->
+<div id="gate">
+  <div class="g-logo">🔐</div>
+  <div class="g-title">EduSpark Admin</div>
+  <div class="g-sub">Sirf authorised Google account hi access kar sakta hai</div>
+  <div class="g-card">
+    <button class="g-btn" id="gateGoogleBtn">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20" alt="Google">
+      Google से Sign In
+    </button>
+    <div class="g-denied" id="gDenied">❌ Ye Google account admin नहीं है। Sign out करके सही account से try करें।</div>
+  </div>
+  <div class="g-msg">Is page ka link kisi ke saath share na करें।</div>
+</div>
+
+<!-- ADMIN APP -->
+<div id="adminApp">
+  <div class="topbar">
+    <div>
+      <div class="tb-t">⚙️ EduSpark Admin</div>
+      <div class="tb-e" id="tbEmail"></div>
+    </div>
+    <button class="logout-btn" onclick="adminLogout()">🚪 Logout</button>
+  </div>
+
+  <div class="a-tabs">
+    <div class="a-tab active" onclick="aTab('add',this)">📤 Add</div>
+    <div class="a-tab" onclick="aTab('quiz',this)">🧩 Quiz</div>
+    <div class="a-tab" onclick="aTab('pyq',this)">📜 PYQ</div>
+    <div class="a-tab" onclick="aTab('live',this)">🔴 Live</div>
+    <div class="a-tab" onclick="aTab('manage',this)">📋 Manage</div>
+    <div class="a-tab" onclick="aTab('doubts',this)">💬 Doubts</div>
+  </div>
+
+  <div id="aTab_add">
+    <div class="af">
+      <label>Board & Class</label>
+      <select id="aBoard" onchange="updateASubj()">
+        <option value="BSER-10">BSER Class 10</option>
+        <option value="CBSE-10">CBSE Class 10</option>
+        <option value="CBSE-12">CBSE Class 12</option>
+        <option value="BSER-12">BSER Class 12</option>
+        <option value="SSC-CHSL">SSC CHSL</option>
+        <option value="SSC-CGL">SSC CGL</option>
+        <option value="BSTC">BSTC / D.El.Ed</option>
+        <option value="REET">REET</option>
+      </select>
+      <label>Subject</label><select id="aSubj"></select>
+      <label>Type</label>
+      <select id="aType">
+        <option value="pdf">📄 PDF / Notes</option>
+        <option value="video">🎥 Video Lecture</option>
+        <option value="dpp">📗 DPP</option>
+        <option value="note">🗒️ Text Note</option>
+      </select>
+      <label>Title</label><input type="text" id="aTitle" placeholder="Chapter 5 Notes PDF"/>
+      <label>Description</label><input type="text" id="aDesc" placeholder="Short description..."/>
+      <label>Link (Drive/YouTube)</label><input type="url" id="aLink" placeholder="https://..."/>
+      <label>Chapter</label><input type="text" id="aChap" placeholder="Chapter name"/>
+      <button class="add-btn" id="addBtn" onclick="addContent()">✅ Add Content</button>
+    </div>
+  </div>
+
+  <div id="aTab_quiz" style="display:none;">
+    <div class="af">
+      <label>Quiz Title</label><input type="text" id="qTitle" placeholder="Science Ch.5 Quiz"/>
+      <label>Board</label>
+      <select id="qBoard">
+        <option value="BSER-10">BSER Class 10</option>
+        <option value="CBSE-10">CBSE Class 10</option>
+        <option value="CBSE-12">CBSE Class 12</option>
+        <option value="BSER-12">BSER Class 12</option>
+        <option value="SSC-CHSL">SSC CHSL</option>
+        <option value="SSC-CGL">SSC CGL</option>
+        <option value="BSTC">BSTC / D.El.Ed</option>
+        <option value="REET">REET</option>
+      </select>
+      <label>Subject</label><select id="qSubj"></select>
+      <label>Questions (JSON)</label>
+      <textarea id="qQs" placeholder='[{"q":"Question?","options":["A","B","C","D"],"ans":0}]'></textarea>
+      <div style="background:var(--blue-l);border-radius:8px;padding:10px;margin-bottom:10px;font-size:11px;color:var(--blue);">
+        📌 ans: 0=A, 1=B, 2=C, 3=D<br>
+        Example: [{"q":"चंद्रमा क्या है?","options":["तारा","उपग्रह","ग्रह","धूमकेतु"],"ans":1}]
+      </div>
+      <button class="add-btn" onclick="addQuiz()">✅ Add Quiz</button>
+    </div>
+  </div>
+
+  <div id="aTab_pyq" style="display:none;">
+    <div class="af">
+      <label>Board & Class</label>
+      <select id="pyqBoardAdmin" onchange="updatePYQSubj()">
+        <option value="BSER-10">BSER Class 10</option>
+        <option value="CBSE-10">CBSE Class 10</option>
+        <option value="CBSE-12">CBSE Class 12</option>
+        <option value="BSER-12">BSER Class 12</option>
+        <option value="SSC-CHSL">SSC CHSL</option>
+        <option value="SSC-CGL">SSC CGL</option>
+        <option value="BSTC">BSTC / D.El.Ed</option>
+        <option value="REET">REET</option>
+      </select>
+      <label>Subject</label>
+      <select id="pyqSubjAdmin"></select>
+      <label>Year</label>
+      <select id="pyqYear">
+        <option value="2024">2024</option>
+        <option value="2023">2023</option>
+        <option value="2022">2022</option>
+        <option value="2021">2021</option>
+        <option value="2020">2020</option>
+        <option value="2019">2019</option>
+        <option value="2018">2018</option>
+      </select>
+      <label>Exam Type</label>
+      <select id="pyqExamType">
+        <option value="Board Exam">Board Exam</option>
+        <option value="Pre-Board">Pre-Board</option>
+        <option value="Sample Paper">Sample Paper</option>
+        <option value="Model Paper">Model Paper</option>
+      </select>
+      <label>Title</label>
+      <input type="text" id="pyqTitle" placeholder="Science 2024 Board Paper"/>
+      <label>Description</label>
+      <input type="text" id="pyqDesc" placeholder="Full paper with solutions..."/>
+      <label>PDF Link (Google Drive)</label>
+      <input type="url" id="pyqLink" placeholder="https://drive.google.com/..."/>
+      <button class="add-btn" id="pyqAddBtn" onclick="addPYQ()">✅ PYQ Add करें</button>
+      <div style="margin-top:10px;">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px;">📋 Added PYQs</div>
+        <div id="pyqManageList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="aTab_live" style="display:none;">
+    <div class="af">
+      <label>Status</label>
+      <select id="liveStatus">
+        <option value="off">❌ Off (No banner)</option>
+        <option value="live">🔴 Live Now</option>
+        <option value="upcoming">⏰ Upcoming</option>
+      </select>
+      <label>Board & Class</label>
+      <select id="liveBoard">
+        <option value="BSER-10">BSER Class 10</option>
+        <option value="CBSE-10">CBSE Class 10</option>
+        <option value="CBSE-12">CBSE Class 12</option>
+        <option value="BSER-12">BSER Class 12</option>
+        <option value="SSC-CHSL">SSC CHSL</option>
+        <option value="SSC-CGL">SSC CGL</option>
+        <option value="BSTC">BSTC / D.El.Ed</option>
+        <option value="REET">REET</option>
+        <option value="ALL">All Boards</option>
+      </select>
+      <label>Class Title</label>
+      <input type="text" id="liveTitleInput" placeholder="Physics Ch.5 Live Class"/>
+      <label>Time Text (jo dikhana hai)</label>
+      <input type="text" id="liveTimeInput" placeholder="Aaj शाम 5:00 PM"/>
+      <label>YouTube Link (Live ya Video)</label>
+      <input type="url" id="liveLinkInput" placeholder="https://youtube.com/..."/>
+      <button class="add-btn" onclick="saveLiveClass()">✅ Live Class Update करें</button>
+    </div>
+  </div>
+
+  <div id="aTab_manage" style="display:none;">
+    <div class="af">
+      <div id="aManageList">
+        <div style="text-align:center;padding:20px;color:var(--g400);">⏳ Loading...</div>
+      </div>
+      <div style="margin-top:16px;">
+        <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px;">🧩 Quizzes</div>
+        <div id="aQuizManageList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="aTab_doubts" style="display:none;">
+    <div class="af">
+      <div id="aDoubtsList"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// SUBJECTS DATA (same as index.html)
+// ══════════════════════════════════════════
+const SUBJECTS = {
+  "CBSE-10":[
+    {id:"math",name:"Mathematics",icon:"📐"},
+    {id:"sci",name:"Science",icon:"🔬"},
+    {id:"sst",name:"Social Science",icon:"🌍"},
+    {id:"eng",name:"English",icon:"📗"},
+    {id:"hindi",name:"Hindi",icon:"🇮🇳"},
+  ],
+  "CBSE-12":[
+    {id:"phy",name:"Physics",icon:"⚡"},
+    {id:"chem",name:"Chemistry",icon:"🧪"},
+    {id:"bio",name:"Biology",icon:"🌿"},
+    {id:"math",name:"Mathematics",icon:"📐"},
+    {id:"eng",name:"English",icon:"📗"},
+    {id:"acc",name:"Accountancy",icon:"📊"},
+    {id:"eco",name:"Economics",icon:"💹"},
+  ],
+  "BSER-10":[
+    {id:"ganit",name:"गणित",icon:"📐"},
+    {id:"vigyan",name:"विज्ञान",icon:"🔬"},
+    {id:"samajik",name:"सामाजिक विज्ञान",icon:"🌍"},
+    {id:"hindi",name:"हिन्दी",icon:"🇮🇳"},
+    {id:"eng",name:"English",icon:"📗"},
+    {id:"sanskrit",name:"संस्कृत",icon:"🕉️"},
+  ],
+  "BSER-12":[
+    {id:"bhautiki",name:"भौतिक विज्ञान",icon:"⚡"},
+    {id:"rasayan",name:"रसायन विज्ञान",icon:"🧪"},
+    {id:"jeev",name:"जीव विज्ञान",icon:"🌿"},
+    {id:"ganit",name:"गणित",icon:"📐"},
+    {id:"hindi",name:"हिन्दी",icon:"🇮🇳"},
+    {id:"lekha",name:"लेखाशास्त्र",icon:"📊"},
+    {id:"arthshastra",name:"अर्थशास्त्र",icon:"💹"},
+  ],
+  "SSC-CHSL":[
+    {id:"gk",name:"General Knowledge",icon:"🌍"},
+    {id:"reasoning",name:"Reasoning",icon:"🧠"},
+    {id:"math",name:"Mathematics",icon:"📐"},
+    {id:"english",name:"English",icon:"📗"},
+    {id:"hindi",name:"Hindi",icon:"🇮🇳"}
+  ],
+  "SSC-CGL":[
+    {id:"gk",name:"General Knowledge",icon:"🌍"},
+    {id:"reasoning",name:"Reasoning",icon:"🧠"},
+    {id:"math",name:"Mathematics",icon:"📐"},
+    {id:"english",name:"English",icon:"📗"},
+    {id:"hindi",name:"Hindi",icon:"🇮🇳"},
+    {id:"finance",name:"Finance & Economics",icon:"💹"}
+  ],
+  "BSTC":[
+    {id:"gk",name:"General Knowledge",icon:"🌍"},
+    {id:"reasoning",name:"Reasoning",icon:"🧠"},
+    {id:"hindi",name:"Hindi",icon:"🇮🇳"},
+    {id:"english",name:"English",icon:"📗"},
+    {id:"teaching",name:"Teaching Aptitude",icon:"👨‍🏫"}
+  ],
+  "REET":[
+    {id:"gk",name:"General Knowledge",icon:"🌍"},
+    {id:"reasoning",name:"Reasoning",icon:"🧠"},
+    {id:"hindi",name:"Hindi",icon:"🇮🇳"},
+    {id:"english",name:"English",icon:"📗"},
+    {id:"math",name:"Mathematics",icon:"📐"},
+    {id:"science",name:"Science",icon:"🔬"}
+  ]
+};
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ══════════════════════════════════════════
+// GOOGLE SIGN-IN GATE — sirf ADMIN_EMAIL allow
+// ══════════════════════════════════════════
+const provider = new firebase.auth.GoogleAuthProvider();
+
+document.getElementById('gateGoogleBtn').addEventListener('click', function(){
+  auth.signInWithRedirect(provider);
+});
+
+function showAdminApp(user){
+  document.getElementById('gate').style.display='none';
+  document.getElementById('adminApp').style.display='block';
+  document.getElementById('tbEmail').textContent = user.email;
+  initSubjectDropdowns();
+  renderAManage();
+  renderQuizManage();
+  renderPYQManage();
+  renderADoubts();
+}
+
+function showDenied(){
+  document.getElementById('gDenied').classList.add('show');
+  auth.signOut().catch(()=>{});
+}
+
+auth.getRedirectResult().then((result)=>{
+  if(result.user){
+    if(result.user.email === ADMIN_EMAIL){
+      showAdminApp(result.user);
+    } else {
+      showDenied();
+    }
+  }
+}).catch((error)=>{
+  showToast('❌ '+error.message);
+});
+
+// Page reload hone par bhi login state check karo
+auth.onAuthStateChanged(function(user){
+  if(user && user.email === ADMIN_EMAIL){
+    showAdminApp(user);
+  }
+});
+
+function adminLogout(){
+  auth.signOut().catch(()=>{});
+  document.getElementById('adminApp').style.display='none';
+  document.getElementById('gate').style.display='flex';
+  showToast('✅ Logout हो गए');
+}
+
+// ══════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════
+function aTab(tab, el){
+  document.querySelectorAll('.a-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['add','quiz','pyq','live','manage','doubts'].forEach(t=>{ document.getElementById('aTab_'+t).style.display='none'; });
+  document.getElementById('aTab_'+tab).style.display='block';
+  if(tab==='manage'){ renderAManage(); renderQuizManage(); }
+  if(tab==='doubts') renderADoubts();
+  if(tab==='pyq') renderPYQManage();
+}
+
+function initSubjectDropdowns(){
+  const subs=SUBJECTS[document.getElementById('aBoard').value]||[];
+  document.getElementById('aSubj').innerHTML=subs.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  const qsubs=SUBJECTS[document.getElementById('qBoard').value]||[];
+  document.getElementById('qSubj').innerHTML=qsubs.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  updatePYQSubj();
+}
+function updateASubj(){
+  document.getElementById('aSubj').innerHTML=(SUBJECTS[document.getElementById('aBoard').value]||[]).map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+}
+function updatePYQSubj(){
+  const board = document.getElementById('pyqBoardAdmin') ?
+    document.getElementById('pyqBoardAdmin').value : 'BSER-10';
+  const subs = SUBJECTS[board]||[];
+  document.getElementById('pyqSubjAdmin').innerHTML = subs.map(s=>`<option value="${s.id}">${s.icon} ${s.name}</option>`).join('');
+}
+
+// ══════════════════════════════════════════
+// ADD CONTENT / QUIZ / PYQ / LIVE
+// ══════════════════════════════════════════
+function addContent(){
+  const title=document.getElementById('aTitle').value.trim();
+  if(!title){ showToast('❌ Title खाली है!'); return; }
+  const btn=document.getElementById('addBtn');
+  btn.disabled=true; btn.textContent='Adding...';
+  db.collection('content').add({
+    board:document.getElementById('aBoard').value,
+    subject:document.getElementById('aSubj').value,
+    type:document.getElementById('aType').value,
+    title, desc:document.getElementById('aDesc').value.trim(),
+    link:document.getElementById('aLink').value.trim(),
+    chapter:document.getElementById('aChap').value.trim(),
+    date:new Date().toISOString()
+  }).then(()=>{
+    ['aTitle','aDesc','aLink','aChap'].forEach(id=>{ document.getElementById(id).value=''; });
+    btn.disabled=false; btn.textContent='✅ Add Content';
+    showToast('✅ Content add हो गया!');
+    renderAManage();
+  }).catch(e=>{ showToast('❌ Error: '+e.message); btn.disabled=false; btn.textContent='✅ Add Content'; });
+}
+
+function addQuiz(){
+  const title=document.getElementById('qTitle').value.trim();
+  const raw=document.getElementById('qQs').value.trim();
+  if(!title||!raw){ showToast('❌ सब fields भरें!'); return; }
+  let questions;
+  try{ questions=JSON.parse(raw); } catch{ showToast('❌ JSON format गलत है!'); return; }
+  db.collection('quizzes').add({
+    title, board:document.getElementById('qBoard').value,
+    subject:document.getElementById('qSubj').value,
+    questions, date:new Date().toISOString()
+  }).then(()=>{
+    document.getElementById('qTitle').value='';
+    document.getElementById('qQs').value='';
+    showToast('✅ Quiz add हो गया!');
+    renderQuizManage();
+  }).catch(e=>showToast('❌ Error: '+e.message));
+}
+
+function addPYQ(){
+  const title = document.getElementById('pyqTitle').value.trim();
+  const link  = document.getElementById('pyqLink').value.trim();
+  if(!title){ showToast('❌ Title खाली है!'); return; }
+  const btn = document.getElementById('pyqAddBtn');
+  btn.disabled=true; btn.textContent='Adding...';
+  db.collection('pyq').add({
+    board:    document.getElementById('pyqBoardAdmin').value,
+    subject:  document.getElementById('pyqSubjAdmin').value,
+    year:     parseInt(document.getElementById('pyqYear').value),
+    examType: document.getElementById('pyqExamType').value,
+    title,
+    desc:     document.getElementById('pyqDesc').value.trim(),
+    link,
+    date:     new Date().toISOString()
+  }).then(()=>{
+    document.getElementById('pyqTitle').value='';
+    document.getElementById('pyqDesc').value='';
+    document.getElementById('pyqLink').value='';
+    btn.disabled=false; btn.textContent='✅ PYQ Add करें';
+    showToast('✅ PYQ add हो गया!');
+    renderPYQManage();
+  }).catch(e=>{
+    showToast('❌ Error: '+e.message);
+    btn.disabled=false; btn.textContent='✅ PYQ Add करें';
+  });
+}
+
+function saveLiveClass(){
+  const status = document.getElementById('liveStatus').value;
+  const board = document.getElementById('liveBoard').value;
+  const title = document.getElementById('liveTitleInput').value.trim();
+  const timeText = document.getElementById('liveTimeInput').value.trim();
+  const link = document.getElementById('liveLinkInput').value.trim();
+  db.collection('_config').doc('liveClass').set({
+    status, board, title, timeText, link, updated: new Date().toISOString()
+  }).then(()=>{
+    showToast('✅ Live Class update हो गया!');
+  }).catch(e=>showToast('❌ Error: '+e.message));
+}
+
+// ══════════════════════════════════════════
+// MANAGE / DELETE
+// ══════════════════════════════════════════
+function renderPYQManage(){
+  db.collection('pyq').orderBy('year','desc').get().then(snap=>{
+    const items = snap.docs.map(d=>({id:d.id,...d.data()}));
+    document.getElementById('pyqManageList').innerHTML = items.length
+      ? items.map(p=>`
+          <div class="mgmt-item">
+            <div>
+              <div class="mgmt-nm">${p.year} — ${p.title}</div>
+              <div class="mgmt-sb">${p.board} • ${p.subject} • ${p.examType||''}</div>
+            </div>
+            <button class="del-btn" onclick="delPYQ('${p.id}')">🗑</button>
+          </div>`).join('')
+      : '<div class="empty"><div class="ei">📜</div><p>कोई PYQ नहीं।</p></div>';
+  }).catch(()=>{});
+}
+function renderAManage(){
+  db.collection('content').orderBy('date','desc').limit(30).get()
+    .then(snap=>{
+      const items=snap.docs.map(d=>({id:d.id,...d.data()}));
+      document.getElementById('aManageList').innerHTML=items.length
+        ? items.map(c=>`
+            <div class="mgmt-item">
+              <div><div class="mgmt-nm">${c.title}</div><div class="mgmt-sb">${c.board} • ${c.type}</div></div>
+              <button class="del-btn" onclick="delContent('${c.id}')">🗑</button>
+            </div>`).join('')
+        : '<div class="empty"><div class="ei">📭</div><p>कोई content नहीं।</p></div>';
+    }).catch(()=>showToast('❌ Load error!'));
+}
+function renderQuizManage(){
+  db.collection('quizzes').orderBy('date','desc').get()
+    .then(snap=>{
+      const items = snap.docs.map(d=>({id:d.id,...d.data()}));
+      document.getElementById('aQuizManageList').innerHTML = items.length
+        ? items.map(q=>`
+            <div class="mgmt-item">
+              <div><div class="mgmt-nm">${q.title}</div><div class="mgmt-sb">${q.board} • ${q.questions.length} Questions</div></div>
+              <button class="del-btn" onclick="delQuiz('${q.id}')">🗑</button>
+            </div>`).join('')
+        : '<div class="empty"><div class="ei">🧩</div><p>कोई quiz नहीं।</p></div>';
+    }).catch(()=>{});
+}
+
+function delQuiz(id){
+  if(!confirm('क्या आप sure हैं? यह Quiz delete हो जाएगी!')) return;
+  db.collection('quizzes').doc(id).delete()
+    .then(()=>{ showToast('🗑 Quiz delete हो गई'); renderQuizManage(); })
+    .catch(e=>showToast('❌ Error: '+e.message));
+}
+function delContent(id){
+  if(!confirm('क्या आप sure हैं? यह content delete हो जाएगा!')) return;
+  db.collection('content').doc(id).delete()
+    .then(()=>{ showToast('🗑 Delete हो गया'); renderAManage(); })
+    .catch(e=>showToast('❌ Error: '+e.message));
+}
+function delPYQ(id){
+  if(!confirm('क्या आप sure हैं? यह PYQ delete हो जाएगा!')) return;
+  db.collection('pyq').doc(id).delete()
+    .then(()=>{ showToast('🗑 PYQ delete हो गया'); renderPYQManage(); })
+    .catch(e=>showToast('❌ Error: '+e.message));
+}
+
+// ══════════════════════════════════════════
+// DOUBTS
+// ══════════════════════════════════════════
+function renderADoubts(){
+  db.collection('doubts').where('status','==','pending').get()
+    .then(snap=>{
+      const doubts=snap.docs.map(d=>({id:d.id,...d.data()}));
+      document.getElementById('aDoubtsList').innerHTML=doubts.length
+        ? doubts.map(d=>`
+            <div class="mgmt-item" style="flex-direction:column;align-items:flex-start;gap:8px;">
+              <div><div class="mgmt-nm">❓ ${(d.text||'').slice(0,60)}...</div><div class="mgmt-sb">${d.name||''} • ${d.board||''}</div></div>
+              <div style="display:flex;gap:6px;width:100%;">
+                <input id="ans_${d.id}" placeholder="जवाब लिखें..." style="flex:1;border:1.5px solid var(--g200);border-radius:8px;padding:7px 10px;font-size:12px;font-family:inherit;outline:none;"/>
+                <button class="rply-btn" onclick="replyDoubt('${d.id}')">✅</button>
+                <button class="del-btn" onclick="delDoubt('${d.id}')">🗑</button>
+              </div>
+            </div>`).join('')
+        : '<div class="empty"><div class="ei">✅</div><p>सभी doubts answer हो गए!</p></div>';
+    }).catch(()=>{});
+}
+
+function replyDoubt(id){
+  const ans=document.getElementById('ans_'+id)?.value.trim();
+  if(!ans){ showToast('❌ जवाब खाली है!'); return; }
+  db.collection('doubts').doc(id).update({answer:ans,status:'answered'})
+    .then(()=>{ showToast('✅ Reply दे दिया!'); renderADoubts(); })
+    .catch(e=>showToast('❌ Error: '+e.message));
+}
+
+function delDoubt(id){
+  db.collection('doubts').doc(id).delete()
+    .then(()=>{ showToast('🗑 Delete हो गया'); renderADoubts(); })
+    .catch(e=>showToast('❌ Error: '+e.message));
+}
+</script>
+</body>
+</html>
