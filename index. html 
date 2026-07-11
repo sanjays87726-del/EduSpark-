@@ -645,3 +645,487 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
 <!-- ALL JS at the bottom -->
 <script>
 
+// ══════════════════════════════════════════
+// STUDENT PROFILE
+// ══════════════════════════════════════════
+function checkStudentProfile(){
+  const profile = JSON.parse(localStorage.getItem('es_student')||'null');
+  if(!profile){
+    document.getElementById('studentSetup').classList.add('show');
+  } else {
+    curBoard = profile.board;
+    localStorage.setItem('es_board', profile.board);
+    updateBoardPill();
+  }
+}
+
+function saveStudentProfile(){
+  const name = document.getElementById('ssName').value.trim();
+  const board = document.getElementById('ssBoard').value;
+  if(!name){ alert('कृपया अपना नाम लिखें!'); return; }
+  const profile = {name, board, date: new Date().toISOString()};
+  localStorage.setItem('es_student', JSON.stringify(profile));
+  curBoard = board;
+  localStorage.setItem('es_board', board);
+  document.getElementById('studentSetup').style.display='none';
+  updateBoardPill();
+  renderHome();
+  renderDoubtSubjects();
+  showToast('✅ Welcome '+name+'! 🎉');
+}
+
+function getStudentName(){
+  const profile = JSON.parse(localStorage.getItem('es_student')||'null');
+  return profile ? profile.name : 'Student';
+}
+
+function checkStudentProfile(){
+  const el = document.getElementById('studentSetup');
+  if(!el) return;
+  const profile = JSON.parse(localStorage.getItem('es_student')||'null');
+  if(!profile){
+    setTimeout(()=>{
+      el.style.display = 'flex';
+    },500);
+  } else {
+    curBoard = profile.board;
+    localStorage.setItem('es_board', profile.board);
+    updateBoardPill();
+  }
+}
+
+// ══════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════
+const DEVICE_ID = localStorage.getItem('es_device') || (()=>{ 
+  const id='dev_'+Date.now(); 
+  localStorage.setItem('es_device',id); 
+  return id; 
+})();
+
+const SUBJECTS = {
+  "CBSE-10":[
+    {id:"math",name:"Mathematics",icon:"📐",color:"sc-blue"},
+    {id:"sci",name:"Science",icon:"🔬",color:"sc-green"},
+    {id:"sst",name:"Social Science",icon:"🌍",color:"sc-orange"},
+    {id:"eng",name:"English",icon:"📗",color:"sc-purple"},
+    {id:"hindi",name:"Hindi",icon:"🇮🇳",color:"sc-red"},
+  ],
+  "CBSE-12":[
+    {id:"phy",name:"Physics",icon:"⚡",color:"sc-blue"},
+    {id:"chem",name:"Chemistry",icon:"🧪",color:"sc-green"},
+    {id:"bio",name:"Biology",icon:"🌿",color:"sc-teal"},
+    {id:"math",name:"Mathematics",icon:"📐",color:"sc-orange"},
+    {id:"eng",name:"English",icon:"📗",color:"sc-purple"},
+    {id:"acc",name:"Accountancy",icon:"📊",color:"sc-red"},
+    {id:"eco",name:"Economics",icon:"💹",color:"sc-indigo"},
+  ],
+  "BSER-10":[
+    {id:"ganit",name:"गणित",icon:"📐",color:"sc-blue"},
+    {id:"vigyan",name:"विज्ञान",icon:"🔬",color:"sc-green"},
+    {id:"samajik",name:"सामाजिक विज्ञान",icon:"🌍",color:"sc-orange"},
+    {id:"hindi",name:"हिन्दी",icon:"🇮🇳",color:"sc-red"},
+    {id:"eng",name:"English",icon:"📗",color:"sc-purple"},
+    {id:"sanskrit",name:"संस्कृत",icon:"🕉️",color:"sc-teal"},
+  ],
+  "BSER-12":[
+    {id:"bhautiki",name:"भौतिक विज्ञान",icon:"⚡",color:"sc-blue"},
+    {id:"rasayan",name:"रसायन विज्ञान",icon:"🧪",color:"sc-green"},
+    {id:"jeev",name:"जीव विज्ञान",icon:"🌿",color:"sc-teal"},
+    {id:"ganit",name:"गणित",icon:"📐",color:"sc-orange"},
+    {id:"hindi",name:"हिन्दी",icon:"🇮🇳",color:"sc-red"},
+    {id:"lekha",name:"लेखाशास्त्र",icon:"📊",color:"sc-indigo"},
+    {id:"arthshastra",name:"अर्थशास्त्र",icon:"💹",color:"sc-pink"},
+  ]
+,"SSC-CHSL":[
+  {id:"gk",name:"General Knowledge",icon:"🌍",color:"sc-blue"},
+  {id:"reasoning",name:"Reasoning",icon:"🧠",color:"sc-purple"},
+  {id:"math",name:"Mathematics",icon:"📐",color:"sc-green"},
+  {id:"english",name:"English",icon:"📗",color:"sc-orange"},
+  {id:"hindi",name:"Hindi",icon:"🇮🇳",color:"sc-red"}
+]
+,"SSC-CGL":[
+  {id:"gk",name:"General Knowledge",icon:"🌍",color:"sc-blue"},
+  {id:"reasoning",name:"Reasoning",icon:"🧠",color:"sc-purple"},
+  {id:"math",name:"Mathematics",icon:"📐",color:"sc-green"},
+  {id:"english",name:"English",icon:"📗",color:"sc-orange"},
+  {id:"hindi",name:"Hindi",icon:"🇮🇳",color:"sc-red"},
+  {id:"finance",name:"Finance & Economics",icon:"💹",color:"sc-indigo"}
+]
+,"BSTC":[
+  {id:"gk",name:"General Knowledge",icon:"🌍",color:"sc-blue"},
+  {id:"reasoning",name:"Reasoning",icon:"🧠",color:"sc-purple"},
+  {id:"hindi",name:"Hindi",icon:"🇮🇳",color:"sc-red"},
+  {id:"english",name:"English",icon:"📗",color:"sc-orange"},
+  {id:"teaching",name:"Teaching Aptitude",icon:"👨‍🏫",color:"sc-green"}
+]
+,"REET":[
+  {id:"gk",name:"General Knowledge",icon:"🌍",color:"sc-blue"},
+  {id:"reasoning",name:"Reasoning",icon:"🧠",color:"sc-purple"},
+  {id:"hindi",name:"Hindi",icon:"🇮🇳",color:"sc-red"},
+  {id:"english",name:"English",icon:"📗",color:"sc-orange"},
+  {id:"math",name:"Mathematics",icon:"📐",color:"sc-green"},
+  {id:"science",name:"Science",icon:"🔬",color:"sc-teal"},
+  {id:"sst",name:"Social Studies",icon:"🌏",color:"sc-indigo"}
+]
+};
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let curBoard = localStorage.getItem('es_board')||'BSER-10';
+let curSubject = null, curType = 'all';
+let allContent = [], allQuizzes = [], allPYQ = [];
+let curQuiz=null, curQ=0, score=0, answered=false;
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+window.onload = function(){
+  // Back button handle karo
+  window.addEventListener('popstate', function(e){
+    if(e.state && e.state.page){
+      const navItem = document.querySelector(`.ni[onclick*="'${e.state.page}'"]`);
+      if(navItem) navTo(e.state.page, navItem);
+    } else {
+      // Back gesture pe home par jaao
+      const homeNav = document.querySelector('.ni');
+      if(homeNav) navTo('home', homeNav);
+      history.pushState({page:'home'}, '', '#home');
+    }
+  });
+
+  setTimeout(()=>{
+
+     // Initial state set karo
+      history.replaceState({page:'home'}, '', '#home');
+    // Extra history entries taaki back gesture app se bahar na jaaye
+    history.pushState({page:'home'}, '', '#home');
+    history.pushState({page:'home'}, '', '#home');
+ document.getElementById('splash').classList.add('hide');
+    setTimeout(()=>{ document.getElementById('splash').style.display='none'; },500);
+    document.getElementById('app').style.display='flex';
+    updateBoardPill();
+    renderDoubtSubjects();
+    listenContent();
+    listenQuizzes();
+    listenDoubts();
+    listenPYQ();
+    checkStudentProfile();
+    // Install toast
+    setTimeout(()=>{
+      if(!window.matchMedia('(display-mode: standalone)').matches){
+        showInstallToast();
+      }
+    }, 4000);
+  }, 2200);
+};
+
+// ══════════════════════════════════════════
+// FIREBASE LISTENERS
+// ══════════════════════════════════════════
+function listenContent(){
+  db.collection('content').orderBy('date','desc').onSnapshot(snap=>{
+    allContent = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderHome();
+    if(curSubject) loadSubjectContent(curType);
+  }, ()=>{ renderHome(); });
+}
+
+function listenQuizzes(){
+  db.collection('quizzes').orderBy('date','desc').onSnapshot(snap=>{
+    allQuizzes = snap.docs.map(d=>({id:d.id,...d.data()}));
+  }, ()=>{});
+}
+
+function listenDoubts(){
+  db.collection('doubts').orderBy('date','desc').onSnapshot(snap=>{
+    const doubts = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderDoubts(doubts);
+  }, ()=>{});
+}
+
+
+function listenPYQ(){
+  db.collection('pyq').orderBy('year','desc').onSnapshot(snap=>{
+    allPYQ = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderPYQ();
+    buildPYQSubjTabs();
+  }, err=>{
+    db.collection('pyq').get().then(snap=>{
+      allPYQ = snap.docs.map(d=>({id:d.id,...d.data()}));
+      renderPYQ();
+      buildPYQSubjTabs();
+    }).catch(()=>{});
+  });
+}
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+const pages = ['home','subject','pyq','doubts','quiz','notes'];
+function navTo(page, el){
+  const currentPage = document.querySelector('.page.active');
+  const currentIndex = pages.indexOf(currentPage ? currentPage.id.replace('page','').toLowerCase() : 'home');
+  const newIndex = pages.indexOf(page);
+  const direction = newIndex > currentIndex ? 'slide-in-right' : 'slide-in-left';
+  
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  history.pushState({page}, '', '#'+page);
+  
+  let newPage;
+  if(page==='home'){ newPage=document.getElementById('pageHome'); renderHome(); }
+  else if(page==='subject'){ newPage=document.getElementById('pageSubject'); showAllSubjects(); }
+  else if(page==='pyq'){ newPage=document.getElementById('pagePYQ'); pyqYearFilter='all'; pyqSubjFilter='all'; renderPYQ(); buildPYQSubjTabs(); }
+  else if(page==='doubts'){ newPage=document.getElementById('pageDoubts'); }
+  else if(page==='quiz'){ newPage=document.getElementById('pageQuiz'); renderQuizList(); }
+  else if(page==='notes'){ newPage=document.getElementById('pageNotes'); renderNotes(); }
+  
+  if(newPage){
+    newPage.classList.add('active', direction);
+    setTimeout(()=>newPage.classList.remove('slide-in-right','slide-in-left'), 300);
+  }
+}
+
+function goHome(){
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.querySelector('.ni').classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pageHome').classList.add('active');
+  history.pushState({page:'home'}, '', '#home');
+}
+
+// ══════════════════════════════════════════
+// BOARD SELECTOR
+// ══════════════════════════════════════════
+function openCategorySel(){
+  document.getElementById('boardOpts').innerHTML=`
+    <div style="margin-bottom:12px;">
+      <div style="font-size:13px;font-weight:700;color:var(--g600);margin-bottom:8px;">🏫 Board Exams</div>
+      <div class="bo ${curBoard==='CBSE-10'?'sel':''}" onclick="selBoard('CBSE-10')">
+        <span style="font-size:26px;">🏫</span><div><div class="bo-nm">CBSE – Class 10</div><div class="bo-sb">Central Board</div></div>
+      </div>
+      <div class="bo ${curBoard==='CBSE-12'?'sel':''}" onclick="selBoard('CBSE-12')">
+        <span style="font-size:26px;">🏫</span><div><div class="bo-nm">CBSE – Class 12</div><div class="bo-sb">Central Board</div></div>
+      </div>
+      <div class="bo ${curBoard==='BSER-10'?'sel':''}" onclick="selBoard('BSER-10')">
+        <span style="font-size:26px;">🎓</span><div><div class="bo-nm">BSER – Class 10</div><div class="bo-sb">Rajasthan Board</div></div>
+      </div>
+      <div class="bo ${curBoard==='BSER-12'?'sel':''}" onclick="selBoard('BSER-12')">
+        <span style="font-size:26px;">🎓</span><div><div class="bo-nm">BSER – Class 12</div><div class="bo-sb">Rajasthan Board</div></div>
+      </div>
+    </div>
+    <div style="border-top:1.5px solid var(--g200);padding-top:12px;">
+      <div style="font-size:13px;font-weight:700;color:var(--g600);margin-bottom:8px;">📋 Competition Exams</div>
+      <div class="bo ${curBoard==='SSC-CHSL'?'sel':''}" onclick="selBoard('SSC-CHSL')">
+        <span style="font-size:26px;">📋</span><div><div class="bo-nm">SSC – CHSL</div><div class="bo-sb">Staff Selection Commission</div></div>
+      </div>
+      <div class="bo ${curBoard==='SSC-CGL'?'sel':''}" onclick="selBoard('SSC-CGL')">
+        <span style="font-size:26px;">📋</span><div><div class="bo-nm">SSC – CGL</div><div class="bo-sb">Staff Selection Commission</div></div>
+      </div>
+      <div class="bo ${curBoard==='BSTC'?'sel':''}" onclick="selBoard('BSTC')">
+        <span style="font-size:26px;">✏️</span><div><div class="bo-nm">BSTC / D.El.Ed</div><div class="bo-sb">Rajasthan</div></div>
+      </div>
+      <div class="bo ${curBoard==='REET'?'sel':''}" onclick="selBoard('REET')">
+        <span style="font-size:26px;">👨‍🏫</span><div><div class="bo-nm">REET</div><div class="bo-sb">Rajasthan Eligibility Test</div></div>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('boardSel').classList.add('show');
+}
+
+// Board dabane par sirf tabhi list select hoti hai, aur select hote hi sheet band ho jaati hai
+function selBoard(board){
+  curBoard = board;
+  localStorage.setItem('es_board', board);
+  const profile = JSON.parse(localStorage.getItem('es_student')||'null');
+  if(profile){
+    profile.board = board;
+    localStorage.setItem('es_student', JSON.stringify(profile));
+  }
+  updateBoardPill();
+  closeBS();
+  renderHome();
+  renderDoubtSubjects();
+  showToast('✅ Category select हो गई: '+board);
+}
+
+// "बंद करें" button
+function closeBS(){
+  document.getElementById('boardSel').classList.remove('show');
+}
+
+// Bahar (backdrop) click karne par bhi band ho jaaye, andar click karne par nahi
+function closeBSOut(event){
+  if(event.target && event.target.id === 'boardSel'){
+    closeBS();
+  }
+}
+
+// Topbar ka pill hamesha current board/competition dikhaye
+function updateBoardPill(){
+  const labels = {
+    'CBSE-10':'🏫 CBSE Class 10',
+    'CBSE-12':'🏫 CBSE Class 12',
+    'BSER-10':'🎓 BSER Class 10',
+    'BSER-12':'🎓 BSER Class 12',
+    'SSC-CHSL':'📋 SSC CHSL',
+    'SSC-CGL':'📋 SSC CGL',
+    'BSTC':'✏️ BSTC / D.El.Ed',
+    'REET':'👨‍🏫 REET'
+  };
+  const pill = document.getElementById('boardPill');
+  if(pill) pill.textContent = labels[curBoard] || '📚 Select Category';
+}
+
+// ══════════════════════════════════════════
+// HOME RENDER
+// ══════════════════════════════════════════
+function renderHome(){
+const profile = JSON.parse(localStorage.getItem('es_student')||'null');
+if(profile && document.getElementById('heroGreeting')){
+  document.getElementById('heroGreeting').textContent = 'नमस्ते '+profile.name+'! 👋 पढ़ाई शुरू करें';
+}
+  const bc=allContent.filter(c=>c.board===curBoard);
+  document.getElementById('stPdf').textContent=bc.filter(c=>c.type==='pdf').length;
+  document.getElementById('stVid').textContent=bc.filter(c=>c.type==='video').length;
+  document.getElementById('stQz').textContent=allQuizzes.filter(q=>q.board===curBoard).length;
+  document.getElementById('stDpp').textContent=bc.filter(c=>c.type==='dpp').length;
+
+  document.getElementById('subjScroll').innerHTML=(SUBJECTS[curBoard]||[]).map(s=>`
+    <div class="subj-card ${s.color}" onclick="openSubjHome('${s.id}')">
+      <div class="s-ic">${s.icon}</div>
+      <div class="s-nm">${s.name}</div>
+      <div class="s-ct">${bc.filter(c=>c.subject===s.id).length} items</div>
+    </div>`).join('');
+
+  document.getElementById('recentList').innerHTML=bc.length
+    ? bc.slice(0,8).map(c=>cHTML(c)).join('')
+    : '<div class="empty"><div class="ei">📭</div><p>अभी कोई content नहीं।<br>Admin Panel से add करें।</p></div>';
+}
+
+function openSubjHome(sid){
+  curSubject=sid;
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.ni')[1].classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pageSubject').classList.add('active');
+  loadSubjectContent('all');
+}
+
+function showAllSubjects(){
+  curSubject=null;
+  document.getElementById('subjHero').style.background='linear-gradient(135deg,var(--navy),var(--navy2))';
+  document.getElementById('subjBoard').textContent=curBoard.replace('-',' Class ');
+  document.getElementById('subjTitle').textContent='All Subjects';
+  document.getElementById('subjCount').textContent=(SUBJECTS[curBoard]||[]).length+' subjects';
+  document.getElementById('typeTabs').innerHTML='';
+  document.getElementById('subjContent').innerHTML=(SUBJECTS[curBoard]||[]).map(s=>`
+    <div class="cnt-item" onclick="openSubjHome('${s.id}')">
+      <div class="cnt-ic" style="font-size:24px;background:rgba(59,130,246,.1);">${s.icon}</div>
+      <div class="cnt-info"><h4>${s.name}</h4><p>${allContent.filter(c=>c.board===curBoard&&c.subject===s.id).length} items</p></div>
+      <span style="font-size:20px;color:var(--g400);">›</span>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// SUBJECT CONTENT
+// ══════════════════════════════════════════
+function loadSubjectContent(type){
+  curType=type;
+  const sub=(SUBJECTS[curBoard]||[]).find(s=>s.id===curSubject);
+  if(!sub) return;
+  document.getElementById('subjHero').className='hero '+sub.color;
+  document.getElementById('subjBoard').textContent=curBoard.replace('-',' Class ');
+  document.getElementById('subjTitle').textContent=sub.icon+' '+sub.name;
+
+  let items=allContent.filter(c=>c.board===curBoard&&c.subject===curSubject);
+  if(type!=='all') items=items.filter(c=>c.type===type);
+  document.getElementById('subjCount').textContent=items.length+' items';
+
+  const labels={all:'🗂 All',pdf:'📄 PDF',video:'🎥 Video',dpp:'📗 DPP',note:'📒 Notes'};
+  document.getElementById('typeTabs').innerHTML=['all','pdf','video','dpp','note'].map(t=>
+    `<div class="type-tab ${curType===t?'active':''}" onclick="loadSubjectContent('${t}')">${labels[t]}</div>`).join('');
+
+  document.getElementById('subjContent').innerHTML=items.length
+    ? items.map(c=>cHTML(c)).join('')
+    : '<div class="empty"><div class="ei">📭</div><p>इस category में content नहीं है।</p></div>';
+}
+
+// ══════════════════════════════════════════
+// CONTENT HTML
+// ══════════════════════════════════════════
+function cHTML(c){
+  const T={pdf:{i:'📄',bg:'ci-pdf',b:'bdg-pdf',l:'PDF'},video:{i:'🎥',bg:'ci-video',b:'bdg-video',l:'Video'},dpp:{i:'📗',bg:'ci-dpp',b:'bdg-dpp',l:'DPP'},note:{i:'🗒️',bg:'ci-note',b:'bdg-note',l:'Note'}};
+  const t=T[c.type]||T.note;
+  const isNew=c.date&&(Date.now()-new Date(c.date).getTime())<7*24*60*60*1000;
+  let click='';
+  if(c.link){
+    if(c.type==='video'){
+      click=`onclick="playVideo('${c.link}')"`;
+    } else {
+      click=`onclick="window.open('${c.link}','_blank')"`;
+    }
+  }
+  return `<div class="cnt-item" ${click}>
+    <div class="cnt-ic ${t.bg}">${t.i}</div>
+    <div class="cnt-info">
+      <h4>${c.title}</h4>
+      <p>${c.desc||c.chapter||''}</p>
+      <span class="bdg ${t.b}">${t.l}</span>${isNew?'<span class="bdg bdg-new">NEW</span>':''}
+    </div>
+    <span style="font-size:18px;color:var(--g400);">${c.link?'🔗':'📄'}</span>
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+// SEARCH
+// ══════════════════════════════════════════
+function doSearch(){
+  const q=document.getElementById('searchInput').value.trim().toLowerCase();
+  const ss=document.getElementById('searchSec'), rs=document.getElementById('recentSec');
+  if(!q){ ss.style.display='none'; rs.style.display='block'; return; }
+  ss.style.display='block'; rs.style.display='none';
+  const res=allContent.filter(c=>c.board===curBoard&&[c.title,c.desc,c.chapter].join(' ').toLowerCase().includes(q));
+  document.getElementById('searchRes').innerHTML=res.length
+    ? res.map(c=>cHTML(c)).join('')
+    : `<div class="empty"><div class="ei">🔍</div><p>"${q}" नहीं मिला।</p></div>`;
+}
+
+// ══════════════════════════════════════════
+// PYQ
+// ══════════════════════════════════════════
+let pyqYearFilter = 'all';
+let pyqSubjFilter = 'all';
+let pyqExamFilter = 'all';
+
+function buildPYQSubjTabs(){
+  const subs = [...new Set(allPYQ.filter(p=>p.board===curBoard).map(p=>p.subject))];
+  const subData = SUBJECTS[curBoard]||[];
+  let html = '<div class="type-tab active" onclick="filterPYQSubj(\'all\',this)">📚 All</div>';
+  subs.forEach(sid=>{
+    const s = subData.find(x=>x.id===sid);
+    if(s) html += `<div class="type-tab" onclick="filterPYQSubj('${sid}',this)">${s.icon} ${s.name}</div>`;
+  });
+  document.getElementById('pyqSubjTabs').innerHTML = html;
+}
+
+function filterPYQ(year, el){
+  pyqYearFilter = year;
+  document.querySelectorAll('#pyqBoardTabs .type-tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderPYQ();
+}
+
+function filterPYQExam(examType, el){
+  pyqExamFilter = examType;
+  document.querySelectorAll('#pyqExamTabs .type-tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderPYQ();
+}
+
+function filterPYQSubj(subj, el){
+  pyqSubjFil
