@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8"/>
+
+<link rel="manifest" href="manifest.json"/>
+
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#0F1B35"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+
+<title>EduSpark – Board Study App</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+
+<!-- Firebase v9 compat SDKs - loaded synchronously before any script -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<!-- Firebase Init - right after SDK scripts -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+<script>
+const FB_CFG = {
+  apiKey: "AIzaSyD90ruZHQ_VGuOoO__Q6PC2svRga3jyfXs",
+  authDomain: "eduspark-41703.firebaseapp.com",
+  projectId: "eduspark-41703",
+  storageBucket: "eduspark-41703.firebasestorage.app",
+  messagingSenderId: "455546882437",
+  appId: "1:455546882437:web:093e07eef1d8c685915cec",
+  measurementId: "G-WGP977E30D"
+};
+if (!firebase.apps.length) { firebase.initializeApp(FB_CFG); }
+
+firebase.analytics();
+
+const auth = firebase.auth();
+const db   = firebase.firestore();
+</script>
+
+<style>
+:root{
+  --navy:#0F1B35;--navy2:#1a3a6b;
+  --blue:#3B82F6;--blue-l:#EFF6FF;
+  --saffron:#F59E0B;--saffron-l:#FFFBEB;
+  --green:#10B981;--green-l:#ECFDF5;
+  --red:#EF4444;--purple:#8B5CF6;--purple-l:#F5F3FF;
+  --teal:#14B8A6;--pink:#EC4899;--indigo:#6366F1;
+  --white:#fff;--g50:#F8FAFF;--g100:#F1F5F9;
+  --g200:#E2E8F0;--g400:#94A3B8;--g600:#64748B;--g800:#1E293B;
+  --r:14px;--rsm:10px;
+  --sh:0 4px 24px rgba(15,27,53,.10);
+  --shsm:0 2px 8px rgba(15,27,53,.07);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);min-height:100vh;overflow-x:hidden;}
+
+/* SPLASH */
+#splash{position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .5s;}
+#splash.hide{opacity:0;pointer-events:none;}
+.sp-logo{font-size:56px;animation:bob 1.2s ease-in-out infinite alternate;}
+.sp-title{font-size:30px;font-weight:800;color:#fff;margin-top:10px;}
+.sp-title span{color:var(--saffron);}
+.sp-sub{font-size:12px;color:var(--g400);margin-top:6px;}
+.sp-bar{width:200px;height:4px;background:rgba(255,255,255,.15);border-radius:99px;margin-top:40px;overflow:hidden;}
+.sp-fill{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--saffron));border-radius:99px;animation:load 2.2s ease forwards;}
+@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-10px)}}
+@keyframes load{to{width:100%}}
+
+
+/* APP */
+#app{display:none;flex-direction:column;min-height:100vh;}
+#app.show{display:flex;}
+
+/* TOPBAR */
+.topbar{background:var(--navy);color:#fff;padding:14px 18px 12px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(15,27,53,.3);}
+.tb-left{display:flex;align-items:center;gap:10px;}
+.tb-brand{font-size:18px;font-weight:800;}
+.tb-brand span{color:var(--saffron);}
+.board-pill{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);border-radius:99px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;padding-bottom:80px;}
+.page{display:none;}
+.page.active{display:block;}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,var(--navy),var(--navy2));padding:24px 18px 28px;color:#fff;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;right:-30px;top:-30px;width:180px;height:180px;border-radius:50%;background:rgba(59,130,246,.12);}
+.hero-g{font-size:12px;color:rgba(255,255,255,.65);margin-bottom:4px;}
+.hero-t{font-size:21px;font-weight:800;line-height:1.3;}
+.hero-t span{color:var(--saffron);}
+.hero-s{font-size:11px;color:rgba(255,255,255,.6);margin-top:5px;}
+
+/* STATS */
+.stats-row{display:flex;gap:10px;margin:16px 18px 0;}
+.stat-card{flex:1;background:var(--white);border-radius:var(--rsm);padding:12px 8px;box-shadow:var(--shsm);text-align:center;}
+.stat-icon{font-size:18px;}
+.stat-val{font-size:18px;font-weight:800;color:var(--navy);margin-top:3px;}
+.stat-label{font-size:10px;color:var(--g600);}
+
+/* SEARCH */
+.search-wrap{padding:12px 18px 0;}
+.search-box{display:flex;align-items:center;gap:10px;background:var(--white);border:1.5px solid var(--g200);border-radius:var(--rsm);padding:10px 14px;box-shadow:var(--shsm);}
+.search-box input{flex:1;border:none;outline:none;font-size:13px;font-family:inherit;color:var(--g800);background:transparent;}
+.search-box input::placeholder{color:var(--g400);}
+
+/* SECTION TITLE */
+.sec-t{font-size:15px;font-weight:700;color:var(--navy);padding:18px 18px 10px;display:flex;align-items:center;gap:6px;}
+
+/* SUBJECT SCROLL */
+.subj-scroll{display:flex;gap:12px;padding:0 18px 4px;overflow-x:auto;scrollbar-width:none;}
+.subj-scroll::-webkit-scrollbar{display:none;}
+.subj-card{min-width:130px;border-radius:16px;padding:16px 14px;cursor:pointer;transition:.2s;flex-shrink:0;box-shadow:var(--shsm);position:relative;overflow:hidden;}
+.subj-card:active{transform:scale(.96);}
+.s-ic{font-size:26px;margin-bottom:8px;}
+.s-nm{font-size:12px;font-weight:700;color:#fff;}
+.s-ct{font-size:10px;color:rgba(255,255,255,.75);margin-top:2px;}
+.subj-card::after{content:'';position:absolute;right:-15px;bottom:-15px;width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.1);}
+
+/* CONTENT ITEMS */
+.type-tabs{display:flex;gap:8px;padding:0 18px;overflow-x:auto;scrollbar-width:none;margin-bottom:4px;}
+.type-tabs::-webkit-scrollbar{display:none;}
+.type-tab{flex-shrink:0;padding:7px 14px;border-radius:99px;border:1.5px solid var(--g200);background:var(--white);font-size:12px;font-weight:600;color:var(--g600);cursor:pointer;transition:.2s;}
+.type-tab.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+.cnt-list{padding:0 18px;}
+.cnt-item{background:var(--white);border-radius:var(--rsm);padding:13px;margin-bottom:10px;box-shadow:var(--shsm);display:flex;align-items:center;gap:12px;cursor:pointer;transition:.2s;border:1.5px solid transparent;}
+.cnt-item:active{border-color:var(--blue);background:var(--blue-l);}
+.cnt-ic{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+.ci-pdf{background:rgba(239,68,68,.1);}
+.ci-video{background:rgba(59,130,246,.1);}
+.ci-dpp{background:rgba(16,185,129,.1);}
+.ci-note{background:rgba(245,158,11,.1);}
+.cnt-info{flex:1;min-width:0;}
+.cnt-info h4{font-size:13px;font-weight:600;color:var(--navy);}
+.cnt-info p{font-size:11px;color:var(--g600);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bdg{font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;display:inline-block;margin-top:3px;}
+.bdg-pdf{background:#FEE2E2;color:var(--red);}
+.bdg-video{background:var(--blue-l);color:var(--blue);}
+.bdg-dpp{background:var(--green-l);color:var(--green);}
+.bdg-note{background:var(--saffron-l);color:var(--saffron);}
+.bdg-new{background:var(--saffron-l);color:var(--saffron);margin-left:4px;}
+
+/* DOUBTS */
+.doubt-hero{background:linear-gradient(135deg,#7C3AED,#4F46E5);padding:22px 18px;color:#fff;border-radius:0 0 22px 22px;}
+.dform{padding:16px 18px;}
+.dform label{font-size:12px;font-weight:600;color:var(--g600);display:block;margin-bottom:5px;}
+.dform select,.dform input,.dform textarea{width:100%;border:1.5px solid var(--g200);border-radius:var(--rsm);padding:10px 13px;font-size:13px;font-family:inherit;background:var(--white);color:var(--g800);outline:none;transition:.2s;margin-bottom:12px;}
+.dform textarea{height:100px;resize:none;}
+.sub-btn{width:100%;background:linear-gradient(90deg,#7C3AED,#4F46E5);color:#fff;border:none;border-radius:var(--rsm);padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+.doubt-item{background:var(--white);border-radius:var(--rsm);padding:13px;margin-bottom:10px;box-shadow:var(--shsm);border-left:3px solid var(--purple);}
+.d-meta{font-size:10px;color:var(--g400);margin-bottom:4px;}
+.d-q{font-size:13px;font-weight:600;color:var(--navy);}
+.d-ans{margin-top:8px;padding:8px 10px;background:var(--purple-l);border-radius:8px;font-size:12px;color:#4F46E5;}
+.d-st{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;display:inline-block;margin-top:5px;}
+.st-p{background:#FEF3C7;color:#92400E;}
+.st-a{background:var(--green-l);color:#065F46;}
+
+/* QUIZ */
+.quiz-hero{background:linear-gradient(135deg,#10B981,#059669);padding:22px 18px;color:#fff;border-radius:0 0 22px 22px;}
+.qz-card{background:var(--white);border-radius:var(--rsm);padding:16px;margin-bottom:12px;box-shadow:var(--shsm);}
+.qzc-t{font-size:14px;font-weight:700;color:var(--navy);}
+.qzc-s{font-size:11px;color:var(--g600);margin-top:3px;}
+.qzc-meta{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.qzc-tag{font-size:10px;font-weight:600;padding:3px 9px;border-radius:99px;background:var(--g100);color:var(--g600);}
+.start-btn{width:100%;margin-top:10px;background:linear-gradient(90deg,#10B981,#059669);color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+#quizActive{display:none;padding:18px;}
+.q-num{font-size:11px;color:var(--g600);margin-bottom:6px;font-weight:600;}
+.q-pbar{width:100%;height:5px;background:var(--g200);border-radius:99px;overflow:hidden;margin-bottom:14px;}
+.q-pfill{height:100%;background:linear-gradient(90deg,#10B981,var(--blue));border-radius:99px;transition:.4s;}
+.q-text{font-size:15px;font-weight:700;color:var(--navy);background:var(--white);padding:16px;border-radius:var(--rsm);box-shadow:var(--shsm);margin-bottom:14px;line-height:1.5;}
+.q-opts{display:flex;flex-direction:column;gap:10px;}
+.q-opt{background:var(--white);border:1.5px solid var(--g200);border-radius:var(--rsm);padding:12px 15px;font-size:13px;cursor:pointer;transition:.2s;}
+.q-opt.sel{border-color:var(--blue);background:var(--blue-l);color:var(--blue);}
+.q-opt.corr{border-color:var(--green);background:var(--green-l);color:#065F46;}
+.q-opt.wrong{border-color:var(--red);background:#FEF2F2;color:var(--red);}
+.q-nav{display:flex;gap:10px;margin-top:16px;}
+.q-btn{flex:1;padding:12px;border:none;border-radius:var(--rsm);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+.q-next{background:var(--blue);color:#fff;}
+.q-exit2{background:var(--g100);color:var(--g600);}
+.q-res{text-align:center;padding:30px 18px;background:var(--white);border-radius:var(--r);margin:18px;box-shadow:var(--sh);}
+
+/* NOTES */
+.notes-hero{background:linear-gradient(135deg,#F59E0B,#D97706);padding:22px 18px;color:#fff;border-radius:0 0 22px 22px;}
+.note-item{background:var(--white);border-radius:var(--rsm);padding:13px;margin-bottom:10px;box-shadow:var(--shsm);border-left:3px solid var(--saffron);}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--g200);display:flex;z-index:100;padding:8px 0 calc(8px + env(safe-area-inset-bottom));box-shadow:0 -4px 20px rgba(15,27,53,.08);}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0;}
+.ni-ic{font-size:22px;}
+.ni-lb{font-size:10px;font-weight:600;color:var(--g400);}
+.ni.active .ni-lb{color:var(--blue);}
+.ni.active .ni-ic{transform:translateY(-2px);}
+
+/* ADMIN PANEL */
+
+/* BOARD SEL */
+#boardSel{position:fixed;inset:0;background:rgba(15,27,53,.6);z-index:150;display:none;align-items:flex-end;backdrop-filter:blur(3px);}
+#boardSel.show{display:flex;}
+.bs-sheet{background:var(--white);width:100%;border-radius:24px 24px 0 0;padding:20px 18px 40px;animation:slideUp .3s ease;}
+.bo{display:flex;align-items:center;gap:14px;padding:14px;border-radius:var(--rsm);margin-bottom:8px;border:2px solid var(--g200);cursor:pointer;transition:.2s;}
+.bo.sel{border-color:var(--blue);background:var(--blue-l);}
+.bo-nm{font-size:14px;font-weight:700;color:var(--navy);}
+.bo-sb{font-size:11px;color:var(--g600);}
+
+/* LIVE CLASS BANNER */
+.live-banner{margin:14px 18px 0;background:linear-gradient(135deg,#DC2626,#991B1B);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;position:relative;overflow:hidden;animation:pulse-glow 2s infinite;}
+@keyframes pulse-glow{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.4)}50%{box-shadow:0 0 0 8px rgba(220,38,38,0)}}
+.live-dot{width:10px;height:10px;background:#fff;border-radius:50%;animation:blink 1s infinite;flex-shrink:0;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.live-info{flex:1;color:#fff;}
+.live-tag{font-size:10px;font-weight:800;letter-spacing:1px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:99px;display:inline-block;margin-bottom:4px;}
+.live-title{font-size:13px;font-weight:700;}
+.live-time{font-size:11px;opacity:.85;margin-top:2px;}
+.live-btn{background:#fff;color:#DC2626;font-size:11px;font-weight:800;padding:7px 14px;border-radius:8px;flex-shrink:0;}
+
+/* VIDEO MODAL */
+#videoModal{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9000;display:none;align-items:center;justify-content:center;padding:18px;}
+#videoModal.show{display:flex;}
+.vm-close{position:absolute;top:20px;right:20px;background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;z-index:10;}
+.vm-frame{width:100%;max-width:600px;aspect-ratio:16/9;border-radius:12px;overflow:hidden;}
+.vm-frame iframe{width:100%;height:100%;}
+#videoModal:fullscreen .vm-frame,
+#videoModal:-webkit-full-screen .vm-frame{width:100vw;height:100vh;max-width:100vw;border-radius:0;}
+.vm-frame iframe{width:100%;height:100%;border:none;}
+
+/* TOAST */
+#toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;}
+#toast.show{opacity:1;}
+
+/* PAGE TRANSITIONS */
+.page{display:none;animation:none;}
+.page.active{display:block;}
+.page.slide-in-right{animation:slideInRight .3s ease forwards;}
+.page.slide-in-left{animation:slideInLeft .3s ease forwards;}
+@keyframes slideInRight{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slideInLeft{from{transform:translateX(-100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* EMPTY */
+.empty{text-align:center;padding:36px 20px;color:var(--g400);}
+.empty .ei{font-size:44px;margin-bottom:10px;}
+.empty p{font-size:13px;}
+
+/* SUBJECT COLORS */
+.sc-blue{background:linear-gradient(135deg,#3B82F6,#1D4ED8);}
+.sc-green{background:linear-gradient(135deg,#10B981,#059669);}
+.sc-red{background:linear-gradient(135deg,#EF4444,#DC2626);}
+.sc-purple{background:linear-gradient(135deg,#8B5CF6,#6D28D9);}
+.sc-orange{background:linear-gradient(135deg,#F59E0B,#D97706);}
+.sc-teal{background:linear-gradient(135deg,#14B8A6,#0D9488);}
+.sc-pink{background:linear-gradient(135deg,#EC4899,#BE185D);}
+.sc-indigo{background:linear-gradient(135deg,#6366F1,#4338CA);}
+
+/* STUDENT PROFILE */
+#studentSetup{position:fixed;inset:0;background:var(--navy);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:7000;padding:24px;}
+#studentSetup.show{display:flex !important;}
+.ss-logo{font-size:48px;margin-bottom:12px;}
+.ss-title{font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;}
+.ss-sub{font-size:12px;color:var(--g400);margin-bottom:28px;text-align:center;}
+.ss-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:24px;width:100%;max-width:360px;}
+.ss-label{font-size:11px;font-weight:600;color:var(--g400);margin-bottom:6px;display:block;}
+.ss-input{width:100%;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;padding:12px 16px;font-size:14px;color:#fff;font-family:inherit;outline:none;margin-bottom:14px;transition:.2s;}
+.ss-input:focus{border-color:var(--saffron);}
+.ss-input::placeholder{color:rgba(255,255,255,.3);}
+.ss-btn{width:100%;background:linear-gradient(90deg,var(--saffron),#D97706);color:var(--navy);border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;}
+
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="sp-logo">📚</div>
+  <div class="sp-title">Edu<span>Spark</span></div>
+  <div class="sp-sub">CBSE & BSER Board Study Platform</div>
+  <div class="sp-bar"><div class="sp-fill"></div></div>
+</div>
+
+<!-- STUDENT SETUP -->
+<div id="studentSetup" style="display:none;position:fixed;inset:0;background:#0F1B35;z-index:9500;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
+  <div class="ss-logo">👋</div>
+  <div class="ss-title">EduSpark में स्वागत है!</div>
+  <div class="ss-sub">एक बार details भरें — फिर याद रहेगा!</div>
+  <div class="ss-card">
+    <button id="ssGoogleBtn" onclick="googleSignInWelcome()" type="button"
+      style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#333;border:none;border-radius:10px;padding:12px 16px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:14px;">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20" alt="Google">
+      Google से Sign In
+    </button>
+    <div style="text-align:center;color:rgba(255,255,255,.35);font-size:11px;margin-bottom:14px;">— या मैन्युअल रूप से भरें —</div>
+    <label class="ss-label">आपका नाम</label>
+    <input type="text" class="ss-input" id="ssName" placeholder="अपना नाम लिखें..."/>
+    <label class="ss-label">Board चुनें</label>
+    <select class="ss-input" id="ssBoard">
+      <option value="BSER-10">BSER Class 10</option>
+      <option value="CBSE-10">CBSE Class 10</option>
+      <option value="CBSE-12">CBSE Class 12</option>
+      <option value="BSER-12">BSER Class 12</option>
+      <option value="SSC-CHSL">SSC CHSL</option>
+  <option value="SSC-CGL">SSC CGL</option>
+    </select>
+    <button class="ss-btn" onclick="saveStudentProfile()">✅ शुरू करें →</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="tb-left">
+      <span style="font-size:22px;">📚</span>
+      <span class="tb-brand">Edu<span>Spark</span></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="board-pill" id="boardPill" onclick="openCategorySel()">
+📚 Select Category
+</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- HOME -->
+    <div class="page active" id="pageHome">
+      <div class="hero">
+        <div class="hero-g" id="heroGreeting">नमस्ते! 👋 पढ़ाई शुरू करें</div>
+        <div class="hero-t">Smart Study <span>Board Exams</span> के लिए</div>
+        <div class="hero-s">CBSE & BSER • Class 10 & 12 • Free Content</div>
+<div style="margin-top:15px;">
+  <button id="googleLoginBtn"
+    style="display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#333;border:none;border-radius:10px;padding:12px 18px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+         width="20" height="20" alt="Google">
+    Google से Sign In
+  </button>
+</div>
+    <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+    <a href="https://instagram.com/bhupesh_jatav_02" target="_blank"
+       style="display
