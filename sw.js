@@ -1,48 +1,30 @@
-const CACHE_NAME = 'eduspark-v2';
-const ASSETS = [
-  '/EduSpark-/',
-  '/EduSpark-/index.html',
-  '/EduSpark-/manifest.json'
-];
+const CACHE_NAME = "eduspark-v3";
 
-// Install — files cache karo
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
-  );
+self.addEventListener("install", event => {
   self.skipWaiting();
 });
 
-// Activate — purana cache delete karo
-self.addEventListener('activate', e => {
-  e.waitUntil(
+self.addEventListener("activate", event => {
+  event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(keys.map(key => caches.delete(key)))
     )
   );
   self.clients.claim();
 });
 
-// Fetch — pehle cache check karo
-self.addEventListener('fetch', e => {
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      return cached || fetch(e.request).then(res => {
-        // Firebase aur YouTube cache mat karo
-        if(e.request.url.includes('firebase') || 
-           e.request.url.includes('youtube') ||
-           e.request.url.includes('googleapis')) {
-          return res;
-        }
-        const clone = res.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));
-        return res;
-      }).catch(() => {
-        // Offline hone par index.html return karo
-        if(e.request.destination === 'document') {
-          return caches.match('/EduSpark-/index.html');
-        }
-      });
-    })
+self.addEventListener("fetch", event => {
+  if (event.request.method !== "GET") return;
+
+  event.respondWith(
+    fetch(event.request)
+      .then(response => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, copy);
+        });
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
