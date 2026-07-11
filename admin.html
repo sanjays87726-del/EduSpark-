@@ -116,6 +116,7 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
     <div class="a-tab" onclick="aTab('quiz',this)">🧩 Quiz</div>
     <div class="a-tab" onclick="aTab('pyq',this)">📜 PYQ</div>
     <div class="a-tab" onclick="aTab('live',this)">🔴 Live</div>
+    <div class="a-tab" onclick="aTab('community',this)">🌐 Community</div>
     <div class="a-tab" onclick="aTab('manage',this)">📋 Manage</div>
     <div class="a-tab" onclick="aTab('doubts',this)">💬 Doubts</div>
   </div>
@@ -250,6 +251,23 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
     </div>
   </div>
 
+  <div id="aTab_community" style="display:none;">
+    <div class="af">
+      <label>WhatsApp Group Link</label>
+      <input type="url" id="waLinkInput" placeholder="https://chat.whatsapp.com/..."/>
+      <label>WhatsApp Button Text</label>
+      <input type="text" id="waTextInput" placeholder="WhatsApp Group Join करें"/>
+      <label>Telegram Group Link</label>
+      <input type="url" id="tgLinkInput" placeholder="https://t.me/..."/>
+      <label>Telegram Button Text</label>
+      <input type="text" id="tgTextInput" placeholder="Telegram Group Join करें"/>
+      <div style="background:var(--blue-l);border-radius:8px;padding:10px;margin-bottom:10px;font-size:11px;color:var(--blue);">
+        📌 Link khaali chhoड़ दें to wo button students ko नहीं दिखेगा। Baad में kabhi bhi yahan se link add/update kar sakte hain — koi code change nahi karna padega.
+      </div>
+      <button class="add-btn" onclick="saveCommunity()">✅ Community Links Update करें</button>
+    </div>
+  </div>
+
   <div id="aTab_manage" style="display:none;">
     <div class="af">
       <div id="aManageList">
@@ -353,7 +371,22 @@ function showToast(msg){
 const provider = new firebase.auth.GoogleAuthProvider();
 
 document.getElementById('gateGoogleBtn').addEventListener('click', function(){
-  auth.signInWithRedirect(provider);
+  const btn = document.getElementById('gateGoogleBtn');
+  btn.disabled = true;
+  auth.signInWithPopup(provider)
+    .then((result)=>{
+      if(result.user.email === ADMIN_EMAIL){
+        showAdminApp(result.user);
+      } else {
+        showDenied();
+      }
+    })
+    .catch((error)=>{
+      btn.disabled = false;
+      if(error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request'){
+        showToast('❌ '+error.message);
+      }
+    });
 });
 
 function showAdminApp(user){
@@ -371,18 +404,6 @@ function showDenied(){
   document.getElementById('gDenied').classList.add('show');
   auth.signOut().catch(()=>{});
 }
-
-auth.getRedirectResult().then((result)=>{
-  if(result.user){
-    if(result.user.email === ADMIN_EMAIL){
-      showAdminApp(result.user);
-    } else {
-      showDenied();
-    }
-  }
-}).catch((error)=>{
-  showToast('❌ '+error.message);
-});
 
 // Page reload hone par bhi login state check karo
 auth.onAuthStateChanged(function(user){
@@ -404,11 +425,12 @@ function adminLogout(){
 function aTab(tab, el){
   document.querySelectorAll('.a-tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  ['add','quiz','pyq','live','manage','doubts'].forEach(t=>{ document.getElementById('aTab_'+t).style.display='none'; });
+  ['add','quiz','pyq','live','community','manage','doubts'].forEach(t=>{ document.getElementById('aTab_'+t).style.display='none'; });
   document.getElementById('aTab_'+tab).style.display='block';
   if(tab==='manage'){ renderAManage(); renderQuizManage(); }
   if(tab==='doubts') renderADoubts();
   if(tab==='pyq') renderPYQManage();
+  if(tab==='community') loadCommunityConfig();
 }
 
 function initSubjectDropdowns(){
@@ -425,7 +447,7 @@ function updatePYQSubj(){
   const board = document.getElementById('pyqBoardAdmin') ?
     document.getElementById('pyqBoardAdmin').value : 'BSER-10';
   const subs = SUBJECTS[board]||[];
-  document.getElementById('pyqSubjAdmin').innerHTML = subs.map(s=>`<option value="${s.id}">${s.icon} ${s.name}</option>`).join('');
+  document.getElementById('pyqSubjAdmin').innerHTML= subs.map(s=>`<option value="${s.id}">${s.icon} ${s.name}</option>`).join('');
 }
 
 // ══════════════════════════════════════════
@@ -508,6 +530,32 @@ function saveLiveClass(){
     status, board, title, timeText, link, updated: new Date().toISOString()
   }).then(()=>{
     showToast('✅ Live Class update हो गया!');
+  }).catch(e=>showToast('❌ Error: '+e.message));
+}
+
+// ══════════════════════════════════════════
+// COMMUNITY (WhatsApp / Telegram)
+// ══════════════════════════════════════════
+function loadCommunityConfig(){
+  db.collection('_config').doc('community').get().then(doc=>{
+    if(!doc.exists) return;
+    const d = doc.data();
+    document.getElementById('waLinkInput').value = d.whatsappLink || '';
+    document.getElementById('waTextInput').value = d.whatsappText || '';
+    document.getElementById('tgLinkInput').value = d.telegramLink || '';
+    document.getElementById('tgTextInput').value = d.telegramText || '';
+  }).catch(()=>{});
+}
+
+function saveCommunity(){
+  const whatsappLink = document.getElementById('waLinkInput').value.trim();
+  const whatsappText = document.getElementById('waTextInput').value.trim();
+  const telegramLink = document.getElementById('tgLinkInput').value.trim();
+  const telegramText = document.getElementById('tgTextInput').value.trim();
+  db.collection('_config').doc('community').set({
+    whatsappLink, whatsappText, telegramLink, telegramText, updated: new Date().toISOString()
+  }).then(()=>{
+    showToast('✅ Community links update हो गए!');
   }).catch(e=>showToast('❌ Error: '+e.message));
 }
 
