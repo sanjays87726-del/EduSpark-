@@ -1500,13 +1500,13 @@ window.onload = function(){
     document.getElementById('splash').classList.add('hide');
     setTimeout(()=>{ document.getElementById('splash').style.display='none'; },500);
     document.getElementById('app').style.display='flex';
-    updateBoardPill();
-    renderDoubtSubjects();
-    listenContent();
-    listenQuizzes();
-    listenDoubts();
-    listenPYQ();
-    listenLiveClass();
+    if (typeof updateBoardPill === "function") updateBoardPill();
+if (typeof renderDoubtSubjects === "function") renderDoubtSubjects();
+if (typeof listenContent === "function") listenContent();
+if (typeof listenQuizzes === "function") listenQuizzes();
+if (typeof listenDoubts === "function") listenDoubts();
+if (typeof listenPYQ === "function") listenPYQ();
+if (typeof listenLiveClass === "function") listenLiveClass();
   }, 2200);
   // Student setup - splash ke baad
   setTimeout(()=>{
