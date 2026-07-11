@@ -1128,4 +1128,405 @@ function filterPYQExam(examType, el){
 }
 
 function filterPYQSubj(subj, el){
-  pyqSubjFil
+  pyqSubjFilter = subj;
+  document.querySelectorAll('#pyqSubjTabs .type-tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderPYQ();
+}
+
+function renderPYQ(){
+
+let items = allPYQ.filter(
+  p => String(p.board).toLowerCase() === String(curBoard).toLowerCase()
+);
+  if(pyqYearFilter!=='all') items = items.filter(p=>String(p.year)===pyqYearFilter);
+  if(pyqSubjFilter!=='all') items = items.filter(p=>p.subject===pyqSubjFilter);
+  if(pyqExamFilter!=='all') items = items.filter(p=>p.examType===pyqExamFilter);
+  const subData = SUBJECTS[curBoard]||[];
+
+  if(document.getElementById('pyqCount'))
+    document.getElementById('pyqCount').textContent = items.length+' PYQ Papers';
+  if(document.getElementById('pyqBoard'))
+    document.getElementById('pyqBoard').textContent = curBoard.replace('-',' Class ');
+
+  // Tiles hide/show based on filter
+  const tilesGrid = document.querySelector('#pyqList div[style*="grid"]');
+  const tilesTitle = document.querySelector('#pyqList .sec-t');
+  if(pyqYearFilter!=='all'||pyqSubjFilter!=='all'){
+    if(tilesGrid) tilesGrid.style.display='none';
+    if(tilesTitle) tilesTitle.style.display='none';
+  } else {
+    if(tilesGrid) tilesGrid.style.display='';
+    if(tilesTitle) tilesTitle.style.display='';
+  }
+
+  const listEl = document.getElementById('pyqFilteredList');
+  if(!listEl) return;
+  listEl.innerHTML = items.length
+    ? items.map(p=>{
+        const sub = subData.find(s=>s.id===p.subject);
+        return `<div class="pyq-item">
+          <span class="pyq-year">${p.year}</span>
+          <span class="pyq-board-tag">${(p.board || '').replace('-',' ')}</span>
+          <div class="pyq-title">📜 ${p.title || 'Untitled PYQ'}</div>
+          <div class="pyq-sub">${sub?sub.icon+' '+sub.name:''} ${p.desc?'• '+p.desc:''}</div>
+          <div class="pyq-footer">
+            <span style="font-size:10px;color:var(--g400);">${p.examType||'Board Exam'}</span>
+            ${p.link?`<button class="pyq-dl" onclick="window.open('${p.link}','_blank')">📥 Download</button>`:'<span style="font-size:11px;color:var(--g400);">Link coming soon</span>'}
+          </div>
+        </div>`;
+      }).join('')
+    : pyqYearFilter!=='all'
+      ? `<div class="empty"><div class="ei">📜</div><p>${pyqYearFilter} mein koi PYQ nahi hai।</p></div>`
+      : '';
+}
+
+// ══════════════════════════════════════════
+// DOUBTS
+// ══════════════════════════════════════════
+function renderDoubtSubjects(){
+  document.getElementById('dSubj').innerHTML=(SUBJECTS[curBoard]||[]).map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+}
+function submitDoubt(){
+  const text=document.getElementById('dText').value.trim();
+  if(!text){ showToast('❌ Doubt खाली है!'); return; }
+  db.collection('doubts').add({
+    board:curBoard,subject:document.getElementById('dSubj').value,
+    topic:document.getElementById('dTopic').value.trim(),text,
+    name:document.getElementById('dName').value.trim()||'Anonymous',
+    date:new Date().toISOString(),status:'pending',answer:'',deviceId:DEVICE_ID,
+  }).then(()=>{
+    document.getElementById('dTopic').value='';
+    document.getElementById('dText').value='';
+    document.getElementById('dName').value='';
+    showToast('✅ Doubt submit हो गया!');
+  }).catch(()=>showToast('❌ Error! दोबारा कोशिश करें।'));
+}
+function renderDoubts(doubts){
+  const subs = SUBJECTS[curBoard] || [];
+
+  const filtered = (doubts || []).filter(d =>
+    d.board === curBoard &&
+    (d.deviceId === DEVICE_ID || !d.deviceId)
+  );
+
+  document.getElementById('doubtsList').innerHTML = filtered.length
+    ? filtered.map(d => {
+        const sub = subs.find(s => s.id === d.subject);
+
+        return `
+        <div class="doubt-item">
+          <div class="d-meta">
+            ${sub ? sub.name : '?'} • ${d.topic || 'General'} • ${d.name}
+          </div>
+          <div class="d-q">❓ ${d.text}</div>
+          ${d.answer ? `<div class="d-ans">✅ ${d.answer}</div>` : ''}
+          <span class="d-st ${d.status === 'answered' ? 'st-a' : 'st-p'}">
+            ${d.status === 'answered' ? '✅ Answered' : '⏳ Pending'}
+          </span>
+        </div>`;
+      }).join('')
+    : '<div class="empty"><div class="ei">💬</div><p>अभी कोई doubt नहीं।</p></div>';
+}
+
+// ══════════════════════════════════════════
+// QUIZ
+// ══════════════════════════════════════════
+function renderQuizList(){
+  exitQuiz();
+  const list=allQuizzes.filter(q=>q.board===curBoard);
+  document.getElementById('quizListSec').innerHTML=list.length
+    ? list.map((q,i)=>`
+        <div class="qz-card">
+          <div class="qzc-t">${q.title}</div>
+          <div class="qzc-s">${q.subject||''}</div>
+          <div class="qzc-meta">
+            <span class="qzc-tag">📝 ${q.questions.length} Questions</span>
+            <span class="qzc-tag">⏱ ~${q.questions.length*30}s</span>
+          </div>
+          <button class="start-btn" onclick="startQuiz(${i})">▶ Start Quiz</button>
+        </div>`).join('')
+    : '<div class="empty"><div class="ei">🧩</div><p>अभी कोई quiz नहीं।</p></div>';
+}
+function startQuiz(idx){
+  const list=allQuizzes.filter(q=>q.board===curBoard);
+  curQuiz=list[idx]; curQ=0; score=0; answered=false;
+  document.getElementById('quizListSec').style.display='none';
+  document.getElementById('quizActive').style.display='block';
+  document.getElementById('quizResult').style.display='none';
+  showQ();
+}
+function showQ(){
+  if(!curQuiz||curQ>=curQuiz.questions.length){ showResult(); return; }
+  const q=curQuiz.questions[curQ], total=curQuiz.questions.length;
+  answered=false;
+  document.getElementById('qNum').textContent=`Question ${curQ+1} of ${total}`;
+  document.getElementById('qFill').style.width=((curQ/total)*100)+'%';
+  document.getElementById('qText').textContent=q.q;
+  document.getElementById('qOpts').innerHTML=q.options.map((o,i)=>
+    `<div class="q-opt" onclick="selOpt(this,${i},${q.ans})">${String.fromCharCode(65+i)}. ${o}</div>`).join('');
+  document.getElementById('qNext').textContent=curQ===total-1?'Result ✓':'अगला →';
+}
+function selOpt(el,idx,ans){
+  if(answered)return; answered=true;
+  document.querySelectorAll('.q-opt').forEach(o=>o.classList.remove('sel','corr','wrong'));
+  el.classList.add(idx===ans?'corr':'wrong');
+  document.querySelectorAll('.q-opt')[ans].classList.add('corr');
+  if(idx===ans)score++;
+}
+function nextQ(){ curQ++; showQ(); }
+function showResult(){
+  document.getElementById('quizActive').style.display='none';
+  document.getElementById('quizResult').style.display='block';
+  const total=curQuiz.questions.length, pct=Math.round((score/total)*100);
+  document.getElementById('rEmoji').textContent=pct>=80?'🏆':pct>=50?'👍':'💪';
+  document.getElementById('rScore').textContent=`${score}/${total} (${pct}%)`;
+  document.getElementById('rMsg').textContent=pct>=80?'शानदार! बेहतरीन Performance!':pct>=50?'अच्छा! और practice करें!':'हिम्मत रखें, आप कर सकते हैं!';
+}
+function exitQuiz(){
+  curQuiz=null;
+  if(document.getElementById('quizListSec')) document.getElementById('quizListSec').style.display='block';
+  if(document.getElementById('quizActive')) document.getElementById('quizActive').style.display='none';
+  if(document.getElementById('quizResult')) document.getElementById('quizResult').style.display='none';
+}
+
+// ══════════════════════════════════════════
+// NOTES
+// ══════════════════════════════════════════
+function saveNote(){
+  const title=document.getElementById('noteTitle').value.trim();
+  const text=document.getElementById('noteText').value.trim();
+  if(!text){ showToast('❌ Note खाली है!'); return; }
+  const notes=JSON.parse(localStorage.getItem('es_notes')||'[]');
+  notes.push({id:Date.now(),title:title||'Untitled',text,date:new Date().toISOString()});
+  localStorage.setItem('es_notes',JSON.stringify(notes));
+  document.getElementById('noteTitle').value='';
+  document.getElementById('noteText').value='';
+  showToast('✅ Note save हो गया!'); renderNotes();
+}
+function renderNotes(){
+  const notes=JSON.parse(localStorage.getItem('es_notes')||'[]').reverse();
+  document.getElementById('notesList').innerHTML=notes.length
+    ? notes.map(n=>`
+        <div class="note-item">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:13px;font-weight:700;color:var(--navy);">${n.title}</div>
+            <button onclick="delNote(${n.id})" style="background:#FEE2E2;color:var(--red);border:none;padding:4px 8px;border-radius:6px;font-size:11px;cursor:pointer;">🗑</button>
+          </div>
+          <div style="font-size:12px;color:var(--g600);margin-top:6px;line-height:1.6;">${n.text}</div>
+          <div style="font-size:10px;color:var(--g400);margin-top:4px;">${new Date(n.date).toLocaleDateString('hi-IN')}</div>
+        </div>`).join('')
+    : '<div class="empty"><div class="ei">📒</div><p>अभी कोई note नहीं।</p></div>';
+}
+function delNote(id){
+  localStorage.setItem('es_notes',JSON.stringify(JSON.parse(localStorage.getItem('es_notes')||'[]').filter(n=>n.id!==id)));
+  renderNotes(); showToast('🗑 Delete हो गया');
+}
+
+function shareApp(){
+  if(navigator.share){
+    navigator.share({
+      title: 'EduSpark — Free Board Study App',
+      text: 'CBSE & BSER Class 10 & 12 ke liye free study app — PDF, Videos, Quiz, PYQ sab free!',
+      url: 'https://sanjays87726-del.github.io/EduSpark-/'
+    }).then(()=>showToast('✅ Share ho gaya!'))
+    .catch(()=>{});
+  } else {
+    navigator.clipboard.writeText('https://sanjays87726-del.github.io/EduSpark-/')
+      .then(()=>showToast('✅ Link copy ho gaya!'))
+      .catch(()=>showToast('🔗 https://sanjays87726-del.github.io/EduSpark-/'));
+  }
+}
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+function getYouTubeId(url){
+  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|live\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+}
+
+function playVideo(url){
+  const videoId = getYouTubeId(url);
+  if(videoId){
+    document.getElementById('vmFrame').innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" allow="autoplay; encrypted-media; fullscreen" allowfullscreen webkitallowfullscreen mozallowfullscreen></iframe>`;
+    document.getElementById('videoModal').classList.add('show');
+    // Try to lock to landscape for better viewing
+    if(screen.orientation && screen.orientation.lock){
+      screen.orientation.lock('landscape').catch(()=>{});
+    }
+  } else {
+    window.open(url, '_blank');
+  }
+}
+
+function closeVideo(){
+  document.getElementById('videoModal').classList.remove('show');
+  document.getElementById('vmFrame').innerHTML = '';
+  if(screen.orientation && screen.orientation.unlock){
+    screen.orientation.unlock();
+  }
+}
+
+// ══════════════════════════════════════════
+// PRIVACY POLICY
+// ══════════════════════════════════════════
+function openPrivacy(){
+  document.getElementById('privacyModal').style.display='flex';
+}
+function closePrivacy(){
+  document.getElementById('privacyModal').style.display='none';
+}
+function closePrivacyOut(event){
+  if(event.target && event.target.id==='privacyModal'){ closePrivacy(); }
+}
+
+// ══════════════════════════════════════════
+// LIVE CLASS
+// ══════════════════════════════════════════
+function listenLiveClass(){
+  db.collection('_config').doc('liveClass').onSnapshot(doc=>{
+    if(doc.exists){
+      const data = doc.data();
+      renderLiveBanner(data);
+    }
+  }, ()=>{});
+}
+
+function renderLiveBanner(data){
+  const sec = document.getElementById('liveBannerSec');
+  if(!sec) return;
+  if(!data || data.status==='off'){ sec.style.display='none'; return; }
+  if(data.board && data.board!=='ALL' && data.board!==curBoard){ sec.style.display='none'; return; }
+  sec.style.display='block';
+  document.getElementById('liveTag').textContent = data.status==='live' ? '🔴 LIVE NOW' : '⏰ UPCOMING';
+  document.getElementById('liveTitle').textContent = data.title || 'Live Class';
+  document.getElementById('liveTime').textContent = data.timeText || '';
+  window._liveClassLink = data.link || '';
+}
+
+function openLiveClass(){
+  if(window._liveClassLink) playVideo(window._liveClassLink);
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBtn').style.display = 'flex';
+  // Flash message dikhao
+  setTimeout(()=>{
+    showInstallToast();
+  }, 3000);
+});
+
+function installApp(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(()=>{ 
+      deferredPrompt = null;
+      document.getElementById('installBtn').style.display = 'none';
+    });
+  }
+}
+function showInstallToast(){
+  const existing = document.getElementById('installToast');
+  if(existing) existing.remove();
+  
+  const toast = document.createElement('div');
+  toast.id = 'installToast';
+  toast.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div style="width:44px;height:44px;background:linear-gradient(135deg,#0F1B35,#1a3a6b);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">📚</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:700;color:#0F1B35;">EduSpark App Install करें</div>
+        <div style="font-size:11px;color:#64748B;margin-top:2px;">Free • Fast • Offline Support</div>
+      </div>
+      <button onclick="installApp();document.getElementById('installToast').remove();" style="background:#0F1B35;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">Install</button>
+    </div>
+    <button onclick="document.getElementById('installToast').remove();" style="position:absolute;top:8px;right:10px;background:none;border:none;font-size:16px;cursor:pointer;color:#94A3B8;">✕</button>
+  `;
+  toast.style.cssText = `position:fixed;bottom:80px;left:12px;right:12px;background:#fff;border-radius:16px;padding:14px 16px;box-shadow:0 8px 32px rgba(15,27,53,.2);z-index:9998;animation:slideUp .4s ease;border:1.5px solid #E2E8F0;position:fixed;`;
+  document.body.appendChild(toast);
+  setTimeout(()=>{ if(document.getElementById('installToast')) document.getElementById('installToast').remove(); }, 8000);
+}
+
+const provider = new firebase.auth.GoogleAuthProvider();
+
+// Welcome screen ka Google Sign-in button
+function googleSignInWelcome(){
+  auth.signInWithRedirect(provider);
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  const btn = document.getElementById("googleLoginBtn");
+
+  if (btn) {
+    btn.addEventListener("click", function () {
+      auth.signInWithRedirect(provider);
+    });
+  }
+
+  auth.getRedirectResult()
+    .then((result) => {
+      if (result.user) {
+        showToast("👋 Welcome " + result.user.displayName);
+        console.log(result.user);
+        // Agar welcome screen abhi khuli hai to naam auto-fill kar do
+        const ssNameInput = document.getElementById('ssName');
+        if (ssNameInput && !ssNameInput.value) {
+          ssNameInput.value = result.user.displayName || '';
+        }
+      }
+    })
+    .catch((error) => {
+      showToast("❌ " + error.message);
+    });
+});
+
+window.onload = function(){
+  // Version check — purana data clear karo
+  if(localStorage.getItem('es_app_version')!=='v5'){
+    localStorage.removeItem('es_student');
+    localStorage.removeItem('es_board');
+    localStorage.setItem('es_app_version','v5');
+  }
+  setTimeout(()=>{
+    document.getElementById('splash').classList.add('hide');
+    setTimeout(()=>{ document.getElementById('splash').style.display='none'; },500);
+    document.getElementById('app').style.display='flex';
+    updateBoardPill();
+    renderDoubtSubjects();
+    listenContent();
+    listenQuizzes();
+    listenDoubts();
+    listenPYQ();
+    listenLiveClass();
+  }, 2200);
+  // Student setup - splash ke baad
+  setTimeout(()=>{
+    const profile = JSON.parse(localStorage.getItem('es_student')||'null');
+    if(!profile){
+      document.getElementById('studentSetup').style.display='flex';
+    }
+  }, 2800);
+};
+
+window.addEventListener("appinstalled", () => {
+  firebase.analytics().logEvent("app_installed");
+  showToast("🎉 EduSpark Installed Successfully!");
+});
+
+</script>
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/EduSpark-/sw.js');
+}
+</script>
+</body>
+</html>
