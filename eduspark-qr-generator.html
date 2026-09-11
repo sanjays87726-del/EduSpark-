@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EduSpark — QR Code Generator</title>
+<script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.9.2/lib/qr-code-styling.js"></script>
+<style>
+  :root{
+    --navy:#0F1B35;--navy2:#1a3a6b;--blue:#3B82F6;--saffron:#F59E0B;
+    --g50:#F8FAFF;--g200:#E2E8F0;--g600:#64748B;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Segoe UI',Poppins,sans-serif;background:var(--g50);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+  .wrap{max-width:420px;width:100%;background:#fff;border-radius:20px;box-shadow:0 10px 40px rgba(15,27,53,.12);padding:26px 24px 30px;text-align:center;}
+  h1{font-size:18px;font-weight:800;color:var(--navy);}
+  .sub{font-size:12px;color:var(--g600);margin-top:4px;margin-bottom:20px;}
+  #qrBox{display:flex;align-items:center;justify-content:center;margin:0 auto 20px;background:linear-gradient(135deg,var(--navy),var(--navy2));border-radius:18px;padding:20px;}
+  #qrCanvas{border-radius:12px;overflow:hidden;background:#fff;}
+  label{display:block;font-size:11px;font-weight:700;color:var(--g600);text-align:left;margin-bottom:5px;}
+  input[type=text]{width:100%;border:1.5px solid var(--g200);border-radius:9px;padding:10px 12px;font-size:13px;margin-bottom:14px;font-family:inherit;outline:none;}
+  .btn{width:100%;border:none;border-radius:9px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+  .btn-download{background:linear-gradient(90deg,var(--navy),var(--navy2));color:#fff;margin-bottom:10px;}
+  .btn-svg{background:var(--g50);color:var(--navy);border:1.5px solid var(--g200);}
+  .note{font-size:10.5px;color:var(--g600);margin-top:14px;line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📜 EduSpark QR Code</h1>
+  <div class="sub">Apna branded, aesthetic QR code banayein — poster, banner ya social media ke liye</div>
+
+  <div id="qrBox"><div id="qrCanvas"></div></div>
+
+  <label>App / Play Store Link</label>
+  <input type="text" id="qrUrl" value="https://sanjays87726-del.github.io/EduSpark-/"/>
+
+  <button class="btn btn-download" onclick="downloadPNG()">📥 PNG Download करें (poster ke लिए)</button>
+  <button class="btn btn-svg" onclick="downloadSVG()">🖼️ SVG Download करें (bina quality loss ke)</button>
+
+  <div class="note">Link change karke "Update" (Enter दबाएं) — QR turant refresh हो जाएगा। Play Store par app publish hone ke baad, yahan wahi link daal kar naya QR generate kar lein.</div>
+</div>
+
+<script>
+let qrCode;
+
+function buildQR(){
+  const url = document.getElementById('qrUrl').value.trim() || 'https://sanjays87726-del.github.io/EduSpark-/';
+  document.getElementById('qrCanvas').innerHTML = '';
+  qrCode = new QRCodeStyling({
+    width: 280,
+    height: 280,
+    type: 'svg',
+    data: url,
+    margin: 8,
+    qrOptions: { errorCorrectionLevel: 'H' },
+    dotsOptions: {
+      type: 'extra-rounded',
+      gradient: {
+        type: 'linear',
+        rotation: 0.7,
+        colorStops: [ { offset: 0, color: '#0F1B35' }, { offset: 1, color: '#3B82F6' } ]
+      }
+    },
+    cornersSquareOptions: { type: 'extra-rounded', color: '#0F1B35' },
+    cornersDotOptions: { type: 'dot', color: '#F59E0B' },
+    backgroundOptions: { color: '#ffffff' },
+    imageOptions: { crossOrigin: 'anonymous', margin: 6, imageSize: 0.42 },
+    image: 'data:image/svg+xml;utf8,' + encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+        <circle cx="50" cy="50" r="50" fill="#F59E0B"/>
+        <text x="50" y="63" font-size="46" text-anchor="middle" font-family="Poppins,Arial,sans-serif">📚</text>
+      </svg>`)
+  });
+  qrCode.append(document.getElementById('qrCanvas'));
+}
+
+function downloadPNG(){ qrCode.download({ name: 'eduspark-qr', extension: 'png' }); }
+function downloadSVG(){ qrCode.download({ name: 'eduspark-qr', extension: 'svg' }); }
+
+document.getElementById('qrUrl').addEventListener('keydown', e=>{ if(e.key==='Enter') buildQR(); });
+document.getElementById('qrUrl').addEventListener('blur', buildQR);
+buildQR();
+</script>
+</body>
+</html>
