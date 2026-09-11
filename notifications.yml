@@ -1,0 +1,29 @@
+name: EduSpark Notifications
+
+# Har 20 minute mein automatically chalta hai — admin ke broadcast turant
+# uthaata hai, aur 3-din inactive students ko reminder bhejta hai.
+# "Run workflow" button se GitHub par kabhi bhi turant bhi chala sakte hain.
+on:
+  schedule:
+    - cron: '*/20 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  send-notifications:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repo checkout karo
+        uses: actions/checkout@v4
+
+      - name: Node.js setup karo
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: firebase-admin install karo
+        run: npm install firebase-admin
+
+      - name: Notifications bhejo
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/send-notifications.js
