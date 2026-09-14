@@ -71,21 +71,21 @@ self.addEventListener("push", event => {
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
-      icon: "https://raw.githubusercontent.com/sanjays87726-del/EduSpark-/main/icon-192.png",
-      badge: "https://raw.githubusercontent.com/sanjays87726-del/EduSpark-/main/icon-192.png",
+      icon: "https://eduspark.de5.net/icon-192.png",
+      badge: "https://eduspark.de5.net/icon-192.png",
       vibrate: [200, 100, 200],
-      data: { url: "/EduSpark-/" }
+      data: { url: "/" }
     })
   );
 });
 
 self.addEventListener("notificationclick", event => {
   event.notification.close();
-  const targetUrl = (event.notification.data && event.notification.data.url) || "/EduSpark-/";
+  const targetUrl = (event.notification.data && event.notification.data.url) || "/";
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then(clientList => {
       for (const client of clientList) {
-        if (client.url.includes("EduSpark-") && "focus" in client) return client.focus();
+        if (client.url.includes("eduspark.de5.net") && "focus" in client) return client.focus();
       }
       if (clients.openWindow) return clients.openWindow(targetUrl);
     })
