@@ -3,9 +3,9 @@ const CACHE_NAME = "eduspark-v5";
 // App shell files jo install hote hi cache ho jaate hain — taaki pehli baar
 // install hone par bhi offline-readiness thodi behtar rahe
 const APP_SHELL = [
-  "./",
-  "./index.html",
-  "./manifest.json"
+  "/",
+  "/index.html",
+  "/manifest.json"
 ];
 
 self.addEventListener("install", event => {
@@ -38,6 +38,17 @@ self.addEventListener("fetch", event => {
   const isBackendApi = url.hostname.includes("googleapis.com") || url.hostname.includes("firebaseio.com");
   if (isBackendApi) return;
 
+  // Ad-network requests must never be cached — caching stale ad responses
+  // breaks ad refresh and can violate ad-network policies. Add to this list
+  // if you integrate a different ad network later.
+  const isAdNetwork = [
+    "googlesyndication.com",
+    "doubleclick.net",
+    "googleadservices.com",
+    "adservice.google.com"
+  ].some(h => url.hostname.includes(h));
+  if (isAdNetwork) return;
+
   event.respondWith(
     fetch(event.request)
       .then(response => {
@@ -49,7 +60,7 @@ self.addEventListener("fetch", event => {
       })
       .catch(() =>
         caches.match(event.request).then(cached =>
-          cached || (event.request.mode === "navigate" ? caches.match("./index.html") : undefined)
+          cached || (event.request.mode === "navigate" ? caches.match("/index.html") : undefined)
         )
       )
   );

@@ -10,6 +10,7 @@
   "theme_color": "#0F1B35",
   "orientation": "portrait",
   "dir": "auto",
+  "categories": ["education"],
   "icons": [
     {
       "src": "/icon-192.png",
