@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact EduSpark</title>
+<meta name="description" content="Get in touch with EduSpark for support, feedback, or account requests.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#16233F;
+    --amber:#E8A33D;
+    --teal:#1E7F6C;
+    --bg:#F7F6F2;
+    --text:#262B33;
+    --muted:#6B7280;
+    --line:#E4E1D8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:680px;margin:0 auto;padding:32px 20px 64px;}
+  header.top{
+    display:flex;align-items:center;justify-content:space-between;
+    padding-bottom:20px;margin-bottom:36px;border-bottom:1px solid var(--line);
+  }
+  .brand{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:22px;color:var(--navy);text-decoration:none;}
+  .back{font-size:14px;color:var(--muted);text-decoration:none;}
+  .back:hover{color:var(--navy);}
+  h1{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:34px;color:var(--navy);margin:0 0 20px;}
+  h2{font-family:'Fraunces',Georgia,serif;font-weight:600;font-size:20px;color:var(--navy);margin:32px 0 12px;}
+  p{margin:0 0 16px;font-size:16px;}
+  .card{
+    display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+    background:#fff;border:1px solid var(--line);border-radius:10px;
+    padding:20px;margin:20px 0;
+  }
+  .card .info{flex:1;min-width:180px;}
+  .card .label{font-size:13px;color:var(--muted);margin-bottom:2px;}
+  .card .value{font-size:17px;font-weight:600;color:var(--navy);}
+  .btn{
+    display:inline-block;padding:11px 20px;border-radius:6px;
+    text-decoration:none;font-weight:600;font-size:15px;white-space:nowrap;
+  }
+  .btn-whatsapp{background:var(--teal);color:#fff;}
+  .btn-whatsapp:hover{background:#166b5a;}
+  .btn-call{background:var(--amber);color:var(--navy);}
+  .btn-call:hover{background:#dc9527;}
+  footer{
+    margin-top:44px;padding-top:20px;border-top:1px solid var(--line);
+    display:flex;gap:18px;flex-wrap:wrap;font-size:14px;color:var(--muted);
+  }
+  footer a{color:var(--muted);text-decoration:none;}
+  footer a:hover{color:var(--navy);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="/">EduSpark</a>
+    <a class="back" href="/">← Back to app</a>
+  </header>
+
+  <main>
+    <h1>Contact Us</h1>
+    <p>Have a question, found a bug, or need help with your account? Reach out and we'll get back to you.</p>
+
+    <div class="card">
+      <div class="info">
+        <div class="label">WhatsApp</div>
+        <div class="value">+91 80941 20884</div>
+      </div>
+      <a class="btn btn-whatsapp" href="https://wa.me/918094120884" target="_blank" rel="noopener">Message on WhatsApp</a>
+    </div>
+
+    <div class="card">
+      <div class="info">
+        <div class="label">Phone</div>
+        <div class="value">+91 80941 20884</div>
+      </div>
+      <a class="btn btn-call" href="tel:+918094120884">Call</a>
+    </div>
+
+    <h2>Account & data requests</h2>
+    <p>If you'd like your account or data deleted, message us with your registered email or phone number and we'll take care of it — see our <a href="/privacy.html">Privacy Policy</a> for details.</p>
+  </main>
+
+  <footer>
+    <a href="/about.html">About</a>
+    <a href="/contact.html">Contact</a>
+    <a href="/privacy.html">Privacy Policy</a>
+  </footer>
+</div>
+</body>
+</html>
