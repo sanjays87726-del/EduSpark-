@@ -1,0 +1,2710 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8"/>
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8171673694157232"
+     crossorigin="anonymous"></script>
+
+<link rel="manifest" href="manifest.json"/>
+<link rel="icon" href="/icon-192.png" type="image/png"/>
+<link rel="apple-touch-icon" href="/icon-192.png"/>
+<link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml"/>
+
+<!-- Removed no-cache/no-store meta tags: they fought the service worker's
+     own cache versioning (see sw.js CACHE_NAME) and could force extra
+     reloads inside a Play Store TWA wrapper, hurting offline reliability. -->
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#0F1B35"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+
+<title>EduSpark – Board Study App</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+
+<!-- Firebase v9 compat SDKs - loaded synchronously before any script -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+
+<!-- Firebase Init - right after SDK scripts -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+<script>
+const FB_CFG = {
+  apiKey: "AIzaSyD90ruZHQ_VGuOoO__Q6PC2svRga3jyfXs",
+  authDomain: "eduspark-41703.firebaseapp.com",
+  projectId: "eduspark-41703",
+  storageBucket: "eduspark-41703.firebasestorage.app",
+  messagingSenderId: "455546882437",
+  appId: "1:455546882437:web:093e07eef1d8c685915cec",
+  measurementId: "G-WGP977E30D"
+};
+if (!firebase.apps.length) { firebase.initializeApp(FB_CFG); }
+
+firebase.analytics();
+
+const auth = firebase.auth();
+const db   = firebase.firestore();
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+
+// 📴 Offline support: ek baar jo content/quiz/PYQ load ho chuka hai, wo
+// internet na hone par bhi (device ke IndexedDB cache se) dikhta rahega
+db.enablePersistence({synchronizeTabs:true}).catch(function(err){
+  // 'failed-precondition' = ek se zyada tabs khule hain, 'unimplemented' = browser support nahi karta
+  console.warn('Offline persistence enable nahi hui:', err.code);
+});
+
+// 🔔 Firebase Cloud Messaging ke liye VAPID key
+// Firebase Console → Project Settings → Cloud Messaging → Web Push certificates se generate karke yahan paste karein
+const FCM_VAPID_KEY = "PASTE_YOUR_VAPID_KEY_HERE";
+</script>
+
+<style>
+:root{
+  --navy:#0F1B35;--navy2:#1a3a6b;
+  --blue:#3B82F6;--blue-l:#EFF6FF;
+  --saffron:#F59E0B;--saffron-l:#FFFBEB;
+  --green:#10B981;--green-l:#ECFDF5;
+  --red:#EF4444;--purple:#8B5CF6;--purple-l:#F5F3FF;
+  --teal:#14B8A6;--pink:#EC4899;--indigo:#6366F1;
+  --white:#fff;--g50:#F8FAFF;--g100:#F1F5F9;
+  --g200:#E2E8F0;--g400:#94A3B8;--g600:#64748B;--g800:#1E293B;
+  --r:14px;--rsm:10px;
+  --sh:0 4px 24px rgba(15,27,53,.10);
+  --shsm:0 2px 8px rgba(15,27,53,.07);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);min-height:100vh;overflow-x:hidden;}
+
+/* SPLASH */
+#splash{position:fixed;inset:0;background:var(--navy);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .5s;}
+#splash.hide{opacity:0;pointer-events:none;}
+.sp-logo{font-size:56px;animation:bob 1.2s ease-in-out infinite alternate;}
+.sp-title{font-size:30px;font-weight:800;color:#fff;margin-top:10px;}
+.sp-title span{color:var(--saffron);}
+.sp-sub{font-size:12px;color:var(--g400);margin-top:6px;}
+.sp-bar{width:200px;height:4px;background:rgba(255,255,255,.15);border-radius:99px;margin-top:40px;overflow:hidden;}
+.sp-fill{height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--saffron));border-radius:99px;animation:load 2.2s ease forwards;}
+@keyframes bob{from{transform:translateY(0)}to{transform:translateY(-10px)}}
+@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes load{to{width:100%}}
+
+
+/* APP */
+#app{display:none;flex-direction:column;min-height:100vh;}
+#app.show{display:flex;}
+
+/* TOPBAR */
+.topbar{background:var(--navy);color:#fff;padding:14px 18px 12px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(15,27,53,.3);}
+.tb-left{display:flex;align-items:center;gap:10px;}
+.tb-brand{font-size:18px;font-weight:800;}
+.tb-brand span{color:var(--saffron);}
+.board-pill{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);border-radius:99px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;padding-bottom:80px;}
+.page{display:none;}
+.page.active{display:block;}
+
+/* HERO */
+.hero{background:linear-gradient(135deg,var(--navy),var(--navy2));padding:24px 18px 28px;color:#fff;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;right:-30px;top:-30px;width:180px;height:180px;border-radius:50%;background:rgba(59,130,246,.12);}
+.hero-g{font-size:12px;color:rgba(255,255,255,.65);margin-bottom:4px;}
+.hero-t{font-size:21px;font-weight:800;line-height:1.3;}
+.hero-t span{color:var(--saffron);}
+.hero-s{font-size:11px;color:rgba(255,255,255,.6);margin-top:5px;}
+
+/* STATS */
+.stats-row{display:flex;gap:10px;margin:16px 18px 0;}
+.stat-card{flex:1;background:var(--white);border-radius:var(--rsm);padding:12px 8px;box-shadow:var(--shsm);text-align:center;}
+.stat-icon{font-size:18px;}
+.stat-val{font-size:18px;font-weight:800;color:var(--navy);margin-top:3px;}
+.stat-label{font-size:10px;color:var(--g600);}
+
+/* SEARCH */
+.search-wrap{padding:12px 18px 0;}
+.search-box{display:flex;align-items:center;gap:10px;background:var(--white);border:1.5px solid var(--g200);border-radius:var(--rsm);padding:10px 14px;box-shadow:var(--shsm);}
+.search-box input{flex:1;border:none;outline:none;font-size:13px;font-family:inherit;color:var(--g800);background:transparent;}
+.search-box input::placeholder{color:var(--g400);}
+
+/* SECTION TITLE */
+.sec-t{font-size:15px;font-weight:700;color:var(--navy);padding:18px 18px 10px;display:flex;align-items:center;gap:6px;}
+
+/* SUBJECT SCROLL */
+.subj-scroll{display:flex;gap:12px;padding:0 18px 4px;overflow-x:auto;scrollbar-width:none;}
+.subj-scroll::-webkit-scrollbar{display:none;}
+.subj-card{min-width:130px;border-radius:16px;padding:16px 14px;cursor:pointer;transition:.2s;flex-shrink:0;box-shadow:var(--shsm);position:relative;overflow:hidden;}
+.subj-card:active{transform:scale(.96);}
+.s-ic{font-size:26px;margin-bottom:8px;}
+.s-nm{font-size:12px;font-weight:700;color:#fff;}
+.s-ct{font-size:10px;color:rgba(255,255,255,.75);margin-top:2px;}
+.subj-card::after{content:'';position:absolute;right:-15px;bottom:-15px;width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.1);}
+
+/* CONTENT ITEMS */
+.type-tabs{display:flex;gap:8px;padding:0 18px;overflow-x:auto;scrollbar-width:none;margin-bottom:4px;}
+.type-tabs::-webkit-scrollbar{display:none;}
+.type-tab{flex-shrink:0;padding:7px 14px;border-radius:99px;border:1.5px solid var(--g200);background:var(--white);font-size:12px;font-weight:600;color:var(--g600);cursor:pointer;transition:.2s;}
+.type-tab.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+.cnt-list{padding:0 18px;}
+.cnt-item{background:var(--white);border-radius:var(--rsm);padding:13px;margin-bottom:10px;box-shadow:var(--shsm);display:flex;align-items:center;gap:12px;cursor:pointer;transition:.2s;border:1.5px solid transparent;}
+.cnt-item:active{border-color:var(--blue);background:var(--blue-l);}
+.cnt-ic{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+.ci-pdf{background:rgba(239,68,68,.1);}
+.ci-video{background:rgba(59,130,246,.1);}
+.ci-dpp{background:rgba(16,185,129,.1);}
+.ci-note{background:rgba(245,158,11,.1);}
+.ci-quiz{background:rgba(99,102,241,.1);}
+.cnt-info{flex:1;min-width:0;}
+.cnt-info h4{font-size:13px;font-weight:600;color:var(--navy);}
+.cnt-info p{font-size:11px;color:var(--g600);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bdg{font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;display:inline-block;margin-top:3px;}
+.bdg-pdf{background:#FEE2E2;color:var(--red);}
+.bdg-video{background:var(--blue-l);color:var(--blue);}
+.bdg-dpp{background:var(--green-l);color:var(--green);}
+.bdg-note{background:var(--saffron-l);color:var(--saffron);}
+.bdg-quiz{background:#E0E7FF;color:var(--indigo);}
+.bdg-new{background:var(--saffron-l);color:var(--saffron);margin-left:4px;}
+
+/* DOUBTS */
+.doubt-hero{background:linear-gradient(135deg,#7C3AED,#4F46E5);padding:22px 18px;color:#fff;border-radius:0 0 22px 22px;}
+.dform{padding:16px 18px;}
+.dform label{font-size:12px;font-weight:600;color:var(--g600);display:block;margin-bottom:5px;}
+.dform select,.dform input,.dform textarea{width:100%;border:1.5px solid var(--g200);border-radius:var(--rsm);padding:10px 13px;font-size:13px;font-family:inherit;background:var(--white);color:var(--g800);outline:none;transition:.2s;margin-bottom:12px;}
+.dform textarea{height:100px;resize:none;}
+.sub-btn{width:100%;background:linear-gradient(90deg,#7C3AED,#4F46E5);color:#fff;border:none;border-radius:var(--rsm);padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+.doubt-item{background:var(--white);border-radius:var(--rsm);padding:13px;margin-bottom:10px;box-shadow:var(--shsm);border-left:3px solid var(--purple);}
+.d-meta{font-size:10px;color:var(--g400);margin-bottom:4px;}
+.d-q{font-size:13px;font-weight:600;color:var(--navy);}
+.d-ans{margin-top:8px;padding:8px 10px;background:var(--purple-l);border-radius:8px;font-size:12px;color:#4F46E5;}
+.d-st{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;display:inline-block;margin-top:5px;}
+.st-p{background:#FEF3C7;color:#92400E;}
+.st-a{background:var(--green-l);color:#065F46;}
+
+/* QUIZ */
+.quiz-hero{background:linear-gradient(135deg,#10B981,#059669);padding:22px 18px;color:#fff;border-radius:0 0 22px 22px;}
+.qz-card{background:var(--white);border-radius:var(--rsm);padding:16px;margin-bottom:12px;box-shadow:var(--shsm);}
+.qzc-t{font-size:14px;font-weight:700;color:var(--navy);}
+.qzc-s{font-size:11px;color:var(--g600);margin-top:3px;}
+.qzc-meta{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.qzc-tag{font-size:10px;font-weight:600;padding:3px 9px;border-radius:99px;background:var(--g100);color:var(--g600);}
+.start-btn{width:100%;margin-top:10px;background:linear-gradient(90deg,#10B981,#059669);color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+#quizActive{display:none;padding:18px;position:relative;}
+.q-corner-timer{position:absolute;top:14px;right:14px;background:var(--navy);color:#fff;font-size:11px;font-weight:700;padding:5px 10px;border-radius:99px;display:flex;align-items:center;gap:4px;box-shadow:var(--shsm);z-index:5;}
+.q-timerbar{display:flex;gap:8px;flex-wrap:wrap;margin:0 46px 10px 0;}
+.q-timer-chip{font-size:11px;font-weight:700;padding:5px 10px;border-radius:99px;background:var(--g100);color:var(--navy);}
+.q-timer-chip.warn{background:#FEE2E2;color:var(--red);animation:blink 1s infinite;}
+.q-num{font-size:11px;color:var(--g600);margin-bottom:6px;font-weight:600;padding-right:46px;}
+.q-pbar{width:100%;height:5px;background:var(--g200);border-radius:99px;overflow:hidden;margin-bottom:14px;}
+.q-pfill{height:100%;background:linear-gradient(90deg,#10B981,var(--blue));border-radius:99px;transition:.4s;}
+.q-text{font-size:15px;font-weight:700;color:var(--navy);background:var(--white);padding:16px;border-radius:var(--rsm);box-shadow:var(--shsm);margin-bottom:14px;line-height:1.5;}
+.q-img{display:none;width:100%;max-height:220px;object-fit:contain;border-radius:var(--rsm);margin:-4px 0 14px;box-shadow:var(--shsm);background:#fff;}
+.q-opts{display:flex;flex-direction:column;gap:10px;}
+.q-opt{background:var(--white);border:1.5px solid var(--g200);border-radius:var(--rsm);padding:12px 15px;font-size:13px;cursor:pointer;transition:.2s;}
+.q-opt.sel{border-color:var(--blue);background:var(--blue-l);color:var(--blue);}
+.q-opt.corr{border-color:var(--green);background:var(--green-l);color:#065F46;}
+.q-opt.wrong{border-color:var(--red);background:#FEF2F2;color:var(--red);}
+.q-nav{display:flex;gap:10px;margin-top:16px;}
+.q-btn{flex:1;padding:12px;border:none;border-radius:var(--rsm);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+.q-next{background:var(--blue);color:#fff;}
+.q-exit2{background:var(--g100);color:var(--g600);}
+.q-prev{background:var(--g100);color:var(--navy);}
+.q-prev:disabled{opacity:.4;cursor:default;}
+.q-res{text-align:center;padding:30px 18px;background:var(--white);border-radius:var(--r);margin:18px;box-shadow:var(--sh);}
+
+/* ANSWER KEY */
+.ak-wrap{margin:0 18px 18px;}
+.ak-title{font-size:15px;font-weight:800;color:var(--navy);padding:6px 2px 12px;display:flex;align-items:center;gap:6px;}
+.ak-card{background:var(--white);border-radius:var(--r);padding:14px 16px;margin-bottom:12px;box-shadow:var(--shsm);border-left:4px solid var(--g200);transition:box-shadow .3s;}
+.ak-card.ak-right{border-left-color:var(--green);}
+.ak-card.ak-wrong{border-left-color:var(--red);}
+.ak-card.ak-skip{border-left-color:var(--g400);}
+.ak-card.ak-flash{box-shadow:0 0 0 3px var(--saffron);}
+.q-palette{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+.qp-num{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:800;color:#fff;cursor:pointer;transition:.15s;}
+.qp-num:active{transform:scale(.9);}
+.qp-num.qp-right{background:var(--green);}
+.qp-num.qp-wrong{background:var(--red);}
+.qp-num.qp-skip{background:var(--g400);}
+.ak-qhead{display:flex;justify-content:space-between;gap:8px;margin-bottom:8px;}
+.ak-qnum{font-size:11px;font-weight:700;color:var(--g600);}
+.ak-status{font-size:11px;font-weight:800;border-radius:99px;padding:2px 10px;flex-shrink:0;}
+.ak-status.right{background:var(--green-l);color:#065F46;}
+.ak-status.wrong{background:#FEF2F2;color:var(--red);}
+.ak-status.skip{background:var(--g100);color:var(--g600);}
+.ak-qtext{font-size:13px;font-weight:600;color:var(--g800);margin-bottom:10px;line-height:1.5;}
+.ak-img{width:100%;max-height:160px;object-fit:contain;border-radius:8px;margin-bottom:10px;background:#fff;}
+.ak-opt{border:1.5px solid var(--g200);border-radius:8px;padding:8px 12px;font-size:12px;margin-bottom:6px;color:var(--g600);}
+.ak-opt.ak-correct{border-color:var(--green);background:var(--green-l);color:#065F46;font-weight:700;}
+.ak-opt.ak-userwrong{border-color:var(--red);background:#FEF2F2;color:var(--red);font-weight:700;}
+.ak-exp{margin-top:8px;background:var(--blue-l);border-radius:8px;padding:9px 12px;font-size:12px;color:#1E40AF;line-height:1.5;}
+.ak-exp b{color:var(--blue);}
+
+/* NOTES */
+.notes-hero{background:linear-gradient(135deg,#F59E0B,#D97706);padding:22px 18px;color:#fff;border-radius:0 0 22px 22px;}
+.note-item{background:var(--white);border-radius:var(--rsm);padding:13px;margin-bottom:10px;box-shadow:var(--shsm);border-left:3px solid var(--saffron);}
+
+/* BOTTOM NAV */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--g200);display:flex;z-index:100;padding:8px 0 calc(8px + env(safe-area-inset-bottom));box-shadow:0 -4px 20px rgba(15,27,53,.08);}
+/* Quiz Full-Screen Mode — test ke time topbar/bottom-nav hata do taaki
+   distraction na ho aur galti se nav tap karke test exit na ho */
+body.quiz-mode .topbar{display:none;}
+body.quiz-mode .bnav{display:none;}
+body.quiz-mode #notifBanner{display:none;}
+body.quiz-mode .content{padding-bottom:14px;}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0;}
+.ni-ic{font-size:22px;}
+.ni-lb{font-size:10px;font-weight:600;color:var(--g400);}
+.ni.active .ni-lb{color:var(--blue);}
+.ni.active .ni-ic{transform:translateY(-2px);}
+.ni-fab{gap:2px;}
+.ni-fab .ni-ic-wrap{width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#1d4ed8);display:flex;align-items:center;justify-content:center;margin-top:-24px;box-shadow:0 6px 18px rgba(59,130,246,.5),0 0 0 4px var(--white);transition:.2s;}
+.ni-fab .ni-ic-wrap .ni-ic{font-size:24px;}
+.ni-fab.active .ni-ic-wrap{background:linear-gradient(135deg,#1d4ed8,var(--navy));transform:scale(1.05);}
+.ni-fab.active .ni-ic-wrap .ni-ic{transform:none;}
+.ni-fab .ni-lb{margin-top:-1px;}
+.ni-fab.active .ni-lb{color:var(--blue);}
+
+/* ADMIN PANEL */
+
+/* BOARD SEL */
+#boardSel{position:fixed;inset:0;background:rgba(15,27,53,.6);z-index:150;display:flex;align-items:flex-end;backdrop-filter:blur(3px);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .25s ease;}
+#boardSel.show{opacity:1;visibility:visible;pointer-events:auto;}
+.bs-sheet{background:var(--white);width:100%;border-radius:24px 24px 0 0;padding:20px 18px 40px;transform:translateY(40px);transition:transform .3s ease;}
+#boardSel.show .bs-sheet{transform:translateY(0);}
+.a-handle{width:40px;height:4px;background:var(--g200);border-radius:99px;margin:0 auto 16px;}
+.a-title{font-size:16px;font-weight:800;color:var(--navy);margin-bottom:14px;text-align:center;}
+.a-close{width:100%;background:var(--g100);color:var(--navy);border:none;border-radius:var(--rsm);padding:13px 0;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:10px;transition:.15s;}
+.a-close:active{background:var(--g200);transform:scale(.98);}
+.bo{display:flex;align-items:center;gap:14px;padding:14px;border-radius:var(--rsm);margin-bottom:8px;border:2px solid var(--g200);cursor:pointer;transition:.2s;}
+.bo.sel{border-color:var(--blue);background:var(--blue-l);}
+.bo-nm{font-size:14px;font-weight:700;color:var(--navy);}
+.bo-sb{font-size:11px;color:var(--g600);}
+
+/* LIVE CLASS BANNER */
+.live-banner{margin:14px 18px 0;background:linear-gradient(135deg,#DC2626,#991B1B);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;position:relative;overflow:hidden;animation:pulse-glow 2s infinite;}
+@keyframes pulse-glow{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.4)}50%{box-shadow:0 0 0 8px rgba(220,38,38,0)}}
+.live-dot{width:10px;height:10px;background:#fff;border-radius:50%;animation:blink 1s infinite;flex-shrink:0;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.live-info{flex:1;color:#fff;}
+.live-tag{font-size:10px;font-weight:800;letter-spacing:1px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:99px;display:inline-block;margin-bottom:4px;}
+.live-title{font-size:13px;font-weight:700;}
+.live-time{font-size:11px;opacity:.85;margin-top:2px;}
+.live-btn{background:#fff;color:#DC2626;font-size:11px;font-weight:800;padding:7px 14px;border-radius:8px;flex-shrink:0;}
+
+/* COMMUNITY (WhatsApp / Telegram) */
+.comm-sec{margin:14px 18px 0;display:flex;gap:10px;flex-wrap:wrap;}
+.comm-btn{flex:1;min-width:140px;display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;text-decoration:none;color:#fff;font-size:13px;font-weight:700;box-shadow:var(--shsm);}
+.comm-btn .ci-emoji{font-size:20px;}
+.comm-wa{background:linear-gradient(135deg,#25D366,#128C7E);}
+.comm-tg{background:linear-gradient(135deg,#34AADF,#1E88C7);}
+
+/* VIDEO MODAL */
+#videoModal{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:9000;display:none;align-items:center;justify-content:center;padding:18px;}
+#videoModal.show{display:flex;}
+.vm-close{position:absolute;top:20px;right:20px;background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:18px;cursor:pointer;z-index:10;}
+.vm-frame{width:100%;max-width:600px;aspect-ratio:16/9;border-radius:12px;overflow:hidden;}
+.vm-frame iframe{width:100%;height:100%;}
+#videoModal:fullscreen .vm-frame,
+#videoModal:-webkit-full-screen .vm-frame{width:100vw;height:100vh;max-width:100vw;border-radius:0;}
+.vm-frame iframe{width:100%;height:100%;border:none;}
+
+/* TOAST */
+#toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap;}
+#toast.show{opacity:1;}
+
+/* PAGE TRANSITIONS */
+.page{display:none;animation:none;}
+.page.active{display:block;}
+.page.slide-in-right{animation:slideInRight .3s ease forwards;}
+.page.slide-in-left{animation:slideInLeft .3s ease forwards;}
+@keyframes slideInRight{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes slideInLeft{from{transform:translateX(-100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* EMPTY */
+.empty{text-align:center;padding:36px 20px;color:var(--g400);}
+.empty .ei{font-size:44px;margin-bottom:10px;}
+.empty p{font-size:13px;}
+
+/* SUBJECT COLORS */
+.sc-blue{background:linear-gradient(135deg,#3B82F6,#1D4ED8);}
+.sc-green{background:linear-gradient(135deg,#10B981,#059669);}
+.sc-red{background:linear-gradient(135deg,#EF4444,#DC2626);}
+.sc-purple{background:linear-gradient(135deg,#8B5CF6,#6D28D9);}
+.sc-orange{background:linear-gradient(135deg,#F59E0B,#D97706);}
+.sc-teal{background:linear-gradient(135deg,#14B8A6,#0D9488);}
+.sc-pink{background:linear-gradient(135deg,#EC4899,#BE185D);}
+.sc-indigo{background:linear-gradient(135deg,#6366F1,#4338CA);}
+
+/* STUDENT PROFILE */
+#studentSetup{position:fixed;inset:0;background:var(--navy);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:7000;padding:24px;}
+#studentSetup.show{display:flex !important;}
+.ss-logo{font-size:48px;margin-bottom:12px;}
+.ss-title{font-size:22px;font-weight:800;color:#fff;margin-bottom:4px;}
+.ss-sub{font-size:12px;color:var(--g400);margin-bottom:28px;text-align:center;}
+.ss-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:24px;width:100%;max-width:360px;}
+.ss-label{font-size:11px;font-weight:600;color:var(--g400);margin-bottom:6px;display:block;}
+.ss-input{width:100%;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.15);border-radius:10px;padding:12px 16px;font-size:14px;color:#fff;font-family:inherit;outline:none;margin-bottom:14px;transition:.2s;}
+.ss-input:focus{border-color:var(--saffron);}
+.ss-input::placeholder{color:rgba(255,255,255,.3);}
+.ss-btn{width:100%;background:linear-gradient(90deg,var(--saffron),#D97706);color:var(--navy);border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:800;cursor:pointer;font-family:inherit;}
+
+/* PHOTO PICKER (welcome screen) */
+.ss-photo-wrap{display:flex;justify-content:center;margin-bottom:16px;}
+.ss-photo-circle{width:78px;height:78px;border-radius:50%;background:rgba(255,255,255,.08);border:1.5px dashed rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:26px;color:rgba(255,255,255,.5);cursor:pointer;position:relative;overflow:hidden;flex-shrink:0;}
+.ss-photo-circle img{width:100%;height:100%;object-fit:cover;}
+.ss-photo-badge{position:absolute;bottom:-2px;right:-2px;background:var(--saffron);color:var(--navy);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid var(--navy);}
+
+/* TOPBAR AVATAR */
+.tb-avatar{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;cursor:pointer;overflow:hidden;flex-shrink:0;}
+.tb-avatar img{width:100%;height:100%;object-fit:cover;}
+
+/* TOPBAR BELL / NOTIFICATIONS */
+.tb-bell{position:relative;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;cursor:pointer;flex-shrink:0;}
+.tb-bell-dot{position:absolute;top:-2px;right:-2px;background:var(--red);color:#fff;border-radius:99px;min-width:16px;height:16px;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 3px;border:1.5px solid var(--navy);}
+.notif-banner{background:var(--saffron-l);border:1.5px solid var(--saffron);border-radius:var(--rsm);padding:12px 14px;margin:12px 18px 0;display:flex;align-items:center;gap:10px;}
+.notif-banner p{font-size:12px;color:var(--navy);font-weight:600;line-height:1.4;flex:1;}
+.notif-banner .nb-btn{background:var(--saffron);color:var(--navy);border:none;border-radius:8px;padding:7px 11px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;}
+.notif-banner .nb-close{background:none;border:none;font-size:15px;color:var(--g600);cursor:pointer;flex-shrink:0;padding:0 2px;}
+.notif-item{background:var(--white);border-radius:var(--rsm);padding:13px;margin-bottom:10px;box-shadow:var(--shsm);border-left:3px solid var(--blue);}
+.notif-item .ni-title{font-size:13px;font-weight:700;color:var(--navy);}
+.notif-item .ni-body{font-size:12px;color:var(--g600);margin-top:4px;line-height:1.4;}
+.notif-item .ni-time{font-size:10px;color:var(--g400);margin-top:6px;}
+.notif-empty{font-size:12px;color:var(--g600);text-align:center;padding:30px 10px;}
+.notif-perm-card{background:var(--white);border-radius:var(--rsm);box-shadow:var(--shsm);padding:13px 14px;display:flex;align-items:center;gap:12px;margin-bottom:14px;border-left:3px solid var(--saffron);}
+.npc-text{flex:1;}
+.npc-title{font-size:13px;font-weight:700;color:var(--navy);}
+.npc-sub{font-size:11px;color:var(--g600);margin-top:2px;line-height:1.4;}
+.npc-switch{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;}
+.npc-switch input{opacity:0;width:0;height:0;}
+.npc-slider{position:absolute;cursor:pointer;inset:0;background:var(--g200);border-radius:99px;transition:.2s;}
+.npc-slider:before{content:"";position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.npc-switch input:checked + .npc-slider{background:var(--green);}
+.npc-switch input:checked + .npc-slider:before{transform:translateX(20px);}
+.npc-switch input:disabled + .npc-slider{opacity:.65;cursor:not-allowed;}
+
+/* PROFILE PAGE */
+.pf-hero{background:linear-gradient(135deg,var(--navy),var(--navy2));padding:30px 18px 60px;color:#fff;text-align:center;position:relative;}
+.pf-avatar-wrap{display:flex;justify-content:center;margin-bottom:10px;}
+.pf-avatar-circle{width:96px;height:96px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:800;color:#fff;cursor:pointer;position:relative;overflow:hidden;}
+.pf-avatar-circle img{width:100%;height:100%;object-fit:cover;}
+.pf-avatar-badge{position:absolute;bottom:2px;right:2px;background:var(--saffron);color:var(--navy);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:12px;border:2px solid var(--navy2);}
+.pf-name{font-size:18px;font-weight:800;margin-top:2px;}
+.pf-sub{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px;}
+.pf-card{background:var(--white);border-radius:var(--r);box-shadow:var(--sh);margin:-40px 18px 18px;padding:18px;position:relative;}
+.pf-card label{font-size:11px;font-weight:700;color:var(--g600);display:block;margin-bottom:6px;}
+.pf-card input,.pf-card select{width:100%;border:1.5px solid var(--g200);border-radius:var(--rsm);padding:11px 14px;font-size:13px;font-family:inherit;color:var(--g800);outline:none;margin-bottom:14px;}
+.pf-lock-hint{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--g100);border-radius:var(--rsm);padding:9px 11px;margin:-8px 0 14px;font-size:11px;font-weight:600;color:var(--g600);line-height:1.4;}
+.pf-lock-hint button{background:var(--navy);color:#fff;border:none;border-radius:7px;padding:6px 11px;font-size:10.5px;font-weight:700;cursor:pointer;flex-shrink:0;font-family:inherit;}
+.pf-save-btn{width:100%;background:linear-gradient(90deg,var(--navy),var(--navy2));color:#fff;border:none;border-radius:var(--rsm);padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+
+/* PYQ PAGE */
+.pyq-chiprow{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;}
+.pyq-chiprow::-webkit-scrollbar{display:none;}
+.pyq-chip{flex-shrink:0;padding:6px 10px;border-radius:99px;border:1.5px solid var(--g200);background:var(--white);font-size:11px;font-weight:600;color:var(--g600);cursor:pointer;transition:.2s;white-space:nowrap;}
+.pyq-chip.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+.pyq-seg{display:flex;background:var(--g100);border-radius:99px;padding:3px;gap:2px;overflow-x:auto;scrollbar-width:none;}
+.pyq-seg::-webkit-scrollbar{display:none;}
+.pyq-seg-btn{flex-shrink:0;padding:6px 9px;border-radius:99px;font-size:10.5px;font-weight:700;color:var(--g600);cursor:pointer;transition:.2s;white-space:nowrap;}
+.pyq-seg-btn.active{background:var(--white);color:var(--saffron);box-shadow:0 1px 4px rgba(15,27,53,.15);}
+.pyq-statbar{background:var(--white);border-radius:var(--rsm);padding:12px 14px;box-shadow:var(--shsm);display:flex;align-items:center;gap:10px;}
+.pyq-statbar .psb-ic{font-size:24px;}
+.pyq-statbar .psb-count{font-size:13px;font-weight:800;color:var(--navy);}
+.pyq-statbar .psb-board{font-size:11px;color:var(--g600);margin-top:1px;}
+.pyq-card{position:relative;background:var(--white);border-radius:var(--rsm);box-shadow:var(--shsm);margin-bottom:10px;padding:13px 14px;border-left:5px solid var(--saffron);}
+.pyq-card-top{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.pyq-yr-badge{background:var(--navy);color:#fff;font-size:12px;font-weight:800;padding:3px 10px;border-radius:6px;}
+.pyq-subj-ic{font-size:16px;}
+.pyq-card-title{font-size:13.5px;font-weight:700;color:var(--g800);line-height:1.4;}
+.pyq-card-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.pyq-meta-tag{font-size:10px;font-weight:700;color:var(--g600);background:var(--g100);padding:3px 9px;border-radius:99px;}
+.pyq-card-foot{display:flex;align-items:center;justify-content:flex-end;margin-top:10px;}
+.pyq-dl2{background:var(--navy);color:#fff;border:none;border-radius:99px;padding:8px 16px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;}
+.pyq-nolink{font-size:11px;color:var(--g400);font-style:italic;}
+
+/* THOUGHT OF THE DAY */
+#thoughtModal{position:fixed;inset:0;background:rgba(15,27,53,.55);display:none;align-items:center;justify-content:center;z-index:800;padding:24px;}
+#thoughtModal.show{display:flex;}
+.thought-card{background:linear-gradient(135deg,var(--navy),var(--navy2));border-radius:18px;padding:28px 22px 22px;max-width:340px;width:100%;color:#fff;text-align:center;position:relative;box-shadow:0 20px 50px rgba(0,0,0,.35);}
+.thought-card .tq-mark{font-size:34px;color:var(--saffron);line-height:1;}
+.thought-card .tq-text{font-size:15px;font-weight:600;line-height:1.6;margin-top:6px;}
+.thought-card .tq-auth{font-size:11.5px;color:rgba(255,255,255,.6);margin-top:12px;}
+.thought-card .tq-close{margin-top:20px;background:var(--saffron);color:var(--navy);border:none;border-radius:99px;padding:10px 26px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;}
+
+/* AD SLOT — reserved space for a future banner ad; hidden until real ad code is pasted in, so no blank box shows meanwhile */
+.ad-slot{min-height:100px;margin:16px 18px;border-radius:var(--r);display:none;align-items:center;justify-content:center;overflow:hidden;background:var(--g100);}
+
+/* Keep Auto ads out of the Quiz and Doubts screens — no ad should interrupt a
+   timed quiz or sit next to a doubt input where a stray tap could land on it.
+   Google's own dashboard exclusion (Ad settings → Excluded areas) is the
+   reliable long-term fix for this; this rule is a code-side backstop. */
+#pageQuiz .google-auto-placed,
+#pageDoubts .google-auto-placed{display:none!important;}
+
+/* LEGAL LINKS (Profile page) */
+.legal-links{display:flex;flex-direction:column;gap:10px;margin:18px;padding:16px;background:var(--white);border-radius:var(--r);box-shadow:var(--shsm);}
+.legal-links a{color:var(--g600);font-size:13px;font-weight:600;text-decoration:none;}
+.legal-links a:hover{color:var(--navy);}
+
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="sp-logo">📚</div>
+  <div class="sp-title">Edu<span>Spark</span></div>
+  <div class="sp-sub">CBSE & BSER Board Study Platform</div>
+  <div class="sp-bar"><div class="sp-fill"></div></div>
+</div>
+
+<!-- STUDENT SETUP -->
+<div id="studentSetup" style="display:none;position:fixed;inset:0;background:#0F1B35;z-index:9500;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
+  <div class="ss-logo">👋</div>
+  <div class="ss-title">EduSpark में स्वागत है!</div>
+  <div class="ss-sub">एक बार details भरें — फिर याद रहेगा!</div>
+  <div class="ss-card">
+    <button id="ssGoogleBtn" onclick="googleSignInWelcome()" type="button"
+      style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#333;border:none;border-radius:10px;padding:12px 16px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:14px;">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20" alt="Google">
+      Google से Sign In
+    </button>
+    <div style="text-align:center;color:rgba(255,255,255,.35);font-size:11px;margin-bottom:14px;">— या मैन्युअल रूप से भरें —</div>
+    <div class="ss-photo-wrap">
+      <div class="ss-photo-circle" id="ssPhotoCircle" onclick="document.getElementById('ssPhotoInput').click()">
+        <span id="ssPhotoIcon">📷</span>
+        <div class="ss-photo-badge">✏️</div>
+      </div>
+      <input type="file" id="ssPhotoInput" accept="image/*" style="display:none;" onchange="handleSSPhotoChange(event)"/>
+    </div>
+    <label class="ss-label">आपका नाम</label>
+    <input type="text" class="ss-input" id="ssName" placeholder="अपना नाम लिखें..."/>
+    <label class="ss-label">Board चुनें</label>
+    <select class="ss-input" id="ssBoard">
+      <option value="BSER-10">BSER Class 10</option>
+      <option value="CBSE-10">CBSE Class 10</option>
+      <option value="CBSE-12">CBSE Class 12</option>
+      <option value="BSER-12">BSER Class 12</option>
+      <option value="SSC-CHSL">SSC CHSL</option>
+  <option value="SSC-CGL">SSC CGL</option>
+    </select>
+    <button class="ss-btn" onclick="saveStudentProfile()">✅ शुरू करें →</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="tb-left">
+      <span style="font-size:22px;">📚</span>
+      <span class="tb-brand">Edu<span>Spark</span></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="board-pill" id="boardPill" onclick="openCategorySel()">
+📚 Select Category
+</div>
+      <div class="tb-bell" id="tbBell" onclick="openNotificationsPage()">🔔<span class="tb-bell-dot" id="tbBellDot" style="display:none;">0</span></div>
+      <div class="tb-avatar" id="tbAvatar" onclick="openProfilePage()">🙂</div>
+    </div>
+  </div>
+
+  <div id="notifBanner" class="notif-banner" style="display:none;">
+    <p>🔔 Notifications OFF हैं। Important updates miss न हों, इसलिए यहीं app में देख सकते हो।</p>
+    <button class="nb-btn" onclick="openNotificationsPage()">देखें</button>
+    <button class="nb-close" onclick="dismissNotifBanner()">✕</button>
+  </div>
+
+  <div class="content">
+
+    <!-- HOME -->
+    <div class="page active" id="pageHome">
+      <div class="hero">
+        <div class="hero-g" id="heroGreeting">नमस्ते! 👋 पढ़ाई शुरू करें</div>
+        <div class="hero-t">Smart Study <span id="heroExamSpan">Board Exams</span> के लिए</div>
+        <div class="hero-s" id="heroSubText">CBSE & BSER • Class 10 & 12 • Free Content</div>
+<div style="margin-top:15px;">
+  <button id="googleLoginBtn"
+    style="display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#333;border:none;border-radius:10px;padding:12px 18px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">
+    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+         width="20" height="20" alt="Google">
+    Google से Sign In
+  </button>
+</div>
+    <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+    <a href="https://instagram.com/bhupesh_jatav_02" target="_blank"
+       style="display:flex;align-items:center;gap:6px;background:linear-gradient(90deg,#E1306C,#833AB4);color:#fff;padding:7px 14px;border-radius:99px;font-size:12px;font-weight:700;text-decoration:none;">
+      📸 @bhupesh_jatav_02
+    </a>
+    <button id="installBtn" onclick="installApp()" style="display:none;align-items:center;gap:6px;background:linear-gradient(90deg,#10B981,#059669);color:#fff;padding:7px 14px;border-radius:99px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;border:none;">
+  📲 App Install करें
+</button>
+    
+    <button onclick="shareApp()"
+       style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);color:#fff;padding:7px 14px;border-radius:99px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">
+      🔗 App Share करें
+    </button>
+  </div>
+      </div>
+      <div class="search-wrap">
+        <div class="search-box">
+          <span>🔍</span>
+          <input type="text" id="searchInput" placeholder="Chapter, topic, PYQ, quiz खोजें..." oninput="doSearch()"/>
+        </div>
+      </div>
+      <div id="searchSec" style="display:none;">
+        <div class="cnt-list" id="searchRes"></div>
+      </div>
+      <div id="homeBrowseSec">
+      <div class="stats-row">
+        <div class="stat-card" style="cursor:pointer;" onclick="openTypeFromHome('pdf')"><div class="stat-icon">📄</div><div class="stat-val" id="stPdf">0</div><div class="stat-label">PDF</div></div>
+        <div class="stat-card" style="cursor:pointer;" onclick="openTypeFromHome('note')"><div class="stat-icon">🗒️</div><div class="stat-val" id="stNote">0</div><div class="stat-label">Notes</div></div>
+        <div class="stat-card" style="cursor:pointer;" onclick="openTypeFromHome('video')"><div class="stat-icon">🎥</div><div class="stat-val" id="stVid">0</div><div class="stat-label">Videos</div></div>
+        <div class="stat-card" style="cursor:pointer;" onclick="openTypeFromHome('quiz')"><div class="stat-icon">🧩</div><div class="stat-val" id="stQz">0</div><div class="stat-label">Quizzes</div></div>
+      </div>
+      <div class="sec-t"><span>📖</span> Subjects</div>
+      <div class="subj-scroll" id="subjScroll"></div>
+        <div id="liveBannerSec" style="display:none;">
+  <div class="live-banner" onclick="openLiveClass()">
+    <div class="live-dot"></div>
+    <div class="live-info">
+      <span class="live-tag" id="liveTag">🔴 LIVE NOW</span>
+      <div class="live-title" id="liveTitle">Live Class Title</div>
+      <div class="live-time" id="liveTime"></div>
+    </div>
+    <div class="live-btn">Join →</div>
+  </div>
+</div>
+        <div class="comm-sec" id="communitySec">
+  <a href="#" id="waJoinBtn" target="_blank" class="comm-btn comm-wa" style="display:none;">
+    <span class="ci-emoji">💬</span>
+    <span id="waJoinText">WhatsApp Group Join करें</span>
+  </a>
+  <a href="#" id="tgJoinBtn" target="_blank" class="comm-btn comm-tg" style="display:none;">
+    <span class="ci-emoji">📢</span>
+    <span id="tgJoinText">Telegram Group Join करें</span>
+  </a>
+</div>
+
+<div class="sec-t"><span>📜</span> PYQ Papers</div>
+<div class="subj-scroll">
+  <div class="subj-card sc-orange" onclick="navTo('pyq')">
+    <div class="s-ic">📜</div>
+    <div class="s-nm">Previous Year</div>
+    <div class="s-ct">Questions</div>
+  </div>
+  <div class="subj-card sc-red" onclick="navTo('pyq')">
+    <div class="s-ic">📋</div>
+    <div class="s-nm">Sample Papers</div>
+    <div class="s-ct">Board Pattern</div>
+  </div>
+  <div class="subj-card sc-purple" onclick="navTo('pyq')">
+    <div class="s-ic">📝</div>
+    <div class="s-nm">Model Papers</div>
+    <div class="s-ct">Practice Set</div>
+  </div>
+  <div class="subj-card sc-teal" onclick="navTo('pyq')">
+    <div class="s-ic">🎯</div>
+    <div class="s-nm">Pre-Board</div>
+    <div class="s-ct">Exam Papers</div>
+  </div>
+</div>
+<!-- Paste AdSense <ins class="adsbygoogle">...</ins> or AdMob code inside #adSlotHome, then remove the inline display:none below -->
+<div id="adSlotHome" class="ad-slot" style="display:none;"></div>
+
+      <div id="recentSec">
+        <div class="sec-t"><span>🆕</span> Recent Updates</div>
+        <div class="cnt-list" id="recentList"></div>
+      </div>
+      <div style="text-align:center;padding:18px 18px 6px;">
+        <span onclick="openPrivacy()" style="font-size:11px;color:var(--g400);text-decoration:underline;cursor:pointer;">Privacy Policy</span>
+      </div>
+      </div><!-- #homeBrowseSec -->
+    </div>
+
+    <!-- SUBJECTS PAGE -->
+    <div class="page" id="pageSubject">
+      <div class="hero" id="subjHero">
+        <div class="hero-g" id="subjBoard">—</div>
+        <div class="hero-t" id="subjTitle">Subject</div>
+        <div class="hero-s">PDF, Notes, Videos, Quiz</div>
+      </div>
+      <div style="padding:14px 18px 8px;display:flex;align-items:center;gap:10px;">
+        <button onclick="navTo('home')" style="background:var(--g100);border:none;border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">← Back</button>
+        <span style="font-size:12px;color:var(--g600);" id="subjCount"></span>
+      </div>
+      <div class="type-tabs" id="typeTabs"></div>
+      <div class="cnt-list" id="subjContent" style="margin-top:10px;"></div>
+    </div>
+
+   <!-- PYQ PAGE -->
+    <div class="page" id="pagePYQ">
+      <div style="background:linear-gradient(135deg,#0F1B35,#1a3a6b);padding:20px 18px 22px;color:#fff;">
+        <button onclick="navTo('home')" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;margin-bottom:12px;font-family:inherit;">← Back</button>
+        <div style="font-size:21px;font-weight:800;">📜 Previous Year Questions</div>
+        <div style="font-size:11.5px;color:rgba(255,255,255,.6);margin-top:4px;">पिछले सालों के Board Papers, Sample Papers और Model Papers</div>
+      </div>
+
+      <div style="padding:14px 18px 0;">
+        <div class="pyq-statbar">
+          <span class="psb-ic">📜</span>
+          <div>
+            <div class="psb-count" id="pyqCount">0 PYQ Papers</div>
+            <div class="psb-board" id="pyqBoard">CBSE & BSER</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="padding:14px 18px 0;">
+        <div style="font-size:11px;font-weight:700;color:var(--g600);margin-bottom:7px;">📅 Year</div>
+        <div class="pyq-chiprow" id="pyqBoardTabs">
+          <div class="pyq-chip active" onclick="filterPYQ('all',this)">सभी</div>
+          <div class="pyq-chip" onclick="filterPYQ('2025',this)">2025</div>
+          <div class="pyq-chip" onclick="filterPYQ('2024',this)">2024</div>
+          <div class="pyq-chip" onclick="filterPYQ('2023',this)">2023</div>
+          <div class="pyq-chip" onclick="filterPYQ('2022',this)">2022</div>
+          <div class="pyq-chip" onclick="filterPYQ('2021',this)">2021</div>
+          <div class="pyq-chip" onclick="filterPYQ('2020',this)">2020</div>
+          <div class="pyq-chip" onclick="filterPYQ('2019',this)">2019</div>
+          <div class="pyq-chip" onclick="filterPYQ('2018',this)">2018</div>
+        </div>
+      </div>
+
+      <div style="padding:12px 18px 0;">
+        <div style="font-size:11px;font-weight:700;color:var(--g600);margin-bottom:7px;">📚 Subject</div>
+        <div class="pyq-chiprow" id="pyqSubjTabs">
+          <div class="pyq-chip active" onclick="filterPYQSubj('all',this)">सभी Subjects</div>
+        </div>
+      </div>
+
+      <div style="padding:12px 18px 0;">
+        <div style="font-size:11px;font-weight:700;color:var(--g600);margin-bottom:7px;" id="pyqExamLabel">📝 Paper Type</div>
+        <div class="pyq-seg" id="pyqExamTabs"></div>
+      </div>
+
+      <div style="padding:16px 18px 18px;" id="pyqList">
+        <div id="pyqFilteredList"></div>
+      </div>
+    </div>
+
+    <!-- DOUBTS -->
+    <div class="page" id="pageDoubts">
+      <div class="doubt-hero">
+        <h2 style="font-size:20px;font-weight:800;">❓ Doubts Section</h2>
+        <p style="font-size:12px;opacity:.8;margin-top:4px;">Doubt लिखें, जल्द जवाब मिलेगा!</p>
+      </div>
+      <div class="dform">
+        <div id="doubtLoginGate" style="display:none;background:var(--saffron-l);border:1.5px solid var(--saffron);border-radius:var(--rsm);padding:12px 14px;margin-bottom:14px;font-size:12.5px;color:var(--g800);">
+          🔒 Doubt पूछने और उसे safe रखने के लिए पहले Google से Sign In करें
+          <button onclick="googleSignIn()" style="display:block;margin-top:8px;width:100%;background:var(--navy);color:#fff;border:none;border-radius:var(--rsm);padding:9px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit;">Google से Sign In करें</button>
+        </div>
+        <label>Subject</label><select id="dSubj"></select>
+        <label>Topic / Chapter</label><input type="text" id="dTopic" placeholder="Chapter 5 – Light"/>
+        <label>Doubt लिखें</label><textarea id="dText" placeholder="अपना doubt विस्तार से लिखें..."></textarea>
+        <label>आपका नाम</label><input type="text" id="dName" placeholder="आपका नाम"/>
+        <button class="sub-btn" onclick="submitDoubt()">📤 Submit Doubt</button>
+      </div>
+      <div class="sec-t"><span>💬</span> सभी Doubts</div>
+      <div style="padding:0 18px 18px;" id="doubtsList"></div>
+    </div>
+
+    <!-- QUIZ -->
+    <div class="page" id="pageQuiz">
+      <div class="quiz-hero">
+        <h2 style="font-size:20px;font-weight:800;">🧩 Quiz Section</h2>
+        <p style="font-size:12px;opacity:.8;margin-top:4px;">Practice करें, Score बढ़ाएं!</p>
+      </div>
+      <div id="quizListSec" style="padding:16px 18px 0;"></div>
+      <!-- Paste AdSense <ins class="adsbygoogle">...</ins> or AdMob code inside #adSlotQuizReturn, then remove the inline display:none below -->
+      <div id="adSlotQuizReturn" class="ad-slot" style="display:none;"></div>
+      <div id="quizActive">
+        <div class="q-corner-timer" id="qCornerTimer">⏱ 0s</div>
+        <div class="q-timerbar" id="qTimerBar" style="display:none;">
+          <span class="q-timer-chip" id="qOverallTimer" style="display:none;"></span>
+          <span class="q-timer-chip" id="qSectionTimer" style="display:none;"></span>
+        </div>
+        <div class="q-num" id="qNum"></div>
+        <div class="q-pbar"><div class="q-pfill" id="qFill"></div></div>
+        <div class="q-text" id="qText"></div>
+        <img class="q-img" id="qImg" alt="Question image"/>
+        <div class="q-opts" id="qOpts"></div>
+        <div class="q-nav">
+          <button class="q-btn q-exit2" onclick="requestExitQuiz()">✕ छोड़ें</button>
+          <button class="q-btn q-prev" id="qPrev" onclick="prevQ()">← पिछला</button>
+          <button class="q-btn q-next" id="qNext" onclick="nextQ()">अगला →</button>
+        </div>
+      </div>
+      <div id="quizResult" style="display:none;">
+        <div class="q-res">
+          <div style="font-size:56px;" id="rEmoji"></div>
+          <div style="font-size:34px;font-weight:800;color:var(--navy);margin-top:10px;" id="rScore"></div>
+          <div style="font-size:13px;color:var(--g600);margin-top:6px;" id="rMsg"></div>
+          <button class="start-btn" style="margin-top:20px;" onclick="exitQuiz()">🏠 Quiz List</button>
+        </div>
+        <div class="ak-wrap">
+          <div class="ak-title">🔢 Question-wise Analysis (टैप करके देखें)</div>
+          <div class="q-palette" id="qPalette"></div>
+          <div class="ak-title" style="margin-top:18px;">📋 Answer Key</div>
+          <div id="rAnswerKey"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="page" id="pageProfile">
+      <div class="pf-hero">
+        <button onclick="closeProfilePage()" style="position:absolute;left:16px;top:16px;background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;">← वापस</button>
+        <div class="pf-avatar-wrap">
+          <div class="pf-avatar-circle" id="pfAvatarCircle" onclick="document.getElementById('pfPhotoInput').click()">
+            <span id="pfAvatarInitial">🙂</span>
+            <div class="pf-avatar-badge">✏️</div>
+          </div>
+          <input type="file" id="pfPhotoInput" accept="image/*" style="display:none;" onchange="handlePFPhotoChange(event)"/>
+        </div>
+        <div class="pf-name" id="pfHeroName">Student</div>
+        <div class="pf-sub" id="pfHeroSub">फ़ोटो पर टैप करके बदलें</div>
+      </div>
+      <div class="pf-card">
+        <label>आपका नाम</label>
+        <input type="text" id="pfName" placeholder="अपना नाम लिखें..."/>
+        <label>Username</label>
+        <input type="text" id="pfUsername" placeholder="जैसे @rahul_10a" maxlength="20"/>
+        <div class="pf-lock-hint" id="pfUsernameHint" style="display:none;"></div>
+        <label>Board / Category</label>
+        <input type="text" id="pfBoardDisplay" disabled style="background:var(--g100);color:var(--g600);"/>
+        <button class="pf-save-btn" onclick="saveProfileEdits()">💾 Profile Update करें</button>
+      </div>
+      <div class="legal-links">
+        <a href="/about.html">ℹ️ About EduSpark</a>
+        <a href="/contact.html">✉️ Contact / Help</a>
+        <a href="/privacy.html">🔒 Privacy Policy</a>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div class="page" id="pageNotifications">
+      <div class="pf-hero" style="padding:24px 18px 22px;">
+        <button onclick="closeNotificationsPage()" style="position:absolute;left:16px;top:16px;background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;">← वापस</button>
+        <div class="pf-name" style="margin-top:26px;">🔔 Notifications</div>
+        <div class="pf-sub">सभी updates और reminders यहाँ मिलेंगे</div>
+      </div>
+      <div style="padding:14px 18px;" id="notifListWrap">
+        <div class="notif-perm-card" id="notifPermCard" style="display:none;">
+          <div class="npc-text">
+            <div class="npc-title" id="npcTitle">🔔 Push Notifications</div>
+            <div class="npc-sub" id="npcSub">पढ़ाई के reminders पाने के लिए allow करें</div>
+          </div>
+          <label class="npc-switch">
+            <input type="checkbox" id="npcToggle" onchange="onNotifToggleChange()"/>
+            <span class="npc-slider"></span>
+          </label>
+        </div>
+        <div id="notifList"></div>
+      </div>
+    </div>
+
+  </div><!-- .content -->
+
+  <!-- BOTTOM NAV -->
+  <div class="bnav">
+    <div class="ni active" data-page="home" onclick="navTo('home')"><span class="ni-ic">🏠</span><span class="ni-lb">Home</span></div>
+    <div class="ni" data-page="subject" onclick="navTo('subject')"><span class="ni-ic">📖</span><span class="ni-lb">Subjects</span></div>
+    <div class="ni ni-fab" data-page="quiz" onclick="navTo('quiz')"><div class="ni-ic-wrap"><span class="ni-ic">🧩</span></div><span class="ni-lb">Quiz</span></div>
+    <div class="ni" data-page="doubts" onclick="navTo('doubts')"><span class="ni-ic">❓</span><span class="ni-lb">Doubts</span></div>
+    <div class="ni" data-page="pyq" onclick="navTo('pyq')"><span class="ni-ic">📜</span><span class="ni-lb">PYQ</span></div>
+  </div>
+</div>
+
+<!-- BOARD SELECTOR -->
+<div id="boardSel" onclick="closeBSOut(event)">
+  <div class="bs-sheet">
+    <div class="a-handle"></div>
+    <div class="a-title">Board & Class चुनें</div>
+    <div id="boardOpts"></div>
+    <button class="a-close" onclick="closeBS()">✕ बंद करें</button>
+  </div>
+</div>
+
+<!-- VIDEO MODAL -->
+<div id="videoModal">
+  <button class="vm-close" onclick="closeVideo()">✕</button>
+  <div class="vm-frame" id="vmFrame"></div>
+</div>
+
+<!-- QUIZ EXIT CONFIRMATION -->
+<div id="quizExitModal" style="position:fixed;inset:0;background:rgba(15,27,53,.6);z-index:400;display:none;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(3px);">
+  <div style="background:var(--white);width:100%;max-width:340px;border-radius:18px;padding:24px 20px 20px;text-align:center;">
+    <div style="font-size:38px;">🚪</div>
+    <div style="font-size:15.5px;font-weight:800;color:var(--navy);margin-top:10px;">Quiz छोड़ना चाहते हैं?</div>
+    <div style="font-size:12.5px;color:var(--g600);margin-top:6px;line-height:1.5;">अभी तक की आपकी progress save नहीं होगी और quiz फिर से शुरू करना होगा।</div>
+    <div style="display:flex;gap:10px;margin-top:18px;">
+      <button onclick="cancelExitQuiz()" style="flex:1;background:var(--g100);border:none;color:var(--navy);border-radius:12px;padding:12px 0;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">जारी रखें</button>
+      <button onclick="confirmExitQuiz()" style="flex:1;background:var(--red);border:none;color:#fff;border-radius:12px;padding:12px 0;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">हां, छोड़ें</button>
+    </div>
+  </div>
+</div>
+
+<!-- THOUGHT OF THE DAY -->
+<div id="thoughtModal" onclick="closeThoughtOut(event)">
+  <div class="thought-card">
+    <div class="tq-mark">"</div>
+    <div class="tq-text" id="tqText">Success ek din ka kaam nahi, roz thoda-thoda karne ka result hai.</div>
+    <div class="tq-auth" id="tqAuth">— आज की सोच</div>
+    <button class="tq-close" onclick="closeThoughtOfDay()">चलिए, पढ़ते हैं 📚</button>
+  </div>
+</div>
+
+<!-- PRIVACY POLICY -->
+<div id="privacyModal" onclick="closePrivacyOut(event)" style="position:fixed;inset:0;background:rgba(15,27,53,.6);z-index:300;display:none;align-items:flex-end;backdrop-filter:blur(3px);">
+  <div style="background:var(--white);width:100%;border-radius:24px 24px 0 0;max-height:85vh;overflow-y:auto;padding:20px 20px 32px;">
+    <div style="width:40px;height:4px;background:var(--g200);border-radius:99px;margin:0 auto 18px;"></div>
+    <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:14px;">🔒 Privacy Policy</div>
+    <div style="font-size:12.5px;color:var(--g600);line-height:1.7;">
+      <p style="margin-bottom:10px;"><b>EduSpark</b> ek free study app hai (CBSE, BSER aur competition exams ke students ke liye). Ye policy batati hai ki hum kaunsa data collect karte hain aur uska use kaise karte hain.</p>
+
+      <p style="margin-bottom:6px;"><b>1. Hum kya collect karte hain</b></p>
+      <p style="margin-bottom:10px;">
+        • Aapka naam aur chuna hua Board/Class (sirf aapke device par save hota hai)<br>
+        • Agar aap Google से Sign In karte hain, to Google account ka naam aur email Firebase Authentication ke through humein milta hai<br>
+        • Agar aap Doubt submit karte hain, to aapka naam (ya "Anonymous"), sawaal, subject, aur board Firestore database mein save hota hai
+      </p>
+
+      <p style="margin-bottom:6px;"><b>2. Data ka use kaise hota hai</b></p>
+      <p style="margin-bottom:10px;">
+        Ye data sirf app ki study features (content dikhana, doubts ka jawab dena, progress yaad rakhna) ke liye use hota hai। Hum aapka data kisi third party ko bechte ya share nahi karte।
+      </p>
+
+      <p style="margin-bottom:6px;"><b>3. Third-party services</b></p>
+      <p style="margin-bottom:10px;">
+        Ye app <b>Google Firebase</b> (Authentication aur Firestore Database) use karta hai data store karne ke liye। Google ki apni privacy policy alag se apply hoti hai।
+      </p>
+
+      <p style="margin-bottom:6px;"><b>4. Ads</b></p>
+      <p style="margin-bottom:10px;">Is app mein koi third-party advertisement nahi dikhaya jaata।</p>
+
+      <p style="margin-bottom:6px;"><b>5. Data delete karwana</b></p>
+      <p style="margin-bottom:10px;">
+        Agar aap apna data delete karwana chahte hain (jaise submit kiya hua doubt ya profile), to neeche diye contact par sampark karein।
+      </p>
+
+      <p style="margin-bottom:6px;"><b>6. Bachchon ki privacy</b></p>
+      <p style="margin-bottom:10px;">
+        Ye app students ke liye bana hai। Hum jaan-boojh kar kisi bhi bachche se unnecessary personal information collect nahi karte। Agar koi minor Google Sign-In use karta hai, ye unke parent/guardian ki janकari mein hona chahiye।
+      </p>
+
+      <p style="margin-bottom:6px;"><b>7. Sampark करें</b></p>
+      <p style="margin-bottom:4px;">Kisi bhi sawaal ya data delete request ke liye humse Instagram par sampark karein: <a href="https://instagram.com/bhupesh_jatav_02" target="_blank">@bhupesh_jatav_02</a></p>
+    </div>
+    <button onclick="closePrivacy()" style="width:100%;background:var(--g100);color:var(--g800);border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:16px;">✕ बंद करें</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ALL JS at the bottom -->
+<script>
+
+// ══════════════════════════════════════════
+// STUDENT PROFILE
+// ══════════════════════════════════════════
+let ssPhotoDataUrl = null;
+
+function resizeImageToDataURL(file, maxDim, cb){
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const img = new Image();
+    img.onload = function(){
+      let w = img.width, h = img.height;
+      if(w > h){ if(w > maxDim){ h = Math.round(h*maxDim/w); w = maxDim; } }
+      else { if(h > maxDim){ w = Math.round(w*maxDim/h); h = maxDim; } }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      cb(canvas.toDataURL('image/jpeg', 0.82));
+    };
+    img.onerror = function(){ cb(null); };
+    img.src = e.target.result;
+  };
+  reader.onerror = function(){ cb(null); };
+  reader.readAsDataURL(file);
+}
+
+function handleSSPhotoChange(event){
+  const file = event.target.files && event.target.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ showToast('❌ केवल image file चुनें'); return; }
+  resizeImageToDataURL(file, 300, function(dataUrl){
+    if(!dataUrl){ showToast('❌ Photo load नहीं हो पाया'); return; }
+    ssPhotoDataUrl = dataUrl;
+    document.getElementById('ssPhotoCircle').innerHTML = `<img src="${dataUrl}" alt="Photo"/><div class="ss-photo-badge">✏️</div>`;
+  });
+}
+
+function saveStudentProfile(){
+  const name = document.getElementById('ssName').value.trim();
+  const board = document.getElementById('ssBoard').value;
+  if(!name){ alert('कृपया अपना नाम लिखें!'); return; }
+  const profile = {name, board, photo: ssPhotoDataUrl || null, date: new Date().toISOString()};
+  localStorage.setItem('es_student', JSON.stringify(profile));
+  curBoard = board;
+  localStorage.setItem('es_board', board);
+  document.getElementById('studentSetup').style.display='none';
+  updateBoardPill();
+  updateTopbarAvatar();
+  renderHome();
+  renderDoubtSubjects();
+  showToast('✅ Welcome '+name+'! 🎉');
+  if (typeof syncStudentToCloud === "function") syncStudentToCloud();
+  if (typeof requestNotificationPermission === "function") requestNotificationPermission();
+}
+
+function getStudentName(){
+  const profile = JSON.parse(localStorage.getItem('es_student')||'null');
+  return profile ? profile.name : 'Student';
+}
+
+function checkStudentProfile(){
+  const el = document.getElementById('studentSetup');
+  if(!el) return;
+  const profile = JSON.parse(localStorage.getItem('es_student')||'null');
+  if(!profile){
+    setTimeout(()=>{
+      el.style.display = 'flex';
+    },500);
+  } else {
+    curBoard = profile.board;
+    localStorage.setItem('es_board', profile.board);
+    updateBoardPill();
+  }
+  updateTopbarAvatar();
+}
+
+// ══════════════════════════════════════════
+// PROFILE PAGE (view / update — photo भी)
+// ══════════════════════════════════════════
+const BOARD_LABELS = {
+  'CBSE-10':'🏫 CBSE Class 10','CBSE-12':'🏫 CBSE Class 12',
+  'BSER-10':'🎓 BSER Class 10','BSER-12':'🎓 BSER Class 12',
+  'SSC-CHSL':'📋 SSC CHSL','SSC-CGL':'📋 SSC CGL',
+  'BSTC':'✏️ BSTC / D.El.Ed','REET':'👨‍🏫 REET'
+};
+
+function updateTopbarAvatar(){
+  const el = document.getElementById('tbAvatar');
+  if(!el) return;
+  const profile = JSON.parse(localStorage.getItem('es_student')||'null');
+  if(profile && profile.photo){
+    el.innerHTML = `<img src="${profile.photo}" alt="Profile"/>`;
+  } else if(profile && profile.name){
+    el.textContent = profile.name.trim().charAt(0).toUpperCase();
+  } else {
+    el.textContent = '🙂';
+  }
+}
+
+// Username field sirf tabhi edit karne layak hoti hai jab student Google se
+// sign in ho — warna field ko locked/readonly dikhाओ, sign-in ka shortcut do
+function updateUsernameLockUI(){
+  const input = document.getElementById('pfUsername');
+  const hint = document.getElementById('pfUsernameHint');
+  if(!input || !hint) return;
+  if(auth.currentUser){
+    input.readOnly = false;
+    input.style.background = '';
+    input.style.color = '';
+    hint.style.display = 'none';
+  } else {
+    input.readOnly = true;
+    input.style.background = 'var(--g100)';
+    input.style.color = 'var(--g600)';
+    hint.style.display = 'flex';
+    hint.innerHTML = '🔒 Google से Sign In करके ही Username set/update करें <button type="button" onclick="googleSignIn()">Sign In</button>';
+  }
+}
+
+let profileReturnPageId = 'pageHome';
+function openProfilePage(){
+  const profile = JSON.parse(localStorage.getItem('es_student')||'null');
+  const curActive = document.querySelector('.page.active');
+  profileReturnPageId = curActive ? curActive.id : 'pageHome';
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const pg = document.getElementById('pageProfile');
+  pg.classList.add('active','slide-in-right');
+  setTimeout(()=>pg.classList.remove('slide-in-right','slide-in-left'), 300);
+
+  document.getElementById('pfName').value = profile ? profile.name : '';
+  document.getElementById('pfUsername').value = profile && profile.username ? profile.username : '';
+  document.getElementById('pfBoardDisplay').value = BOARD_LABELS[curBoard] || curBoard;
+  document.getElementById('pfHeroName').textContent = profile ? profile.name : 'Student';
+  document.getElementById('pfHeroSub').textContent = profile && profile.username ? '@'+profile.username : 'फ़ोटो पर टैप करके बदलें';
+  updateUsernameLockUI();
+
+  const av = document.getElementById('pfAvatarCircle');
+  if(profile && profile.photo){
+    av.innerHTML = `<img src="${profile.photo}" alt="Profile"/><div class="pf-avatar-badge">✏️</div>`;
+  } else {
+    const initial = profile && profile.name ? profile.name.trim().charAt(0).toUpperCase() : '🙂';
+    av.innerHTML = `<span id="pfAvatarInitial">${initial}</span><div class="pf-avatar-badge">✏️</div>`;
+  }
+}
+
+function closeProfilePage(){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const back = document.getElementById(profileReturnPageId) || document.getElementById('pageHome');
+  back.classList.add('active');
+}
+
+function handlePFPhotoChange(event){
+  const file = event.target.files && event.target.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ showToast('❌ केवल image file चुनें'); return; }
+  resizeImageToDataURL(file, 300, function(dataUrl){
+    if(!dataUrl){ showToast('❌ Photo load नहीं हो पाया'); return; }
+    const profile = JSON.parse(localStorage.getItem('es_student')||'null') || {name:getStudentName(), board:curBoard, date:new Date().toISOString()};
+    profile.photo = dataUrl;
+    localStorage.setItem('es_student', JSON.stringify(profile));
+    document.getElementById('pfAvatarCircle').innerHTML = `<img src="${dataUrl}" alt="Profile"/><div class="pf-avatar-badge">✏️</div>`;
+    updateTopbarAvatar();
+    if (typeof syncStudentToCloud === "function") syncStudentToCloud();
+    showToast('✅ Photo update हो गई!');
+  });
+}
+
+function finishSaveProfileEdits(name, username){
+  const profile = JSON.parse(localStorage.getItem('es_student')||'null') || {board:curBoard, date:new Date().toISOString()};
+  profile.name = name;
+  profile.username = username;
+  localStorage.setItem('es_student', JSON.stringify(profile));
+  document.getElementById('pfHeroName').textContent = name;
+  document.getElementById('pfHeroSub').textContent = username ? '@'+username : 'फ़ोटो पर टैप करके बदलें';
+  updateTopbarAvatar();
+  renderHome();
+  syncStudentToCloud();
+  showToast('✅ Profile update हो गया!');
+}
+
+// Har student ka username unique ho — save se pehle Firestore mein check karta hai
+// ki yeh username kisi doosre device/account ne pehle se to nahi liya.
+// Username sirf Google-signed-in students hi set/update kar sakte hain (taaki
+// wahi username unke account se hamesha ke liye juda rahe aur kisi bhi device
+// par sign in karne par wapas mil jaaye) — anonymous students ka naam save ho
+// jaata hai lekin username field locked rehti hai.
+function saveProfileEdits(){
+  const name = document.getElementById('pfName').value.trim();
+  if(!name){ showToast('❌ नाम खाली है!'); return; }
+
+  if(!auth.currentUser){
+    const existing = JSON.parse(localStorage.getItem('es_student')||'null') || {};
+    finishSaveProfileEdits(name, existing.username || '');
+    return;
+  }
+
+  let username = document.getElementById('pfUsername').value.trim().replace(/^@+/,'').replace(/\s+/g,'_');
+
+  if(!username){ finishSaveProfileEdits(name, username); return; }
+
+  const usernameLower = username.toLowerCase();
+  const myId = getStudentDocId();
+  const myUid = auth.currentUser.uid;
+  const saveBtn = document.querySelector('.pf-save-btn');
+  if(saveBtn){ saveBtn.disabled = true; saveBtn.textContent = '⏳ Username check हो रहा है...'; }
+
+  db.collection('students').where('usernameLower','==',usernameLower).get()
+    .then(snap=>{
+      const takenByOther = snap.docs.some(d => {
+        if(d.id === myId) return false;
+        const dd = d.data();
+        if(dd && dd.googleUid === myUid) return false; // wahi account, purana/dusra record
+        return true;
+      });
+      if(saveBtn){ saveBtn.disabled = false; saveBtn.textContent = '💾 Profile Update करें'; }
+      if(takenByOther){
+        showToast('❌ यह Username पहले से लिया जा चुका है, कोई और चुनें');
+        return;
+      }
+      finishSaveProfileEdits(name, username);
+    })
+    .catch(()=>{
+      if(saveBtn){ saveBtn.disabled = false; saveBtn.textContent = '💾 Profile Update करें'; }
+      // Internet issue jaisi स्थिति में bhi profile local save ho jaaye
+      finishSaveProfileEdits(name, username);
+    });
+}
+
+// ══════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════
+const DEVICE_ID = localStorage.getItem('es_device') || (()=>{ 
+  const id='dev_'+Date.now(); 
+  localStorage.setItem('es_device',id); 
+  return id; 
+})();
+
+// Google-signed-in student ka cloud record UID se identify hota hai (taaki
+// wahi username/photo kisi bhi device par sign-in karne par wapas mil jaaye).
+// Bina-login (anonymous) student ke liye purana DEVICE_ID hi use hota hai.
+function getStudentDocId(){
+  return (auth.currentUser && auth.currentUser.uid) ? auth.currentUser.uid : DEVICE_ID;
+}
+
+const SUBJECTS = {
+  "CBSE-10":[
+    {id:"math",name:"Mathematics",icon:"📐",color:"sc-blue"},
+    {id:"sci",name:"Science",icon:"🔬",color:"sc-green"},
+    {id:"sst",name:"Social Science",icon:"🌍",color:"sc-orange"},
+    {id:"eng",name:"English",icon:"📗",color:"sc-purple"},
+    {id:"hindi",name:"Hindi",icon:"🇮🇳",color:"sc-red"},
+  ],
+  "CBSE-12":[
+    {id:"phy",name:"Physics",icon:"⚡",color:"sc-blue"},
+    {id:"chem",name:"Chemistry",icon:"🧪",color:"sc-green"},
+    {id:"bio",name:"Biology",icon:"🌿",color:"sc-teal"},
+    {id:"math",name:"Mathematics",icon:"📐",color:"sc-orange"},
+    {id:"eng",name:"English",icon:"📗",color:"sc-purple"},
+    {id:"acc",name:"Accountancy",icon:"📊",color:"sc-red"},
+    {id:"eco",name:"Economics",icon:"💹",color:"sc-indigo"},
+  ],
+  "BSER-10":[
+    {id:"ganit",name:"गणित",icon:"📐",color:"sc-blue"},
+    {id:"vigyan",name:"विज्ञान",icon:"🔬",color:"sc-green"},
+    {id:"samajik",name:"सामाजिक विज्ञान",icon:"🌍",color:"sc-orange"},
+    {id:"hindi",name:"हिन्दी",icon:"🇮🇳",color:"sc-red"},
+    {id:"eng",name:"English",icon:"📗",color:"sc-purple"},
+    {id:"sanskrit",name:"संस्कृत",icon:"🕉️",color:"sc-teal"},
+  ],
+  "BSER-12":[
+    {id:"bhautiki",name:"भौतिक विज्ञान",icon:"⚡",color:"sc-blue"},
+    {id:"rasayan",name:"रसायन विज्ञान",icon:"🧪",color:"sc-green"},
+    {id:"jeev",name:"जीव विज्ञान",icon:"🌿",color:"sc-teal"},
+    {id:"ganit",name:"गणित",icon:"📐",color:"sc-orange"},
+    {id:"hindi",name:"हिन्दी",icon:"🇮🇳",color:"sc-red"},
+    {id:"lekha",name:"लेखाशास्त्र",icon:"📊",color:"sc-indigo"},
+    {id:"arthshastra",name:"अर्थशास्त्र",icon:"💹",color:"sc-pink"},
+  ]
+,"SSC-CHSL":[
+  {id:"math",name:"Mathematics",icon:"📐",color:"sc-green"},
+  {id:"reasoning",name:"Reasoning",icon:"🧠",color:"sc-purple"},
+
+  {id:"gk",name:"General Knowledge",icon:"🌍",color:"sc-blue"},
+  {id:"english",name:"English",icon:"📗",color:"sc-orange"},
+  {id:"hindi",name:"Hindi",icon:"🇮🇳",color:"sc-red"}
+]
+,"SSC-CGL":[
+  {id:"math",name:"Mathematics",icon:"📐",color:"sc-green"},
+  {id:"reasoning",name:"Reasoning",icon:"🧠",color:"sc-purple"},
+
+  {id:"gk",name:"General Knowledge",icon:"🌍",color:"sc-blue"},
+  {id:"english",name:"English",icon:"📗",color:"sc-orange"},
+  {id:"hindi",name:"Hindi",icon:"🇮🇳",color:"sc-red"},
+  {id:"finance",name:"Finance & Economics",icon:"💹",color:"sc-indigo"}
+]
+,"BSTC":[
+  {id:"gk",name:"General Knowledge",icon:"🌍",color:"sc-blue"},
+  {id:"reasoning",name:"Reasoning",icon:"🧠",color:"sc-purple"},
+  {id:"hindi",name:"Hindi",icon:"🇮🇳",color:"sc-red"},
+  {id:"english",name:"English",icon:"📗",color:"sc-orange"},
+  {id:"teaching",name:"Teaching Aptitude",icon:"👨‍🏫",color:"sc-green"}
+]
+,"REET":[
+  {id:"gk",name:"General Knowledge",icon:"🌍",color:"sc-blue"},
+  {id:"reasoning",name:"Reasoning",icon:"🧠",color:"sc-purple"},
+  {id:"hindi",name:"Hindi",icon:"🇮🇳",color:"sc-red"},
+  {id:"english",name:"English",icon:"📗",color:"sc-orange"},
+  {id:"math",name:"Mathematics",icon:"📐",color:"sc-green"},
+  {id:"science",name:"Science",icon:"🔬",color:"sc-teal"},
+  {id:"sst",name:"Social Studies",icon:"🌏",color:"sc-indigo"}
+]
+};
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let curBoard = localStorage.getItem('es_board')||'BSER-10';
+// Competition exam boards (SSC/BSTC/REET) — inke liye hero text aur PYQ ka
+// "Paper Type" filter Board Exam wale se alag (Tier 1/Tier 2/Pre/Mains) hota hai
+const COMPETITION_BOARDS = ['SSC-CHSL','SSC-CGL','BSTC','REET'];
+function isCompetitionBoard(board){ return COMPETITION_BOARDS.includes(board); }
+let curSubject = null, curType = 'all';
+let allContent = [], allQuizzes = [], allPYQ = [];
+let curQuiz=null, curQ=0, score=0, answered=false;
+let quizSections=[], curSection=0;
+let userAnswers=[];
+let ovTimerInt=null, secTimerInt=null, qStopInt=null;
+let ovSecondsLeft=0, secSecondsLeft=0, qSecondsElapsed=0;
+
+// ══════════════════════════════════════════
+// BACK NAVIGATION
+// Mobile back-gesture ko app ke andar hi handle karta hai (jaise ek normal
+// app) — pehle modal band hoga, phir subject-detail se list par, phir
+// kisi bhi tab se Home par. Home se ek aur back par hi app exit hoga.
+// ══════════════════════════════════════════
+function armBackGuard(){
+  history.pushState({guard:true}, '', location.href);
+}
+function performBack(){
+  const videoModal = document.getElementById('videoModal');
+  const privacyModal = document.getElementById('privacyModal');
+  const boardSel = document.getElementById('boardSel');
+  const thoughtModal = document.getElementById('thoughtModal');
+  if(thoughtModal && thoughtModal.classList.contains('show')){ closeThoughtOfDay(); return true; }
+  const quizExitModal = document.getElementById('quizExitModal');
+  if(quizExitModal && quizExitModal.style.display==='flex'){ cancelExitQuiz(); return true; }
+  if(videoModal && videoModal.classList.contains('show')){ closeVideo(); return true; }
+  if(privacyModal && privacyModal.style.display==='flex'){ closePrivacy(); return true; }
+  if(boardSel && boardSel.classList.contains('show')){ closeBS(); return true; }
+  const notifPage = document.getElementById('pageNotifications');
+  if(notifPage && notifPage.classList.contains('active')){ closeNotificationsPage(); return true; }
+  const profilePage = document.getElementById('pageProfile');
+  if(profilePage && profilePage.classList.contains('active')){ closeProfilePage(); return true; }
+  if(curQuiz){ requestExitQuiz(); return true; }
+  const subjectPage = document.getElementById('pageSubject');
+  if(subjectPage && subjectPage.classList.contains('active') && curSubject){ showAllSubjects(); return true; }
+  // Home par search khuli ho to pehle usse band karo, seedha app exit na ho
+  const searchInput = document.getElementById('searchInput');
+  const searchSec = document.getElementById('searchSec');
+  if(searchInput && searchSec && searchSec.style.display!=='none' && searchInput.value.trim()){
+    searchInput.value=''; doSearch(); return true;
+  }
+  const activePage = document.querySelector('.page.active');
+  if(activePage && activePage.id !== 'pageHome'){ navTo('home'); return true; }
+  return false;
+}
+window.addEventListener('popstate', function(){
+  const handled = performBack();
+  if(handled) armBackGuard();
+});
+
+// ══════════════════════════════════════════
+// FIREBASE LISTENERS
+// ══════════════════════════════════════════
+function listenContent(){
+  db.collection('content').orderBy('date','desc').onSnapshot(snap=>{
+    allContent = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderHome();
+    if(curSubject) loadSubjectContent(curType);
+  }, ()=>{ renderHome(); });
+}
+
+function listenQuizzes(){
+  db.collection('quizzes').orderBy('date','desc').onSnapshot(snap=>{
+    allQuizzes = snap.docs.map(d=>({id:d.id,...d.data()}));
+  }, ()=>{});
+}
+
+function listenDoubts(){
+  db.collection('doubts').orderBy('date','desc').onSnapshot(snap=>{
+    const doubts = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderDoubts(doubts);
+  }, ()=>{});
+}
+
+
+function listenPYQ(){
+  db.collection('pyq').orderBy('year','desc').onSnapshot(snap=>{
+    allPYQ = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderPYQ();
+    buildPYQSubjTabs();
+    buildPYQExamTabs();
+  }, err=>{
+    db.collection('pyq').get().then(snap=>{
+      allPYQ = snap.docs.map(d=>({id:d.id,...d.data()}));
+      renderPYQ();
+      buildPYQSubjTabs();
+      buildPYQExamTabs();
+    }).catch(()=>{});
+  });
+}
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+const pages = ['home','subject','doubts','quiz','pyq'];
+function navTo(page){
+  const currentPage = document.querySelector('.page.active');
+  const currentIndex = pages.indexOf(currentPage ? currentPage.id.replace('page','').toLowerCase() : 'home');
+  const newIndex = pages.indexOf(page);
+  const direction = newIndex > currentIndex ? 'slide-in-right' : 'slide-in-left';
+
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  const navEl = document.querySelector(`.ni[data-page="${page}"]`);
+  if(navEl) navEl.classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+
+  let newPage;
+  if(page==='home'){ newPage=document.getElementById('pageHome'); renderHome(); }
+  else if(page==='subject'){ newPage=document.getElementById('pageSubject'); showAllSubjects(); }
+  else if(page==='pyq'){ newPage=document.getElementById('pagePYQ'); pyqYearFilter='all'; pyqSubjFilter='all'; pyqExamFilter='all'; renderPYQ(); buildPYQSubjTabs(); buildPYQExamTabs(); }
+  else if(page==='doubts'){ newPage=document.getElementById('pageDoubts'); if(typeof updateDoubtLoginGate==='function') updateDoubtLoginGate(); }
+  else if(page==='quiz'){
+    newPage=document.getElementById('pageQuiz');
+    const activeEl=document.getElementById('quizActive');
+    const quizInProgress = curQuiz && activeEl && activeEl.style.display!=='none';
+    // Agar test already chal raha hai to usse reset mat karo — sirf page dikha do
+    if(!quizInProgress) renderQuizList();
+  }
+
+  if(newPage){
+    newPage.classList.add('active', direction);
+    setTimeout(()=>newPage.classList.remove('slide-in-right','slide-in-left'), 300);
+  }
+}
+
+// ══════════════════════════════════════════
+// BOARD SELECTOR
+// ══════════════════════════════════════════
+function openCategorySel(){
+  document.getElementById('boardOpts').innerHTML=`
+    <div style="margin-bottom:12px;">
+      <div style="font-size:13px;font-weight:700;color:var(--g600);margin-bottom:8px;">🏫 Board Exams</div>
+      <div class="bo ${curBoard==='CBSE-10'?'sel':''}" onclick="selBoard('CBSE-10')">
+        <span style="font-size:26px;">🏫</span><div><div class="bo-nm">CBSE – Class 10</div><div class="bo-sb">Central Board</div></div>
+      </div>
+      <div class="bo ${curBoard==='CBSE-12'?'sel':''}" onclick="selBoard('CBSE-12')">
+        <span style="font-size:26px;">🏫</span><div><div class="bo-nm">CBSE – Class 12</div><div class="bo-sb">Central Board</div></div>
+      </div>
+      <div class="bo ${curBoard==='BSER-10'?'sel':''}" onclick="selBoard('BSER-10')">
+        <span style="font-size:26px;">🎓</span><div><div class="bo-nm">BSER – Class 10</div><div class="bo-sb">Rajasthan Board</div></div>
+      </div>
+      <div class="bo ${curBoard==='BSER-12'?'sel':''}" onclick="selBoard('BSER-12')">
+        <span style="font-size:26px;">🎓</span><div><div class="bo-nm">BSER – Class 12</div><div class="bo-sb">Rajasthan Board</div></div>
+      </div>
+    </div>
+    <div style="border-top:1.5px solid var(--g200);padding-top:12px;">
+      <div style="font-size:13px;font-weight:700;color:var(--g600);margin-bottom:8px;">📋 Competition Exams</div>
+      <div class="bo ${curBoard==='SSC-CHSL'?'sel':''}" onclick="selBoard('SSC-CHSL')">
+        <span style="font-size:26px;">📋</span><div><div class="bo-nm">SSC – CHSL</div><div class="bo-sb">Staff Selection Commission</div></div>
+      </div>
+      <div class="bo ${curBoard==='SSC-CGL'?'sel':''}" onclick="selBoard('SSC-CGL')">
+        <span style="font-size:26px;">📋</span><div><div class="bo-nm">SSC – CGL</div><div class="bo-sb">Staff Selection Commission</div></div>
+      </div>
+      <div class="bo ${curBoard==='BSTC'?'sel':''}" onclick="selBoard('BSTC')">
+        <span style="font-size:26px;">✏️</span><div><div class="bo-nm">BSTC / D.El.Ed</div><div class="bo-sb">Rajasthan</div></div>
+      </div>
+      <div class="bo ${curBoard==='REET'?'sel':''}" onclick="selBoard('REET')">
+        <span style="font-size:26px;">👨‍🏫</span><div><div class="bo-nm">REET</div><div class="bo-sb">Rajasthan Eligibility Test</div></div>
+      </div>
+    </div>
+  `;
+  
+  document.getElementById('boardSel').classList.add('show');
+}
+
+// Board dabane par sirf tabhi list select hoti hai, aur select hote hi sheet band ho jaati hai
+function selBoard(board){
+  curBoard = board;
+  localStorage.setItem('es_board', board);
+  const profile = JSON.parse(localStorage.getItem('es_student')||'null');
+  if(profile){
+    profile.board = board;
+    localStorage.setItem('es_student', JSON.stringify(profile));
+  }
+  updateBoardPill();
+  closeBS();
+  renderHome();
+  renderDoubtSubjects();
+  pyqYearFilter='all'; pyqSubjFilter='all'; pyqExamFilter='all';
+  renderPYQ(); buildPYQSubjTabs(); buildPYQExamTabs();
+  showToast('✅ Category select हो गई: '+board);
+}
+
+// "बंद करें" button
+function closeBS(){
+  document.getElementById('boardSel').classList.remove('show');
+}
+
+// Bahar (backdrop) click karne par bhi band ho jaaye, andar click karne par nahi
+function closeBSOut(event){
+  if(event.target && event.target.id === 'boardSel'){
+    closeBS();
+  }
+}
+
+// Topbar ka pill hamesha current board/competition dikhaye
+function updateBoardPill(){
+  const labels = {
+    'CBSE-10':' CBSE Class 10',
+    'CBSE-12':' CBSE Class 12',
+    'BSER-10':' BSER Class 10',
+    'BSER-12':' BSER Class 12',
+    'SSC-CHSL':'📋 SSC CHSL',
+    'SSC-CGL':'📋 SSC CGL',
+    'BSTC':'✏️ BSTC / D.El.Ed',
+    'REET':'👨‍🏫 REET'
+  };
+  const pill = document.getElementById('boardPill');
+  if(pill) pill.textContent = labels[curBoard] || '📚 Select Category';
+}
+
+// ══════════════════════════════════════════
+// HOME RENDER
+// ══════════════════════════════════════════
+function renderHome(){
+const profile = JSON.parse(localStorage.getItem('es_student')||'null');
+if(profile && document.getElementById('heroGreeting')){
+  document.getElementById('heroGreeting').textContent = 'नमस्ते '+profile.name+'! 👋 पढ़ाई शुरू करें';
+}
+  // Board Exam ya Competition Exam ke hisab se hero text badlo
+  const examSpan=document.getElementById('heroExamSpan'), subText=document.getElementById('heroSubText');
+  if(examSpan && subText){
+    if(isCompetitionBoard(curBoard)){
+      examSpan.textContent='Competition Exams';
+      subText.textContent='SSC, BSTC, REET • Free Content';
+    } else {
+      examSpan.textContent='Board Exams';
+      subText.textContent='CBSE & BSER • Class 10 & 12 • Free Content';
+    }
+  }
+  const bc=allContent.filter(c=>c.board===curBoard);
+  document.getElementById('stPdf').textContent=bc.filter(c=>c.type==='pdf').length;
+  document.getElementById('stVid').textContent=bc.filter(c=>c.type==='video').length;
+  document.getElementById('stQz').textContent=allQuizzes.filter(q=>q.board===curBoard).length;
+  document.getElementById('stNote').textContent=bc.filter(c=>c.type==='note').length;
+
+  document.getElementById('subjScroll').innerHTML=(SUBJECTS[curBoard]||[]).map(s=>`
+    <div class="subj-card ${s.color}" onclick="openSubjHome('${s.id}')">
+      <div class="s-ic">${s.icon}</div>
+      <div class="s-nm">${s.name}</div>
+      <div class="s-ct">${bc.filter(c=>c.subject===s.id||c.subject==='all').length} items</div>
+    </div>`).join('');
+
+  document.getElementById('recentList').innerHTML=bc.length
+    ? bc.slice(0,8).map(c=>cHTML(c)).join('')
+    : '<div class="empty"><div class="ei">📭</div><p>अभी कोई content नहीं।<br>Admin Panel से add करें।</p></div>';
+}
+
+let homeTypeFilter = null;
+function openTypeFromHome(type){
+  homeTypeFilter = type;
+  navTo('subject');
+}
+function openSubjHome(sid){
+  curSubject=sid;
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.querySelector('.ni[data-page="subject"]').classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pageSubject').classList.add('active');
+  const t = homeTypeFilter || 'all';
+  homeTypeFilter = null;
+  loadSubjectContent(t);
+}
+
+function showAllSubjects(){
+  curSubject=null;
+  document.getElementById('subjHero').style.background='linear-gradient(135deg,var(--navy),var(--navy2))';
+  document.getElementById('subjBoard').textContent=curBoard.replace('-',' Class ');
+  const typeLabels={pdf:'📄 PDF',note:'🗒️ Notes',video:'🎥 Videos',quiz:'🧩 Quizzes',dpp:'📗 DPP'};
+  document.getElementById('subjTitle').textContent = homeTypeFilter ? (typeLabels[homeTypeFilter]+' — Subject चुनें') : 'All Subjects';
+  document.getElementById('subjCount').textContent=(SUBJECTS[curBoard]||[]).length+' subjects';
+  document.getElementById('typeTabs').innerHTML='';
+  document.getElementById('subjContent').innerHTML=(SUBJECTS[curBoard]||[]).map(s=>{
+    const cnt = homeTypeFilter
+      ? allContent.filter(c=>c.board===curBoard&&(c.subject===s.id||c.subject==='all')&&c.type===homeTypeFilter).length
+      : allContent.filter(c=>c.board===curBoard&&(c.subject===s.id||c.subject==='all')).length;
+    return `
+    <div class="cnt-item" onclick="openSubjHome('${s.id}')">
+      <div class="cnt-ic" style="font-size:24px;background:rgba(59,130,246,.1);">${s.icon}</div>
+      <div class="cnt-info"><h4>${s.name}</h4><p>${cnt} items</p></div>
+      <span style="font-size:20px;color:var(--g400);">›</span>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// SUBJECT CONTENT
+// ══════════════════════════════════════════
+function loadSubjectContent(type){
+  curType=type;
+  const sub=(SUBJECTS[curBoard]||[]).find(s=>s.id===curSubject);
+  if(!sub) return;
+  document.getElementById('subjHero').className='hero '+sub.color;
+  document.getElementById('subjBoard').textContent=curBoard.replace('-',' Class ');
+  document.getElementById('subjTitle').textContent=sub.icon+' '+sub.name;
+
+  let items=allContent.filter(c=>c.board===curBoard&&(c.subject===curSubject||c.subject==='all'));
+  if(type!=='all') items=items.filter(c=>c.type===type);
+  document.getElementById('subjCount').textContent=items.length+' items';
+
+  const labels={all:'🗂 All',pdf:'📄 PDF',note:'🗒️ Notes',video:'🎥 Video',dpp:'📗 DPP',quiz:'🧩 Quiz'};
+  document.getElementById('typeTabs').innerHTML=['all','pdf','note','video','dpp','quiz'].map(t=>
+    `<div class="type-tab ${curType===t?'active':''}" onclick="loadSubjectContent('${t}')">${labels[t]}</div>`).join('');
+
+  document.getElementById('subjContent').innerHTML=items.length
+    ? items.map(c=>cHTML(c)).join('')
+    : '<div class="empty"><div class="ei">📭</div><p>इस category में content नहीं है।</p></div>';
+}
+
+// ══════════════════════════════════════════
+// CONTENT HTML
+// ══════════════════════════════════════════
+function cHTML(c){
+  const T={pdf:{i:'📄',bg:'ci-pdf',b:'bdg-pdf',l:'PDF'},video:{i:'🎥',bg:'ci-video',b:'bdg-video',l:'Video'},dpp:{i:'📗',bg:'ci-dpp',b:'bdg-dpp',l:'DPP'},quiz:{i:'🧩',bg:'ci-quiz',b:'bdg-quiz',l:'Quiz'},note:{i:'🗒️',bg:'ci-note',b:'bdg-note',l:'Note'}};
+  const t=T[c.type]||T.note;
+  const isNew=c.date&&(Date.now()-new Date(c.date).getTime())<7*24*60*60*1000;
+  let click='', rightIcon='📄';
+  if(c.type==='quiz'){
+    click=`onclick="startChapterQuiz('${c.id}')"`;
+    rightIcon='▶️';
+  } else if(c.link){
+    if(c.type==='video'){ click=`onclick="playVideo('${c.link}')"`; }
+    else { click=`onclick="window.open('${c.link}','_blank')"`; }
+    rightIcon='🔗';
+  }
+  const sub = c.type==='quiz' ? `${(c.questions||[]).length} प्रश्न${c.chapter?' • '+c.chapter:''}` : (c.desc||c.chapter||'');
+  return `<div class="cnt-item" ${click}>
+    <div class="cnt-ic ${t.bg}">${t.i}</div>
+    <div class="cnt-info">
+      <h4>${c.title}</h4>
+      <p>${sub}</p>
+      <span class="bdg ${t.b}">${t.l}</span>${isNew?'<span class="bdg bdg-new">NEW</span>':''}
+    </div>
+    <span style="font-size:18px;color:var(--g400);">${rightIcon}</span>
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+// SEARCH
+// ══════════════════════════════════════════
+function doSearch(){
+  const raw=document.getElementById('searchInput').value.trim().toLowerCase();
+  const ss=document.getElementById('searchSec'), browse=document.getElementById('homeBrowseSec');
+  if(!raw){ ss.style.display='none'; if(browse) browse.style.display='block'; return; }
+  ss.style.display='block'; if(browse) browse.style.display='none';
+
+  // Query ko words me todo — sabhi words kahin bhi mil jaayein to match maano
+  // (isse word-order/spacing ka farak nahi padta, jaise "light chapter 5"
+  // easily "Chapter 5 - Light" se match ho jaayega)
+  const words=raw.split(/\s+/).filter(Boolean);
+  const matches=(hay)=>{
+    const h=hay.toLowerCase();
+    return words.every(w=>h.includes(w));
+  };
+  const subData=SUBJECTS[curBoard]||[];
+
+  const cRes=allContent.filter(c=>c.board===curBoard && matches([c.title,c.desc,c.chapter].filter(Boolean).join(' ')));
+  const pRes=allPYQ.filter(p=>{
+    if(String(p.board).toLowerCase()!==String(curBoard).toLowerCase()) return false;
+    const sub=subData.find(s=>s.id===p.subject);
+    return matches([p.title,p.year,p.examType,p.desc,sub?sub.name:''].filter(Boolean).join(' '));
+  });
+  const qRes=allQuizzes.filter(q=>{
+    if(q.board!==curBoard) return false;
+    return matches([q.title,subjDisplayName(q.board,q.subject)].filter(Boolean).join(' '));
+  });
+
+  let html='';
+  if(cRes.length) html += cRes.map(c=>cHTML(c)).join('');
+  if(pRes.length) html += `<div class="sec-t" style="margin-top:${cRes.length?'16px':'0'};"><span>📜</span> PYQ</div>` + pRes.map(p=>pyqSearchCardHTML(p,subData)).join('');
+  if(qRes.length) html += `<div class="sec-t" style="margin-top:16px;"><span>🧩</span> Quiz</div>` + qRes.map(q=>quizSearchCardHTML(q)).join('');
+
+  document.getElementById('searchRes').innerHTML = html || `<div class="empty"><div class="ei">🔍</div><p>"${raw}" के लिए कुछ नहीं मिला।</p></div>`;
+}
+function pyqSearchCardHTML(p, subData){
+  const sub=subData.find(s=>s.id===p.subject);
+  return `<div class="pyq-card">
+    <div class="pyq-card-top">
+      <span class="pyq-yr-badge">${p.year||''}</span>
+      ${sub?`<span class="pyq-subj-ic">${sub.icon}</span>`:''}
+    </div>
+    <div class="pyq-card-title">${p.title||'Untitled PYQ'}</div>
+    <div class="pyq-card-meta">
+      ${sub?`<span class="pyq-meta-tag">${sub.name}</span>`:''}
+      ${p.examType?`<span class="pyq-meta-tag">${p.examType}</span>`:''}
+    </div>
+    <div class="pyq-card-foot">
+      ${p.link?`<button class="pyq-dl2" onclick="window.open('${p.link}','_blank')">📥 Download</button>`:`<button class="pyq-dl2" onclick="navTo('pyq')">देखें →</button>`}
+    </div>
+  </div>`;
+}
+function quizSearchCardHTML(q){
+  return `<div class="qz-card">
+    <div class="qzc-t">${q.title}</div>
+    <div class="qzc-s">${subjDisplayName(q.board,q.subject)}</div>
+    <div class="qzc-meta">
+      <span class="qzc-tag">📝 ${totalQFor(q)} Questions</span>
+      <span class="qzc-tag">⏱ ${totalTimeFor(q)} min</span>
+    </div>
+    <button class="start-btn" onclick="startQuizById('${q.id}')">▶ Start Quiz</button>
+  </div>`;
+}
+// Search result se seedha quiz shuru karna (id se — kisi filtered list ke
+// index par depend nahi karta, isliye search context se bhi safe hai)
+function startQuizById(id){
+  const q=allQuizzes.find(x=>x.id===id);
+  if(!q){ showToast('❌ Quiz नहीं मिला'); return; }
+  curQuiz=q;
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  const navEl=document.querySelector('.ni[data-page="quiz"]'); if(navEl) navEl.classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pageQuiz').classList.add('active');
+  launchQuiz();
+}
+
+// ══════════════════════════════════════════
+// PYQ
+// ══════════════════════════════════════════
+let pyqYearFilter = 'all';
+let pyqSubjFilter = 'all';
+let pyqExamFilter = 'all';
+
+function buildPYQSubjTabs(){
+  const subs = [...new Set(allPYQ.filter(p=>p.board===curBoard).map(p=>p.subject))];
+  const subData = SUBJECTS[curBoard]||[];
+  let html = '<div class="pyq-chip active" onclick="filterPYQSubj(\'all\',this)">सभी Subjects</div>';
+  subs.forEach(sid=>{
+    const s = subData.find(x=>x.id===sid);
+    if(s) html += `<div class="pyq-chip" onclick="filterPYQSubj('${sid}',this)">${s.icon} ${s.name}</div>`;
+  });
+  document.getElementById('pyqSubjTabs').innerHTML = html;
+}
+// Competition exam boards (SSC/BSTC/REET) ke liye "Paper Type" ki jagah
+// Tier 1 / Tier 2 / Pre / Mains dikhाओ; baaki boards ke liye pehle wale hi
+function buildPYQExamTabs(){
+  const label=document.getElementById('pyqExamLabel');
+  const isComp = isCompetitionBoard(curBoard);
+  const types = isComp
+    ? ['Tier 1','Tier 2','Pre','Mains']
+    : ['Board Exam','Pre-Board','Sample Paper','Model Paper'];
+  if(label) label.textContent = isComp ? '📝 Exam Stage' : '📝 Paper Type';
+  let html='<div class="pyq-seg-btn active" onclick="filterPYQExam(\'all\',this)">सभी</div>';
+  types.forEach(t=>{ html+=`<div class="pyq-seg-btn" onclick="filterPYQExam('${t}',this)">${t}</div>`; });
+  document.getElementById('pyqExamTabs').innerHTML = html;
+}
+
+function filterPYQ(year, el){
+  pyqYearFilter = year;
+  document.querySelectorAll('#pyqBoardTabs .pyq-chip').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderPYQ();
+}
+
+function filterPYQExam(examType, el){
+  pyqExamFilter = examType;
+  document.querySelectorAll('#pyqExamTabs .pyq-seg-btn').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderPYQ();
+}
+
+function filterPYQSubj(subj, el){
+  pyqSubjFilter = subj;
+  document.querySelectorAll('#pyqSubjTabs .pyq-chip').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderPYQ();
+}
+
+function renderPYQ(){
+
+let items = allPYQ.filter(
+  p => String(p.board).toLowerCase() === String(curBoard).toLowerCase()
+);
+  if(pyqYearFilter!=='all') items = items.filter(p=>String(p.year)===pyqYearFilter);
+  if(pyqSubjFilter!=='all') items = items.filter(p=>p.subject===pyqSubjFilter||p.subject==='all');
+  if(pyqExamFilter!=='all') items = items.filter(p=>p.examType===pyqExamFilter);
+  const subData = SUBJECTS[curBoard]||[];
+
+  if(document.getElementById('pyqCount'))
+    document.getElementById('pyqCount').textContent = items.length+' PYQ Papers';
+  if(document.getElementById('pyqBoard'))
+    document.getElementById('pyqBoard').textContent = curBoard.replace('-',' Class ');
+
+  const examColors={'Board Exam':'var(--saffron)','Pre-Board':'var(--blue)','Sample Paper':'var(--teal)','Model Paper':'var(--purple)','Tier 1':'var(--blue)','Tier 2':'var(--purple)','Pre':'var(--teal)','Mains':'var(--saffron)'};
+
+  const listEl = document.getElementById('pyqFilteredList');
+  if(!listEl) return;
+  listEl.innerHTML = items.length
+    ? items.map(p=>{
+        const sub = subData.find(s=>s.id===p.subject);
+        const isAllSubj = p.subject==='all';
+        const accent = examColors[p.examType] || 'var(--saffron)';
+        return `<div class="pyq-card" style="border-left-color:${accent};">
+          <div class="pyq-card-top">
+            <span class="pyq-yr-badge">${p.year}</span>
+            ${sub?`<span class="pyq-subj-ic">${sub.icon}</span>`:(isAllSubj?`<span class="pyq-subj-ic">🗂</span>`:'')}
+          </div>
+          <div class="pyq-card-title">${p.title || 'Untitled PYQ'}</div>
+          <div class="pyq-card-meta">
+            ${sub?`<span class="pyq-meta-tag">${sub.name}</span>`:(isAllSubj?`<span class="pyq-meta-tag">All Subjects</span>`:'')}
+            <span class="pyq-meta-tag" style="color:${accent};">${p.examType||'Board Exam'}</span>
+            ${p.desc?`<span class="pyq-meta-tag">${p.desc}</span>`:''}
+          </div>
+          <div class="pyq-card-foot">
+            ${p.link?`<button class="pyq-dl2" onclick="window.open('${p.link}','_blank')">📥 Download</button>`:'<span class="pyq-nolink">Link जल्द आएगा</span>'}
+          </div>
+        </div>`;
+      }).join('')
+    : `<div class="empty"><div class="ei">📜</div><p>इस filter में कोई PYQ नहीं मिला।</p></div>`;
+}
+
+// ══════════════════════════════════════════
+// DOUBTS
+// ══════════════════════════════════════════
+function renderDoubtSubjects(){
+  document.getElementById('dSubj').innerHTML=(SUBJECTS[curBoard]||[]).map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+}
+// Doubts form ke upar login-gate banner dikhाओ/chhupाओ (login state ke hisab se)
+function updateDoubtLoginGate(){
+  const gate=document.getElementById('doubtLoginGate');
+  if(gate) gate.style.display = (auth.currentUser) ? 'none' : 'block';
+}
+function submitDoubt(){
+  const text=document.getElementById('dText').value.trim();
+  if(!text){ showToast('❌ Doubt खाली है!'); return; }
+  // Doubt sirf logged-in student hi puch sakta hai — isse doubt uske account
+  // (uid) se hamesha ke liye jud jaata hai aur device badalne/app reinstall
+  // karne par bhi erase nahi hota
+  if(!auth.currentUser){
+    showToast('🔒 Doubt पूछने के लिए पहले Google से Sign In करें');
+    if(typeof googleSignIn==='function') googleSignIn();
+    return;
+  }
+  db.collection('doubts').add({
+    board:curBoard,subject:document.getElementById('dSubj').value,
+    topic:document.getElementById('dTopic').value.trim(),text,
+    name:document.getElementById('dName').value.trim()||auth.currentUser.displayName||'Anonymous',
+    date:new Date().toISOString(),status:'pending',answer:'',
+    uid:auth.currentUser.uid, deviceId:DEVICE_ID,
+  }).then(()=>{
+    document.getElementById('dTopic').value='';
+    document.getElementById('dText').value='';
+    document.getElementById('dName').value='';
+    showToast('✅ Doubt submit हो गया!');
+  }).catch(()=>showToast('❌ Error! दोबारा कोशिश करें।'));
+}
+function renderDoubts(doubts){
+  const subs = SUBJECTS[curBoard] || [];
+  const myUid = auth.currentUser ? auth.currentUser.uid : null;
+
+  // Login ho to uid se match karo (sab device par sync), warna purane
+  // (login se pehle wale) doubts ke liye deviceId se match karo
+  const filtered = (doubts || []).filter(d =>
+    d.board === curBoard &&
+    ((myUid && d.uid === myUid) || (!d.uid && d.deviceId === DEVICE_ID))
+  );
+
+  document.getElementById('doubtsList').innerHTML = filtered.length
+    ? filtered.map(d => {
+        const sub = subs.find(s => s.id === d.subject);
+
+        return `
+        <div class="doubt-item">
+          <div class="d-meta">
+            ${sub ? sub.name : '?'} • ${d.topic || 'General'} • ${d.name}
+          </div>
+          <div class="d-q">❓ ${d.text}</div>
+          ${d.answer ? `<div class="d-ans">✅ ${d.answer}</div>` : ''}
+          <span class="d-st ${d.status === 'answered' ? 'st-a' : 'st-p'}">
+            ${d.status === 'answered' ? '✅ Answered' : '⏳ Pending'}
+          </span>
+        </div>`;
+      }).join('')
+    : '<div class="empty"><div class="ei">💬</div><p>अभी कोई doubt नहीं।</p></div>';
+}
+
+// ══════════════════════════════════════════
+// QUIZ
+// ══════════════════════════════════════════
+
+// Subject id ko sundar naam me badlo (Full Mock ke liye special label)
+function subjDisplayName(board, sid){
+  if(sid==='fullmock') return '🎯 Full Mock (All Subjects)';
+  if(sid==='all') return '🗂 All Subjects';
+  const s=(SUBJECTS[board]||[]).find(x=>x.id===sid);
+  return s ? (s.icon+' '+s.name) : (sid||'');
+}
+// Sectional aur flat dono tarah ke quiz ko ek common "sections" array me badlo
+function normalizeQuiz(q){
+  if(q.sectional && Array.isArray(q.sections)){
+    return q.sections.map(s=>({name:s.name||'Section', timeMinutes:s.timeMinutes||0, questions:s.questions||[]}));
+  }
+  return [{name:q.title, timeMinutes:q.timeMinutes||0, questions:q.questions||[]}];
+}
+function totalQFor(q){
+  return q.sectional ? (q.sections||[]).reduce((a,s)=>a+((s.questions||[]).length),0) : (q.questions||[]).length;
+}
+function totalTimeFor(q){
+  return q.sectional ? (q.sections||[]).reduce((a,s)=>a+(s.timeMinutes||0),0) : (q.timeMinutes||Math.ceil(totalQFor(q)*0.5));
+}
+function totalQuestionsCount(){ return quizSections.reduce((a,s)=>a+s.questions.length,0); }
+function globalQIndex(){
+  let n=0; for(let i=0;i<curSection;i++) n+=quizSections[i].questions.length;
+  return n+curQ+1;
+}
+function fmtTime(s){
+  s=Math.max(0,Math.round(s));
+  return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+}
+function clearAllTimers(){
+  clearInterval(ovTimerInt); clearInterval(secTimerInt); clearInterval(qStopInt);
+  ovTimerInt=secTimerInt=qStopInt=null;
+}
+
+function renderQuizList(){
+  exitQuiz();
+  const list=allQuizzes.filter(q=>q.board===curBoard);
+  document.getElementById('quizListSec').innerHTML=list.length
+    ? list.map((q,i)=>`
+        <div class="qz-card">
+          <div class="qzc-t">${q.title}</div>
+          <div class="qzc-s">${subjDisplayName(q.board,q.subject)}</div>
+          <div class="qzc-meta">
+            <span class="qzc-tag">📝 ${totalQFor(q)} Questions</span>
+            <span class="qzc-tag">⏱ ${totalTimeFor(q)} min</span>
+            ${q.sectional?'<span class="qzc-tag">🧩 Sectional</span>':''}
+            ${q.subject==='fullmock'?'<span class="qzc-tag" style="background:#FEF3C7;color:#92400E;">🎯 Full Mock</span>':''}
+          </div>
+          <button class="start-btn" onclick="startQuiz(${i})">▶ Start Quiz</button>
+        </div>`).join('')
+    : '<div class="empty"><div class="ei">🧩</div><p>अभी कोई quiz नहीं।</p></div>';
+}
+function startQuiz(idx){
+  const list=allQuizzes.filter(q=>q.board===curBoard);
+  curQuiz=list[idx];
+  launchQuiz();
+}
+// Subject page se chapter-wise quiz shuru karna (content collection se)
+function startChapterQuiz(contentId){
+  const c=allContent.find(x=>x.id===contentId);
+  if(!c || !Array.isArray(c.questions) || !c.questions.length){ showToast('❌ Quiz load नहीं हो पाया'); return; }
+  curQuiz={title:c.title, board:c.board, subject:c.subject, type:'practice', sectional:false, timeMinutes:c.timeMinutes, questions:c.questions};
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.querySelector('.ni[data-page="quiz"]').classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('pageQuiz').classList.add('active');
+  launchQuiz();
+}
+function launchQuiz(){
+  quizSections=normalizeQuiz(curQuiz); curSection=0; curQ=0; score=0; answered=false;
+  userAnswers=new Array(quizSections.reduce((a,s)=>a+s.questions.length,0)).fill(null);
+  document.getElementById('quizListSec').style.display='none';
+  const adQR=document.getElementById('adSlotQuizReturn'); if(adQR) adQR.style.display='none';
+  document.getElementById('quizActive').style.display='block';
+  document.getElementById('quizResult').style.display='none';
+  // Test ko full-screen banao — topbar/bottom-nav hata do taaki distraction na ho
+  // aur galti se Quiz tab dobara tap karke test exit na ho jaaye
+  document.body.classList.add('quiz-mode');
+  startQuizTimers();
+  showQ();
+}
+
+// ── TIMERS ──
+function startQuizTimers(){
+  clearAllTimers();
+  const bar=document.getElementById('qTimerBar'), ovEl=document.getElementById('qOverallTimer'), secEl=document.getElementById('qSectionTimer');
+  bar.style.display='none'; ovEl.style.display='none'; secEl.style.display='none';
+  ovEl.classList.remove('warn'); secEl.classList.remove('warn');
+
+  const isSectional=!!curQuiz.sectional, sectionalTiming=!!curQuiz.sectionalTiming;
+
+  if(isSectional && sectionalTiming){
+    const sec=quizSections[curSection];
+    secSecondsLeft=(sec.timeMinutes||0)*60;
+    if(secSecondsLeft>0){
+      bar.style.display='flex'; secEl.style.display='inline-flex';
+      secEl.textContent=`⏳ ${sec.name}: ${fmtTime(secSecondsLeft)}`;
+      secTimerInt=setInterval(()=>{
+        secSecondsLeft--;
+        secEl.textContent=`⏳ ${sec.name}: ${fmtTime(secSecondsLeft)}`;
+        secEl.classList.toggle('warn', secSecondsLeft<=30);
+        if(secSecondsLeft<=0){ clearInterval(secTimerInt); showToast('⏰ Section का समय समाप्त!'); goToNextSection(); }
+      },1000);
+    }
+  } else if(!isSectional && curQuiz.timeMinutes){
+    ovSecondsLeft=curQuiz.timeMinutes*60;
+    bar.style.display='flex'; ovEl.style.display='inline-flex';
+    ovEl.textContent=`⏳ कुल समय: ${fmtTime(ovSecondsLeft)}`;
+    ovTimerInt=setInterval(()=>{
+      ovSecondsLeft--;
+      ovEl.textContent=`⏳ कुल समय: ${fmtTime(ovSecondsLeft)}`;
+      ovEl.classList.toggle('warn', ovSecondsLeft<=30);
+      if(ovSecondsLeft<=0){ clearInterval(ovTimerInt); showToast('⏰ समय समाप्त! Quiz submit हो रही है...'); showResult(); }
+    },1000);
+  } else if(isSectional && !sectionalTiming){
+    const totalSec=quizSections.reduce((a,s)=>a+((s.timeMinutes||0)*60),0);
+    if(totalSec>0){
+      ovSecondsLeft=totalSec;
+      bar.style.display='flex'; ovEl.style.display='inline-flex';
+      ovEl.textContent=`⏳ कुल समय: ${fmtTime(ovSecondsLeft)}`;
+      ovTimerInt=setInterval(()=>{
+        ovSecondsLeft--;
+        ovEl.textContent=`⏳ कुल समय: ${fmtTime(ovSecondsLeft)}`;
+        ovEl.classList.toggle('warn', ovSecondsLeft<=30);
+        if(ovSecondsLeft<=0){ clearInterval(ovTimerInt); showToast('⏰ समय समाप्त! Quiz submit हो रही है...'); showResult(); }
+      },1000);
+    }
+  }
+}
+function startQuestionStopwatch(){
+  clearInterval(qStopInt);
+  qSecondsElapsed=0;
+  const el=document.getElementById('qCornerTimer');
+  el.textContent='⏱ 0s';
+  qStopInt=setInterval(()=>{
+    qSecondsElapsed++;
+    el.textContent='⏱ '+qSecondsElapsed+'s';
+  },1000);
+}
+function goToNextSection(){
+  curSection++; curQ=0;
+  if(curSection>=quizSections.length){ showResult(); return; }
+  startQuizTimers();
+  showQ();
+}
+
+function showQ(){
+  const sec=quizSections[curSection];
+  if(!curQuiz||!sec){ showResult(); return; }
+  const q=sec.questions[curQ];
+  if(!q){ showResult(); return; }
+  const totalAll=totalQuestionsCount(), globalIdx=globalQIndex();
+  document.getElementById('qNum').textContent = curQuiz.sectional
+    ? `${sec.name} • प्रश्न ${curQ+1}/${sec.questions.length}  (कुल ${globalIdx}/${totalAll})`
+    : `Question ${globalIdx} of ${totalAll}`;
+  document.getElementById('qFill').style.width=(((globalIdx-1)/totalAll)*100)+'%';
+  document.getElementById('qText').textContent=q.q;
+  const imgEl=document.getElementById('qImg');
+  if(q.img){ imgEl.src=q.img; imgEl.style.display='block'; } else { imgEl.style.display='none'; imgEl.src=''; }
+  document.getElementById('qOpts').innerHTML=q.options.map((o,i)=>
+    `<div class="q-opt" onclick="selOpt(this,${i},${q.ans})">${String.fromCharCode(65+i)}. ${o}</div>`).join('');
+  // Agar ye question pehle se answer ho chuka hai (← पिछला button se wapas aaye hain),
+  // to purani selection dikha do — dobara click karke score double-count nahi hoga
+  const prevAns = userAnswers[globalIdx-1];
+  if(prevAns!==null && prevAns!==undefined){
+    answered=true;
+    const optEls=document.querySelectorAll('#qOpts .q-opt');
+    if(curQuiz.type==='mock'){
+      if(optEls[prevAns]) optEls[prevAns].classList.add('sel');
+    } else {
+      if(optEls[prevAns]) optEls[prevAns].classList.add(prevAns===q.ans?'corr':'wrong');
+      if(optEls[q.ans]) optEls[q.ans].classList.add('corr');
+    }
+  } else {
+    answered=false;
+  }
+  const prevBtn=document.getElementById('qPrev');
+  if(prevBtn) prevBtn.disabled = (curQ===0);
+  const isVeryLast = curSection===quizSections.length-1 && curQ===sec.questions.length-1;
+  const isSectionLast = curQ===sec.questions.length-1;
+  document.getElementById('qNext').textContent = isVeryLast ? 'Result ✓' : (isSectionLast ? 'अगला Section →' : 'अगला →');
+  startQuestionStopwatch();
+}
+// Pichhle question par wapas jao (sirf current section ke andar — section
+// paar karke peeche nahi jaate, taaki sectional timing na bigde)
+function prevQ(){
+  if(curQ<=0) return;
+  curQ--;
+  showQ();
+}
+function selOpt(el,idx,ans){
+  if(answered)return; answered=true;
+  userAnswers[globalQIndex()-1]=idx;
+  document.querySelectorAll('.q-opt').forEach(o=>o.classList.remove('sel','corr','wrong'));
+  if(curQuiz.type==='mock'){
+    el.classList.add('sel'); // Mock test — result तक सही/गलत नहीं दिखेगा
+  } else {
+    el.classList.add(idx===ans?'corr':'wrong');
+    document.querySelectorAll('.q-opt')[ans].classList.add('corr');
+  }
+  if(idx===ans)score++;
+}
+function nextQ(){
+  const sec=quizSections[curSection];
+  curQ++;
+  if(curQ>=sec.questions.length){
+    if(curSection<quizSections.length-1) goToNextSection();
+    else showResult();
+  } else {
+    showQ();
+  }
+}
+function showResult(){
+  clearAllTimers();
+  document.getElementById('quizActive').style.display='none';
+  document.getElementById('quizResult').style.display='block';
+  // Result screen par wapas normal chrome (topbar/bottom-nav) dikha do
+  document.body.classList.remove('quiz-mode');
+  const total=totalQuestionsCount(), pct=total?Math.round((score/total)*100):0;
+  document.getElementById('rEmoji').textContent=pct>=80?'🏆':pct>=50?'👍':'💪';
+  document.getElementById('rScore').textContent=`${score}/${total} (${pct}%)`;
+  document.getElementById('rMsg').textContent=pct>=80?'शानदार! बेहतरीन Performance!':pct>=50?'अच्छा! और practice करें!':'हिम्मत रखें, आप कर सकते हैं!';
+  renderAnswerKey();
+  renderQPalette();
+}
+
+// ══════════════════════════════════════════
+// QUESTION PALETTE — result screen par sabhi question no. clickable grid
+// (green = सही, red = गलत, grey = छूटा हुआ), tap karne par us question
+// ke Answer Key card tak seedha scroll ho jaata hai
+// ══════════════════════════════════════════
+function renderQPalette(){
+  const box=document.getElementById('qPalette');
+  if(!box) return;
+  let gi=0, html='';
+  quizSections.forEach(sec=>{
+    (sec.questions||[]).forEach(q=>{
+      gi++;
+      const uAns=userAnswers[gi-1];
+      const isSkip = uAns===null || uAns===undefined;
+      const isRight = !isSkip && uAns===q.ans;
+      const cls = isSkip?'qp-skip':(isRight?'qp-right':'qp-wrong');
+      html+=`<div class="qp-num ${cls}" onclick="jumpToAnswer(${gi})">${gi}</div>`;
+    });
+  });
+  box.innerHTML=html;
+}
+function jumpToAnswer(n){
+  const el=document.getElementById('akQ'+n);
+  if(!el) return;
+  el.scrollIntoView({behavior:'smooth', block:'center'});
+  el.classList.add('ak-flash');
+  setTimeout(()=>el.classList.remove('ak-flash'), 900);
+}
+
+// ══════════════════════════════════════════
+// ANSWER KEY (सभी quiz types के लिए)
+// ══════════════════════════════════════════
+function renderAnswerKey(){
+  const box=document.getElementById('rAnswerKey');
+  if(!box) return;
+  let gi=0, html='';
+  quizSections.forEach(sec=>{
+    (sec.questions||[]).forEach(q=>{
+      gi++;
+      const uAns=userAnswers[gi-1];
+      const isSkip = uAns===null || uAns===undefined;
+      const isRight = !isSkip && uAns===q.ans;
+      const statusCls = isSkip?'skip':(isRight?'right':'wrong');
+      const statusLbl = isSkip?'⭕ छूटा हुआ':(isRight?'✅ सही':'❌ गलत');
+      const optsHtml=(q.options||[]).map((o,i)=>{
+        let cls='ak-opt';
+        if(i===q.ans) cls+=' ak-correct';
+        else if(i===uAns) cls+=' ak-userwrong';
+        return `<div class="${cls}">${String.fromCharCode(65+i)}. ${o}</div>`;
+      }).join('');
+      html+=`<div class="ak-card ak-${statusCls}" id="akQ${gi}">
+        <div class="ak-qhead">
+          <span class="ak-qnum">प्रश्न ${gi}${curQuiz.sectional?' • '+sec.name:''}</span>
+          <span class="ak-status ${statusCls}">${statusLbl}</span>
+        </div>
+        <div class="ak-qtext">${q.q||''}</div>
+        ${q.img?`<img class="ak-img" src="${q.img}" alt="Question image"/>`:''}
+        ${optsHtml}
+        ${q.exp?`<div class="ak-exp"><b>💡 व्याख्या:</b> ${q.exp}</div>`:''}
+      </div>`;
+    });
+  });
+  box.innerHTML=html || '<div class="empty"><div class="ei">📋</div><p>कोई प्रश्न नहीं।</p></div>';
+}
+// Quiz beech mein chhodne se pehle confirmation maangta hai (taaki galti se
+// progress na chali jaaye) — quiz result screen se "Quiz List" par sidha exitQuiz() hi chalta hai
+function requestExitQuiz(){
+  const activeEl = document.getElementById('quizActive');
+  const inProgress = activeEl && activeEl.style.display !== 'none';
+  if(!inProgress){ exitQuiz(); return; }
+  const modal = document.getElementById('quizExitModal');
+  if(modal) modal.style.display = 'flex';
+}
+function cancelExitQuiz(){
+  const modal = document.getElementById('quizExitModal');
+  if(modal) modal.style.display = 'none';
+}
+function confirmExitQuiz(){
+  const modal = document.getElementById('quizExitModal');
+  if(modal) modal.style.display = 'none';
+  exitQuiz();
+}
+function exitQuiz(){
+  clearAllTimers();
+  quizSections=[]; curSection=0;
+  curQuiz=null; userAnswers=[];
+  document.body.classList.remove('quiz-mode');
+  if(document.getElementById('quizListSec')) document.getElementById('quizListSec').style.display='block';
+  const adQR=document.getElementById('adSlotQuizReturn'); if(adQR) adQR.style.display='flex';
+  if(document.getElementById('quizActive')) document.getElementById('quizActive').style.display='none';
+  if(document.getElementById('quizResult')) document.getElementById('quizResult').style.display='none';
+}
+
+function shareApp(){
+  if(navigator.share){
+    navigator.share({
+      title: 'EduSpark — Free Board Study App',
+      text: 'CBSE & BSER Class 10 & 12 ke liye free study app — PDF, Videos, Quiz, PYQ sab free!',
+      url: 'https://eduspark.de5.net/'
+    }).then(()=>showToast('✅ Share ho gaya!'))
+    .catch(()=>{});
+  } else {
+    navigator.clipboard.writeText('https://eduspark.de5.net/')
+      .then(()=>showToast('✅ Link copy ho gaya!'))
+      .catch(()=>showToast('🔗 https://eduspark.de5.net/'));
+  }
+}
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+function getYouTubeId(url){
+  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|live\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+}
+
+function playVideo(url){
+  const videoId = getYouTubeId(url);
+  if(videoId){
+    document.getElementById('vmFrame').innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" allow="autoplay; encrypted-media; fullscreen" allowfullscreen webkitallowfullscreen mozallowfullscreen></iframe>`;
+    document.getElementById('videoModal').classList.add('show');
+    // Try to lock to landscape for better viewing
+    if(screen.orientation && screen.orientation.lock){
+      screen.orientation.lock('landscape').catch(()=>{});
+    }
+  } else {
+    window.open(url, '_blank');
+  }
+}
+
+function closeVideo(){
+  document.getElementById('videoModal').classList.remove('show');
+  document.getElementById('vmFrame').innerHTML = '';
+  if(screen.orientation && screen.orientation.unlock){
+    screen.orientation.unlock();
+  }
+}
+
+
+// ══════════════════════════════════════════
+// PRIVACY POLICY
+// ══════════════════════════════════════════
+function openPrivacy(){
+  document.getElementById('privacyModal').style.display='flex';
+}
+function closePrivacy(){
+  document.getElementById('privacyModal').style.display='none';
+}
+function closePrivacyOut(event){
+  if(event.target && event.target.id==='privacyModal'){ closePrivacy(); }
+}
+
+// ══════════════════════════════════════════
+// THOUGHT OF THE DAY
+// ══════════════════════════════════════════
+const THOUGHTS = [
+  {t:"मेहनत उस समय भी करो जब कोई देख नहीं रहा — सफलता वहीं से शुरू होती है।", a:"आज की सोच"},
+  {t:"हर बड़ा एग्जाम एक छोटी शुरुआत से जीता जाता है — आज का 1 घंटा भी गिनती में है।", a:"आज की सोच"},
+  {t:"Consistency, talent से ज़्यादा result देती है। रोज़ थोड़ा पढ़ो, हार मत मानो।", a:"आज की सोच"},
+  {t:"जो स्टूडेंट गलतियों से सीखता है, वही सबसे तेज़ आगे बढ़ता है।", a:"आज की सोच"},
+  {t:"Result की चिंता छोड़ो, आज के syllabus पर focus करो — बाकी अपने आप होगा।", a:"आज की सोच"},
+  {t:"Doubt पूछने में शर्म कैसी? जो पूछता है, वही आगे निकलता है।", a:"आज की सोच"},
+  {t:"तुम्हारा आज का revision, कल के exam hall में तुम्हारा सबसे बड़ा साथी होगा।", a:"आज की सोच"},
+  {t:"Distraction थोड़ी देर की खुशी देता है, पढ़ाई ज़िंदगी भर की।", a:"आज की सोच"},
+  {t:"छोटे-छोटे targets बनाओ — हर दिन जीतने की आदत डालो।", a:"आज की सोच"},
+  {t:"जो आज मुश्किल लग रहा है, कल वही तुम्हारी सबसे बड़ी ताकत बनेगा।", a:"आज की सोच"},
+  {t:"खुद से रोज़ एक सवाल पूछो — आज मैंने कल से बेहतर क्या किया?", a:"आज की सोच"},
+  {t:"Marks से ज़्यादा ज़रूरी है समझना — समझ आएगी तो marks खुद आएंगे।", a:"आज की सोच"},
+  {t:"हार मानने का मन करे तो याद करो — तुमने यहाँ तक पहुँचने के लिए कितना किया है।", a:"आज की सोच"},
+  {t:"बड़े सपने देखो, पर आज के छोटे chapter से शुरुआत करो।", a:"आज की सोच"},
+  {t:"पढ़ाई में मन ना लगे तो 10 मिनट का break लो, फिर दोबारा जुट जाओ — रुकना नहीं है।", a:"आज की सोच"},
+  {t:"जो लोग रोज़ थोड़ा आगे बढ़ते हैं, वही आखिर में सबसे आगे होते हैं।", a:"आज की सोच"},
+  {t:"आज का PYQ practice, कल का confidence है।", a:"आज की सोच"},
+  {t:"खुद पर भरोसा रखो — तुमने पहले भी मुश्किल चीज़ें सीखी हैं।", a:"आज की सोच"},
+  {t:"एक अच्छी आदत — रोज़ सोने से पहले आज पढ़ी चीज़ को 5 मिनट दोहराओ।", a:"आज की सोच"},
+  {t:"Comparison छोड़ो, अपनी कल वाली performance से आज बेहतर बनो।", a:"आज की सोच"}
+];
+function getTodaysThought(){
+  const start = new Date(new Date().getFullYear(),0,0);
+  const diff = new Date() - start;
+  const dayOfYear = Math.floor(diff / (1000*60*60*24));
+  return THOUGHTS[dayOfYear % THOUGHTS.length];
+}
+function maybeShowThoughtOfDay(){
+  const profile = JSON.parse(localStorage.getItem('es_student')||'null');
+  if(!profile) return; // naya user pehle profile setup karega
+  const todayStr = new Date().toDateString();
+  if(localStorage.getItem('es_thought_shown_on') === todayStr) return;
+  const th = getTodaysThought();
+  document.getElementById('tqText').textContent = th.t;
+  document.getElementById('tqAuth').textContent = th.a;
+  document.getElementById('thoughtModal').classList.add('show');
+}
+function closeThoughtOfDay(){
+  document.getElementById('thoughtModal').classList.remove('show');
+  localStorage.setItem('es_thought_shown_on', new Date().toDateString());
+}
+function closeThoughtOut(event){
+  if(event.target && event.target.id==='thoughtModal'){ closeThoughtOfDay(); }
+}
+
+// ══════════════════════════════════════════
+// LIVE CLASS
+// ══════════════════════════════════════════
+function listenLiveClass(){
+  db.collection('_config').doc('liveClass').onSnapshot(doc=>{
+    if(doc.exists){
+      const data = doc.data();
+      renderLiveBanner(data);
+    }
+  }, ()=>{});
+}
+
+function renderLiveBanner(data){
+  const sec = document.getElementById('liveBannerSec');
+  if(!sec) return;
+  if(!data || data.status==='off'){ sec.style.display='none'; return; }
+  if(data.board && data.board!=='ALL' && data.board!==curBoard){ sec.style.display='none'; return; }
+  sec.style.display='block';
+  document.getElementById('liveTag').textContent = data.status==='live' ? '🔴 LIVE NOW' : '⏰ UPCOMING';
+  document.getElementById('liveTitle').textContent = data.title || 'Live Class';
+  document.getElementById('liveTime').textContent = data.timeText || '';
+  window._liveClassLink = data.link || '';
+}
+
+function openLiveClass(){
+  if(window._liveClassLink) playVideo(window._liveClassLink);
+}
+
+// ══════════════════════════════════════════
+// COMMUNITY (WhatsApp / Telegram)
+// ══════════════════════════════════════════
+function listenCommunity(){
+  db.collection('_config').doc('community').onSnapshot(doc=>{
+    const data = doc.exists ? doc.data() : {};
+    const waBtn = document.getElementById('waJoinBtn');
+    const tgBtn = document.getElementById('tgJoinBtn');
+
+    if(data.whatsappLink){
+      waBtn.href = data.whatsappLink;
+      document.getElementById('waJoinText').textContent = data.whatsappText || 'WhatsApp Group Join करें';
+      waBtn.style.display = 'flex';
+    } else {
+      waBtn.style.display = 'none';
+    }
+
+    if(data.telegramLink){
+      tgBtn.href = data.telegramLink;
+      document.getElementById('tgJoinText').textContent = data.telegramText || 'Telegram Group Join करें';
+      tgBtn.style.display = 'flex';
+    } else {
+      tgBtn.style.display = 'none';
+    }
+  }, ()=>{});
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBtn').style.display = 'flex';
+  // Flash message dikhao
+  setTimeout(()=>{
+    showInstallToast();
+  }, 3000);
+});
+
+function installApp(){
+  if(deferredPrompt){
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(()=>{ 
+      deferredPrompt = null;
+      document.getElementById('installBtn').style.display = 'none';
+    });
+  }
+}
+function showInstallToast(){
+  const existing = document.getElementById('installToast');
+  if(existing) existing.remove();
+  
+  const toast = document.createElement('div');
+  toast.id = 'installToast';
+  toast.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div style="width:44px;height:44px;background:linear-gradient(135deg,#0F1B35,#1a3a6b);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">📚</div>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:700;color:#0F1B35;">EduSpark App Install करें</div>
+        <div style="font-size:11px;color:#64748B;margin-top:2px;">Free • Fast • Offline Support</div>
+      </div>
+      <button onclick="installApp();document.getElementById('installToast').remove();" style="background:#0F1B35;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">Install</button>
+    </div>
+    <button onclick="document.getElementById('installToast').remove();" style="position:absolute;top:8px;right:10px;background:none;border:none;font-size:16px;cursor:pointer;color:#94A3B8;">✕</button>
+  `;
+  toast.style.cssText = `position:fixed;bottom:80px;left:12px;right:12px;background:#fff;border-radius:16px;padding:14px 16px;box-shadow:0 8px 32px rgba(15,27,53,.2);z-index:9998;animation:slideUp .4s ease;border:1.5px solid #E2E8F0;position:fixed;`;
+  document.body.appendChild(toast);
+  setTimeout(()=>{ if(document.getElementById('installToast')) document.getElementById('installToast').remove(); }, 8000);
+}
+
+const provider = new firebase.auth.GoogleAuthProvider();
+provider.setCustomParameters({ prompt: 'select_account' });
+
+// Popup try karo (zyaadatar browsers mein reliable hai), agar popup block/unsupported
+// ho (jaise installed/standalone app mein) to redirect par fallback kar do.
+function googleSignIn(){
+  auth.signInWithPopup(provider).catch((error) => {
+    if (error.code === 'auth/popup-blocked' ||
+        error.code === 'auth/popup-closed-by-user' ||
+        error.code === 'auth/cancelled-popup-request' ||
+        error.code === 'auth/operation-not-supported-in-this-environment') {
+      auth.signInWithRedirect(provider).catch((redirectErr) => {
+        showToast("❌ Sign-in fail: " + redirectErr.message);
+      });
+    } else {
+      showToast("❌ Sign-in fail: " + error.message);
+    }
+  });
+}
+
+// Welcome screen ka Google Sign-in button
+function googleSignInWelcome(){
+  googleSignIn();
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  const btn = document.getElementById("googleLoginBtn");
+  if (btn) {
+    btn.addEventListener("click", function () {
+      googleSignIn();
+    });
+  }
+
+  auth.getRedirectResult()
+    .then((result) => {
+      if (result.user) {
+        // Agar welcome screen abhi khuli hai to naam auto-fill kar do
+        const ssNameInput = document.getElementById('ssName');
+        if (ssNameInput && !ssNameInput.value) {
+          ssNameInput.value = result.user.displayName || '';
+        }
+      }
+    })
+    .catch((error) => {
+      showToast("❌ " + error.message);
+    });
+});
+
+// Sign-in state track karo — sign-in hone ke baad button hamesha hide rahe
+// (yahi wo bug tha: pehle sign-in ke baad bhi button dikhta reh jaata tha)
+auth.onAuthStateChanged(function(user){
+  const loginBtn = document.getElementById('googleLoginBtn');
+  const ssBtn = document.getElementById('ssGoogleBtn');
+  if (typeof updateUsernameLockUI === "function") updateUsernameLockUI();
+  if (typeof updateDoubtLoginGate === "function") updateDoubtLoginGate();
+
+  if(user){
+    if(loginBtn) loginBtn.style.display = 'none';
+    if(ssBtn) ssBtn.style.display = 'none';
+
+    const existingProfile = JSON.parse(localStorage.getItem('es_student')||'null');
+    const isNewOnThisDevice = !existingProfile;
+
+    // Is Google account se jo bhi username/photo pehle kisi bhi device par
+    // set kiya gaya tha, usse yahan wapas le aao — isi email se sign in karne
+    // par purana username/photo kabhi erase/reset nahi hoga
+    db.collection('students').doc(user.uid).get().then(function(docSnap){
+      const cloud = docSnap.exists ? docSnap.data() : null;
+      const merged = existingProfile ? Object.assign({}, existingProfile) : {
+        board: curBoard, date: new Date().toISOString()
+      };
+      if(!merged.name) merged.name = (cloud && cloud.name) || user.displayName || 'Student';
+      if(cloud && cloud.username) merged.username = cloud.username; // account ka asli username hamesha priority
+      if(cloud && cloud.photo) merged.photo = cloud.photo;
+      if(!merged.photo && user.photoURL) merged.photo = user.photoURL;
+
+      localStorage.setItem('es_student', JSON.stringify(merged));
+      const setupEl = document.getElementById('studentSetup');
+      if(setupEl) setupEl.style.display = 'none';
+
+      if(isNewOnThisDevice) showToast("👋 Welcome " + merged.name);
+      if (typeof updateTopbarAvatar === "function") updateTopbarAvatar();
+      if (typeof renderHome === "function") renderHome();
+      if (typeof updateUsernameLockUI === "function") updateUsernameLockUI();
+      if (typeof syncStudentToCloud === "function") syncStudentToCloud();
+
+      // Naye device/naye student ko native "Allow Notifications" popup dikhाओ
+      // (normal apps ki tarah); purane/returning session par chupchap register karo
+      if(isNewOnThisDevice){
+        if (typeof requestNotificationPermission === "function") requestNotificationPermission();
+      } else {
+        if (typeof initPushNotifications === "function") initPushNotifications();
+      }
+    }).catch(function(){
+      // Offline/error — jo local profile hai usi ke saath aage badho
+      if (typeof syncStudentToCloud === "function") syncStudentToCloud();
+      if (typeof initPushNotifications === "function") initPushNotifications();
+    });
+  } else {
+    // Sign out hai — agar profile bhi manually set nahi hai to button dikhaओ
+    const existingProfile = JSON.parse(localStorage.getItem('es_student')||'null');
+    if(!existingProfile){
+      if(loginBtn) loginBtn.style.display = '';
+      if(ssBtn) ssBtn.style.display = '';
+    }
+  }
+});
+
+// ══════════════════════════════════════════
+// PUSH NOTIFICATIONS
+// ══════════════════════════════════════════
+
+// Student ka record Firestore mein save/update karta hai — taaki naam ke
+// saath 3-din wala reminder aur admin ka broadcast notification bhej sakein.
+// lastActive har app-open par update hoti hai (3-din inactivity check isी se hoga).
+function syncStudentToCloud(fcmToken){
+  const profile = JSON.parse(localStorage.getItem('es_student')||'null');
+  if(!profile) return;
+  const data = {
+    name: profile.name || 'Student',
+    username: profile.username || null,
+    usernameLower: profile.username ? profile.username.toLowerCase() : null,
+    photo: profile.photo || null,
+    board: curBoard,
+    deviceId: DEVICE_ID,
+    lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  // Google se sign in hai to uski identity bhi save karo — isi se agli baar
+  // kisi bhi device par sign in karne par username/photo wapas mil paate hain
+  if(auth.currentUser){
+    data.googleUid = auth.currentUser.uid;
+    data.email = auth.currentUser.email || null;
+  }
+  if(fcmToken) data.fcmToken = fcmToken;
+  db.collection('students').doc(getStudentDocId()).set(data, {merge:true}).catch(()=>{});
+}
+
+// Notification permission maango — sirf ek baar, profile setup ke turant baad
+// Agar deny kar diya, to custom banner dikhao jo in-app Notifications page ki taraf le jaaye
+function requestNotificationPermission(){
+  if(!('Notification' in window) || !('serviceWorker' in navigator)) return;
+  if(Notification.permission === 'granted'){ registerFcmToken(); return; }
+  if(Notification.permission === 'denied'){ showNotifBanner(); return; }
+  Notification.requestPermission().then(permission=>{
+    if(permission === 'granted') registerFcmToken();
+    else showNotifBanner();
+  });
+}
+
+// Har app-open par call hota hai — permission pehle se granted ho to silently
+// token refresh + lastActive update kar deta hai, dobara poochta nahi
+function initPushNotifications(){
+  if(!('Notification' in window)){ return; }
+  if(Notification.permission === 'granted'){ registerFcmToken(); }
+  else {
+    syncStudentToCloud(); // permission na ho tab bhi lastActive update ho jaaye
+    if(Notification.permission === 'denied') showNotifBanner();
+  }
+}
+
+// Push permission blocked hone par dikhne wala banner — taaki student
+// notifications app ke andar (Notifications page mein) dekh sake
+function showNotifBanner(){
+  if(localStorage.getItem('es_notif_banner_dismissed')==='1') return;
+  const el = document.getElementById('notifBanner');
+  if(el) el.style.display = 'flex';
+}
+function dismissNotifBanner(){
+  localStorage.setItem('es_notif_banner_dismissed','1');
+  const el = document.getElementById('notifBanner');
+  if(el) el.style.display = 'none';
+}
+
+// Notifications page ke andar ka toggle — jab tak student allow na kare,
+// yeh card dikhता rehta hai taaki wo jab chahe wahin se allow kar sake
+function renderNotifPermCard(){
+  const card = document.getElementById('notifPermCard');
+  const toggle = document.getElementById('npcToggle');
+  const title = document.getElementById('npcTitle');
+  const sub = document.getElementById('npcSub');
+  if(!card || !toggle) return;
+  if(!('Notification' in window)){ card.style.display = 'none'; return; }
+
+  const perm = Notification.permission;
+  card.style.display = 'flex';
+
+  if(perm === 'granted'){
+    toggle.checked = true;
+    toggle.disabled = true;
+    title.textContent = '✅ Push Notifications ON हैं';
+    sub.textContent = 'आपको सभी study reminders मिलते रहेंगे';
+  } else if(perm === 'denied'){
+    toggle.checked = false;
+    toggle.disabled = true;
+    title.textContent = '🔕 Push Notifications बंद हैं';
+    sub.textContent = 'Browser/App की Settings में जाकर Notifications allow करें';
+  } else {
+    toggle.checked = false;
+    toggle.disabled = false;
+    title.textContent = '🔔 Push Notifications Allow करें';
+    sub.textContent = 'रोज़ के पढ़ाई reminders पाने के लिए toggle ON करें';
+  }
+}
+
+function onNotifToggleChange(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission !== 'default') { renderNotifPermCard(); return; }
+  Notification.requestPermission().then(function(permission){
+    if(permission === 'granted'){
+      if (typeof registerFcmToken === "function") registerFcmToken();
+      showToast('✅ Notifications Allow हो गईं!');
+    } else {
+      showToast('🔕 Notifications allow नहीं हुईं');
+    }
+    renderNotifPermCard();
+  });
+}
+
+// ══════════════════════════════════════════
+// IN-APP NOTIFICATION CENTER
+// ══════════════════════════════════════════
+let notifReturnPageId = 'pageHome';
+function openNotificationsPage(){
+  const curActive = document.querySelector('.page.active');
+  notifReturnPageId = curActive ? curActive.id : 'pageHome';
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const pg = document.getElementById('pageNotifications');
+  pg.classList.add('active','slide-in-right');
+  setTimeout(()=>pg.classList.remove('slide-in-right','slide-in-left'), 300);
+
+  renderNotifPermCard();
+  renderNotifications();
+
+  // Ab tak ke sabhi notifications "dekh liye" maano — badge clear karo
+  localStorage.setItem('es_notif_seen_ts', new Date().toISOString());
+  updateNotifBadge();
+}
+function closeNotificationsPage(){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const back = document.getElementById(notifReturnPageId) || document.getElementById('pageHome');
+  back.classList.add('active');
+}
+
+function renderNotifications(){
+  const el = document.getElementById('notifList');
+  if(!el) return;
+  el.innerHTML = '<div class="notif-empty">लोड हो रहा है...</div>';
+  db.collection('notificationQueue').orderBy('createdAt','desc').limit(30).get()
+    .then(snap=>{
+      const items = snap.docs.map(d=>d.data()).filter(n=>{
+        return !n.audience || n.audience === 'all' || n.audience === curBoard;
+      });
+      if(!items.length){
+        el.innerHTML = '<div class="notif-empty">🔔 अभी तक कोई notification नहीं है।</div>';
+        return;
+      }
+      el.innerHTML = items.map(n=>`
+        <div class="notif-item">
+          <div class="ni-title">${n.title || ''}</div>
+          <div class="ni-body">${n.body || ''}</div>
+          <div class="ni-time">${formatNotifTime(n.createdAt)}</div>
+        </div>`).join('');
+    })
+    .catch(()=>{ el.innerHTML = '<div class="notif-empty">❌ Notifications load नहीं हो पाए।</div>'; });
+}
+
+function formatNotifTime(createdAt){
+  try{
+    const d = new Date(createdAt);
+    if(isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('hi-IN',{day:'numeric',month:'short'}) + ' • ' + d.toLocaleTimeString('hi-IN',{hour:'2-digit',minute:'2-digit'});
+  }catch(e){ return ''; }
+}
+
+// Topbar par bell ke upar kitni "unread" notifications hain, uska badge
+function updateNotifBadge(){
+  const dot = document.getElementById('tbBellDot');
+  if(!dot) return;
+  const seenTs = localStorage.getItem('es_notif_seen_ts');
+  db.collection('notificationQueue').orderBy('createdAt','desc').limit(30).get()
+    .then(snap=>{
+      const items = snap.docs.map(d=>d.data()).filter(n=>{
+        return !n.audience || n.audience === 'all' || n.audience === curBoard;
+      });
+      const unread = seenTs ? items.filter(n => n.createdAt && n.createdAt > seenTs).length : items.length;
+      if(unread > 0){
+        dot.style.display = 'flex';
+        dot.textContent = unread > 9 ? '9+' : String(unread);
+      } else {
+        dot.style.display = 'none';
+      }
+    })
+    .catch(()=>{});
+}
+
+function registerFcmToken(){
+  if(FCM_VAPID_KEY === "PASTE_YOUR_VAPID_KEY_HERE" || !('serviceWorker' in navigator) || typeof firebase.messaging !== 'function'){
+    syncStudentToCloud();
+    return;
+  }
+  navigator.serviceWorker.getRegistration('/sw.js').then(reg=>{
+    if(!reg){ syncStudentToCloud(); return; }
+    const messaging = firebase.messaging();
+    messaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: reg })
+      .then(token=>{ syncStudentToCloud(token || null); })
+      .catch(()=>{ syncStudentToCloud(); });
+  }).catch(()=>{ syncStudentToCloud(); });
+}
+
+window.onload = function(){
+  // Version check — purana data clear karo
+  if(localStorage.getItem('es_app_version')!=='v5'){
+    localStorage.removeItem('es_student');
+    localStorage.removeItem('es_board');
+    localStorage.setItem('es_app_version','v5');
+  }
+  setTimeout(()=>{
+    document.getElementById('splash').classList.add('hide');
+    setTimeout(()=>{ document.getElementById('splash').style.display='none'; },500);
+    document.getElementById('app').style.display='flex';
+    if (typeof updateBoardPill === "function") updateBoardPill();
+if (typeof renderDoubtSubjects === "function") renderDoubtSubjects();
+if (typeof listenContent === "function") listenContent();
+if (typeof listenQuizzes === "function") listenQuizzes();
+if (typeof listenDoubts === "function") listenDoubts();
+if (typeof listenPYQ === "function") listenPYQ();
+if (typeof listenLiveClass === "function") listenLiveClass();
+if (typeof listenCommunity === "function") listenCommunity();
+    // Back-gesture guard armed karo — ab back press pehle app ke andar handle hoga
+    armBackGuard();
+    // Aaj ka Thought of the Day dikhाओ
+    if (typeof maybeShowThoughtOfDay === "function") maybeShowThoughtOfDay();
+    // Push notification token register/update karo (agar permission pehle se hai)
+    if (typeof initPushNotifications === "function") initPushNotifications();
+    // Topbar bell par unread notifications ka badge dikhाओ
+    if (typeof updateNotifBadge === "function") updateNotifBadge();
+  }, 500);
+  // Student setup - splash ke baad
+  setTimeout(()=>{
+    const profile = JSON.parse(localStorage.getItem('es_student')||'null');
+    if(!profile){
+      document.getElementById('studentSetup').style.display='flex';
+    }
+    if (typeof updateTopbarAvatar === "function") updateTopbarAvatar();
+    // Install toast
+    setTimeout(()=>{
+      if(!window.matchMedia('(display-mode: standalone)').matches){
+        if (typeof showInstallToast === "function") showInstallToast();
+      }
+    }, 1800);
+  }, 900);
+};
+
+window.addEventListener("appinstalled", () => {
+  firebase.analytics().logEvent("app_installed");
+  showToast("🎉 EduSpark Installed Successfully!");
+});
+
+// Agar student browser settings se खुद notification permission badal de, to
+// Notifications page ka toggle (agar khula hai) apne aap refresh ho jaaye
+if(navigator.permissions && navigator.permissions.query){
+  navigator.permissions.query({name:'notifications'}).then(function(status){
+    status.onchange = function(){ if (typeof renderNotifPermCard === "function") renderNotifPermCard(); };
+  }).catch(function(){});
+}
+
+</script>
+<script>
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js');
+}
+</script>
+</body>
+</html>

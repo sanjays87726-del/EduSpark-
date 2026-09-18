@@ -1,4 +1,4 @@
-const CACHE_NAME = "eduspark-v5";
+const CACHE_NAME = "eduspark-v6";
 
 // App shell files jo install hote hi cache ho jaate hain — taaki pehli baar
 // install hone par bhi offline-readiness thodi behtar rahe
@@ -49,20 +49,28 @@ self.addEventListener("fetch", event => {
   ].some(h => url.hostname.includes(h));
   if (isAdNetwork) return;
 
+  // Stale-while-revalidate: pehle jo bhi cache mein already hai wo TURANT
+  // de do (isse load bahut fast feel hota hai, khaas kar refresh par), aur
+  // saath hi background mein network se fresh copy laakar cache update kar do
+  // taaki agli baar aur naya content mile. Pehle yahan "network-first" tha
+  // jisme HAR baar network ka wait karna padta tha — isi wajah se site slow
+  // aur refresh par bhaari lagti thi.
   event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, copy);
-        });
-        return response;
-      })
-      .catch(() =>
-        caches.match(event.request).then(cached =>
-          cached || (event.request.mode === "navigate" ? caches.match("/index.html") : undefined)
-        )
-      )
+    caches.match(event.request).then(cachedResponse => {
+      const networkFetch = fetch(event.request)
+        .then(networkResponse => {
+          if (networkResponse && networkResponse.ok) {
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+          }
+          return networkResponse;
+        })
+        .catch(() =>
+          cachedResponse || (event.request.mode === "navigate" ? caches.match("/index.html") : undefined)
+        );
+
+      return cachedResponse || networkFetch;
+    })
   );
 });
 
