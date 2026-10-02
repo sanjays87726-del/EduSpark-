@@ -1,4 +1,4 @@
-const CACHE_NAME = "eduspark-v6";
+const CACHE_NAME = "eduspark-v7";
 
 // App shell files jo install hote hi cache ho jaate hain — taaki pehli baar
 // install hone par bhi offline-readiness thodi behtar rahe
@@ -82,18 +82,23 @@ self.addEventListener("fetch", event => {
 self.addEventListener("push", event => {
   let data = { title: "EduSpark", body: "Naya update aa gaya hai! 📚" };
   if (event.data) {
-    try { data = event.data.json(); } catch (e) { data.body = event.data.text(); }
+    try { data = event.data.json(); } catch (e) { data = { body: event.data.text() }; }
   }
-  // FCM data-message aane par title/body notification key ke andar bhi ho sakte hain
-  const title = data.notification?.title || data.title || "EduSpark";
-  const body = data.notification?.body || data.body || "";
+  // FCM payload teen shakl mein aa sakta hai:
+  //   1) { notification: { title, body } }   (notification message)
+  //   2) { data: { title, body, url } }      (data message)
+  //   3) { title, body }                     (seedha)
+  const n = data.notification || ((data.data && (data.data.title || data.data.body)) ? data.data : data);
+  const title = n.title || "EduSpark";
+  const body = n.body || "";
+  const url = (data.data && data.data.url) || (data.fcmOptions && data.fcmOptions.link) || "/";
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
       icon: "https://eduspark.de5.net/icon-192.png",
       badge: "https://eduspark.de5.net/icon-192.png",
       vibrate: [200, 100, 200],
-      data: { url: "/" }
+      data: { url }
     })
   );
 });

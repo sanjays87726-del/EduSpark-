@@ -268,10 +268,11 @@ body.quiz-mode .content{padding-bottom:14px;}
 /* ADMIN PANEL */
 
 /* BOARD SEL */
-#boardSel{position:fixed;inset:0;background:rgba(15,27,53,.6);z-index:150;display:flex;align-items:flex-end;backdrop-filter:blur(3px);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .25s ease;}
-#boardSel.show{opacity:1;visibility:visible;pointer-events:auto;}
-.bs-sheet{background:var(--white);width:100%;border-radius:24px 24px 0 0;padding:20px 18px 40px;transform:translateY(40px);transition:transform .3s ease;}
-#boardSel.show .bs-sheet{transform:translateY(0);}
+#boardSel{position:fixed;inset:0;background:rgba(15,27,53,.6);z-index:150;display:flex;align-items:flex-end;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .3s ease,visibility 0s linear .36s;}
+#boardSel.show{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .3s ease,visibility 0s linear 0s;}
+/* Sheet neeche se poora slide-up hoti hai, band hone par wapas neeche slide-down */
+.bs-sheet{background:var(--white);width:100%;max-height:88vh;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;border-radius:24px 24px 0 0;padding:20px 18px 40px;transform:translate3d(0,100%,0);transition:transform .28s cubic-bezier(.4,0,1,1);will-change:transform;}
+#boardSel.show .bs-sheet{transform:translate3d(0,0,0);transition:transform .38s cubic-bezier(.22,1,.36,1);}
 .a-handle{width:40px;height:4px;background:var(--g200);border-radius:99px;margin:0 auto 16px;}
 .a-title{font-size:16px;font-weight:800;color:var(--navy);margin-bottom:14px;text-align:center;}
 .a-close{width:100%;background:var(--g100);color:var(--navy);border:none;border-radius:var(--rsm);padding:13px 0;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:10px;transition:.15s;}
@@ -280,6 +281,26 @@ body.quiz-mode .content{padding-bottom:14px;}
 .bo.sel{border-color:var(--blue);background:var(--blue-l);}
 .bo-nm{font-size:14px;font-weight:700;color:var(--navy);}
 .bo-sb{font-size:11px;color:var(--g600);}
+
+/* HOME PYQ CARDS — Subjects wale cards se chhote/patle */
+#pyqHomeScroll{gap:10px;}
+.pyq-home-card{min-width:98px;padding:12px 12px;border-radius:14px;}
+.pyq-home-card .s-ic{font-size:21px;margin-bottom:5px;}
+.pyq-home-card .s-nm{font-size:11.5px;line-height:1.3;}
+.pyq-home-card .s-ct{font-size:9.5px;}
+.pyq-home-card::after{width:44px;height:44px;right:-12px;bottom:-12px;}
+
+/* NOTIFICATION PERMISSION DIALOG (Android system dialog jaisa) */
+#notifAsk{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:flex-end;justify-content:center;padding:0 16px 28px;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .25s ease,visibility 0s linear .3s;}
+#notifAsk.show{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .25s ease,visibility 0s linear 0s;}
+.na-card{background:#fff;width:100%;max-width:420px;border-radius:28px;overflow:hidden;text-align:center;transform:translate3d(0,40px,0);transition:transform .3s cubic-bezier(.22,1,.36,1);}
+#notifAsk.show .na-card{transform:translate3d(0,0,0);}
+.na-head{padding:26px 24px 20px;}
+.na-ic{font-size:30px;line-height:1;}
+.na-title{font-size:17px;font-weight:600;color:#111;line-height:1.35;margin-top:14px;}
+.na-sub{font-size:12px;color:var(--g600);line-height:1.5;margin-top:8px;}
+.na-btn{display:block;width:100%;background:none;border:none;border-top:1px solid #e6e8ee;padding:17px 0;font-size:17px;font-weight:500;color:#0b5fe0;cursor:pointer;font-family:inherit;}
+.na-btn:active{background:#f1f4fb;}
 
 /* LIVE CLASS BANNER */
 .live-banner{margin:14px 18px 0;background:linear-gradient(135deg,#DC2626,#991B1B);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;position:relative;overflow:hidden;animation:pulse-glow 2s infinite;}
@@ -421,6 +442,21 @@ body.quiz-mode .content{padding-bottom:14px;}
 .pyq-card-foot{display:flex;align-items:center;justify-content:flex-end;margin-top:10px;}
 .pyq-dl2{background:var(--navy);color:#fff;border:none;border-radius:99px;padding:8px 16px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;}
 .pyq-nolink{font-size:11px;color:var(--g400);font-style:italic;}
+
+/* PYQ PAGE LIST — compact 2-column cards (sirf PYQ page ki list; Home search ke cards wese hi rahenge) */
+#pyqFilteredList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+#pyqFilteredList .empty{grid-column:1/-1;}
+#pyqFilteredList .pyq-card{margin-bottom:0;padding:10px 10px 10px 11px;border-left-width:4px;display:flex;flex-direction:column;min-width:0;}
+#pyqFilteredList .pyq-card-top{margin-bottom:5px;gap:6px;}
+#pyqFilteredList .pyq-yr-badge{font-size:11px;padding:2px 8px;border-radius:5px;}
+#pyqFilteredList .pyq-subj-ic{font-size:14px;}
+#pyqFilteredList .pyq-card-title{font-size:12px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;}
+#pyqFilteredList .pyq-card-meta{gap:4px;margin-top:6px;}
+#pyqFilteredList .pyq-meta-tag{font-size:9px;padding:2px 7px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#pyqFilteredList .pyq-card-foot{margin-top:auto;padding-top:8px;}
+#pyqFilteredList .pyq-dl2{width:100%;padding:7px 8px;font-size:10.5px;}
+#pyqFilteredList .pyq-nolink{font-size:10px;}
+@media (max-width:330px){#pyqFilteredList{grid-template-columns:1fr;}}
 
 /* THOUGHT OF THE DAY */
 #thoughtModal{position:fixed;inset:0;background:rgba(15,27,53,.55);display:none;align-items:center;justify-content:center;z-index:800;padding:24px;}
@@ -586,28 +622,7 @@ body.quiz-mode .content{padding-bottom:14px;}
 </div>
 
 <div class="sec-t"><span>📜</span> PYQ Papers</div>
-<div class="subj-scroll">
-  <div class="subj-card sc-orange" onclick="navTo('pyq')">
-    <div class="s-ic">📜</div>
-    <div class="s-nm">Previous Year</div>
-    <div class="s-ct">Questions</div>
-  </div>
-  <div class="subj-card sc-red" onclick="navTo('pyq')">
-    <div class="s-ic">📋</div>
-    <div class="s-nm">Sample Papers</div>
-    <div class="s-ct">Board Pattern</div>
-  </div>
-  <div class="subj-card sc-purple" onclick="navTo('pyq')">
-    <div class="s-ic">📝</div>
-    <div class="s-nm">Model Papers</div>
-    <div class="s-ct">Practice Set</div>
-  </div>
-  <div class="subj-card sc-teal" onclick="navTo('pyq')">
-    <div class="s-ic">🎯</div>
-    <div class="s-nm">Pre-Board</div>
-    <div class="s-ct">Exam Papers</div>
-  </div>
-</div>
+<div class="subj-scroll" id="pyqHomeScroll"></div>
 <!-- Paste AdSense <ins class="adsbygoogle">...</ins> or AdMob code inside #adSlotHome, then remove the inline display:none below -->
 <div id="adSlotHome" class="ad-slot" style="display:none;"></div>
 
@@ -657,15 +672,15 @@ body.quiz-mode .content{padding-bottom:14px;}
       <div style="padding:14px 18px 0;">
         <div style="font-size:11px;font-weight:700;color:var(--g600);margin-bottom:7px;">📅 Year</div>
         <div class="pyq-chiprow" id="pyqBoardTabs">
-          <div class="pyq-chip active" onclick="filterPYQ('all',this)">सभी</div>
-          <div class="pyq-chip" onclick="filterPYQ('2025',this)">2025</div>
-          <div class="pyq-chip" onclick="filterPYQ('2024',this)">2024</div>
-          <div class="pyq-chip" onclick="filterPYQ('2023',this)">2023</div>
-          <div class="pyq-chip" onclick="filterPYQ('2022',this)">2022</div>
-          <div class="pyq-chip" onclick="filterPYQ('2021',this)">2021</div>
-          <div class="pyq-chip" onclick="filterPYQ('2020',this)">2020</div>
-          <div class="pyq-chip" onclick="filterPYQ('2019',this)">2019</div>
-          <div class="pyq-chip" onclick="filterPYQ('2018',this)">2018</div>
+          <div class="pyq-chip active" data-y="all" onclick="filterPYQ('all',this)">सभी</div>
+          <div class="pyq-chip" data-y="2025" onclick="filterPYQ('2025',this)">2025</div>
+          <div class="pyq-chip" data-y="2024" onclick="filterPYQ('2024',this)">2024</div>
+          <div class="pyq-chip" data-y="2023" onclick="filterPYQ('2023',this)">2023</div>
+          <div class="pyq-chip" data-y="2022" onclick="filterPYQ('2022',this)">2022</div>
+          <div class="pyq-chip" data-y="2021" onclick="filterPYQ('2021',this)">2021</div>
+          <div class="pyq-chip" data-y="2020" onclick="filterPYQ('2020',this)">2020</div>
+          <div class="pyq-chip" data-y="2019" onclick="filterPYQ('2019',this)">2019</div>
+          <div class="pyq-chip" data-y="2018" onclick="filterPYQ('2018',this)">2018</div>
         </div>
       </div>
 
@@ -821,6 +836,19 @@ body.quiz-mode .content{padding-bottom:14px;}
     <div class="a-title">Board & Class चुनें</div>
     <div id="boardOpts"></div>
     <button class="a-close" onclick="closeBS()">✕ बंद करें</button>
+  </div>
+</div>
+
+<!-- NOTIFICATION PERMISSION (Allow dabane par asli browser/Android permission popup aata hai) -->
+<div id="notifAsk">
+  <div class="na-card" role="dialog" aria-modal="true" aria-labelledby="naTitle">
+    <div class="na-head">
+      <div class="na-ic">🔔</div>
+      <div class="na-title" id="naTitle">Allow EduSpark to send you notifications?</div>
+      <div class="na-sub">Study reminders, नए PDF, Quiz और PYQ की updates सीधे आपके फ़ोन पर मिलेंगी।</div>
+    </div>
+    <button class="na-btn" onclick="notifAskAllow()">Allow</button>
+    <button class="na-btn" onclick="notifAskDeny()">Don't allow</button>
   </div>
 </div>
 
@@ -1247,6 +1275,8 @@ function performBack(){
   const privacyModal = document.getElementById('privacyModal');
   const boardSel = document.getElementById('boardSel');
   const thoughtModal = document.getElementById('thoughtModal');
+  const notifAsk = document.getElementById('notifAsk');
+  if(notifAsk && notifAsk.classList.contains('show')){ notifAskDeny(); return true; }
   if(thoughtModal && thoughtModal.classList.contains('show')){ closeThoughtOfDay(); return true; }
   const quizExitModal = document.getElementById('quizExitModal');
   if(quizExitModal && quizExitModal.style.display==='flex'){ cancelExitQuiz(); return true; }
@@ -1303,15 +1333,11 @@ function listenDoubts(){
 function listenPYQ(){
   db.collection('pyq').orderBy('year','desc').onSnapshot(snap=>{
     allPYQ = snap.docs.map(d=>({id:d.id,...d.data()}));
-    renderPYQ();
-    buildPYQSubjTabs();
-    buildPYQExamTabs();
+    refreshPYQUI();
   }, err=>{
     db.collection('pyq').get().then(snap=>{
       allPYQ = snap.docs.map(d=>({id:d.id,...d.data()}));
-      renderPYQ();
-      buildPYQSubjTabs();
-      buildPYQExamTabs();
+      refreshPYQUI();
     }).catch(()=>{});
   });
 }
@@ -1320,7 +1346,7 @@ function listenPYQ(){
 // NAVIGATION
 // ══════════════════════════════════════════
 const pages = ['home','subject','doubts','quiz','pyq'];
-function navTo(page){
+function navTo(page, instant){
   const currentPage = document.querySelector('.page.active');
   const currentIndex = pages.indexOf(currentPage ? currentPage.id.replace('page','').toLowerCase() : 'home');
   const newIndex = pages.indexOf(page);
@@ -1334,7 +1360,15 @@ function navTo(page){
   let newPage;
   if(page==='home'){ newPage=document.getElementById('pageHome'); renderHome(); }
   else if(page==='subject'){ newPage=document.getElementById('pageSubject'); showAllSubjects(); }
-  else if(page==='pyq'){ newPage=document.getElementById('pagePYQ'); pyqYearFilter='all'; pyqSubjFilter='all'; pyqExamFilter='all'; renderPYQ(); buildPYQSubjTabs(); buildPYQExamTabs(); }
+  else if(page==='pyq'){
+    newPage=document.getElementById('pagePYQ');
+    // Home ke kisi specific card (jaise Pre-Board) se aaye ho ya refresh ke baad restore ho raha ho
+    // to wahi filter lagao, warna sab reset
+    const pf = pyqPending || {y:'all',s:'all',e:'all'};
+    pyqPending = null;
+    pyqYearFilter = pf.y||'all'; pyqSubjFilter = pf.s||'all'; pyqExamFilter = pf.e||'all';
+    refreshPYQUI();
+  }
   else if(page==='doubts'){ newPage=document.getElementById('pageDoubts'); if(typeof updateDoubtLoginGate==='function') updateDoubtLoginGate(); }
   else if(page==='quiz'){
     newPage=document.getElementById('pageQuiz');
@@ -1345,8 +1379,51 @@ function navTo(page){
   }
 
   if(newPage){
-    newPage.classList.add('active', direction);
-    setTimeout(()=>newPage.classList.remove('slide-in-right','slide-in-left'), 300);
+    if(instant){
+      newPage.classList.add('active');
+    } else {
+      newPage.classList.add('active', direction);
+      setTimeout(()=>newPage.classList.remove('slide-in-right','slide-in-left'), 300);
+    }
+  }
+  if(page==='pyq') setTimeout(scrollPYQActiveChips, 80);
+  persistNav();
+}
+
+// ══════════════════════════════════════════
+// REFRESH PAR SAME PAGE — current page/subject/PYQ filter sessionStorage mein
+// save hota hai, taaki reload ke baad app Home par na jaaye, wahin khule
+// jahan student tha (sirf app band karke dobara kholne par Home se start hoga)
+// ══════════════════════════════════════════
+function persistNav(){
+  try{
+    const act = document.querySelector('.page.active');
+    if(!act) return;
+    const map = {pageHome:'home',pageSubject:'subject',pageDoubts:'doubts',pageQuiz:'quiz',pagePYQ:'pyq'};
+    const page = map[act.id];
+    if(!page) return; // Profile/Notifications jaise overlay pages ko save nahi karte
+    const st = {page, board:curBoard};
+    if(page==='subject'){ st.subj = curSubject; st.type = curType; }
+    if(page==='pyq'){ st.y = pyqYearFilter; st.s = pyqSubjFilter; st.e = pyqExamFilter; }
+    sessionStorage.setItem('es_nav', JSON.stringify(st));
+  }catch(e){}
+}
+function restoreNavState(){
+  let st = null;
+  try{ st = JSON.parse(sessionStorage.getItem('es_nav')||'null'); }catch(e){}
+  if(!st || !st.page || st.page==='home') return;
+  if(st.board && st.board !== curBoard) return;
+  if(st.page==='pyq'){
+    pyqPending = {y:st.y||'all', s:st.s||'all', e:st.e||'all'};
+    navTo('pyq', true);
+  } else if(st.page==='subject'){
+    navTo('subject', true);
+    if(st.subj && (SUBJECTS[curBoard]||[]).some(x=>x.id===st.subj)){
+      homeTypeFilter = (st.type && st.type!=='all') ? st.type : null;
+      openSubjHome(st.subj);
+    }
+  } else {
+    navTo(st.page, true);
   }
 }
 
@@ -1387,6 +1464,8 @@ function openCategorySel(){
     </div>
   `;
   
+  const bsSheet = document.querySelector('#boardSel .bs-sheet');
+  if(bsSheet) bsSheet.scrollTop = 0;
   document.getElementById('boardSel').classList.add('show');
 }
 
@@ -1401,10 +1480,14 @@ function selBoard(board){
   }
   updateBoardPill();
   closeBS();
-  renderHome();
-  renderDoubtSubjects();
-  pyqYearFilter='all'; pyqSubjFilter='all'; pyqExamFilter='all';
-  renderPYQ(); buildPYQSubjTabs(); buildPYQExamTabs();
+  pyqYearFilter='all'; pyqSubjFilter='all'; pyqExamFilter='all'; pyqPending=null;
+  // Sheet ka slide-down animation smooth rahe, isliye heavy re-render thoda ruk kar
+  setTimeout(function(){
+    renderHome();
+    renderDoubtSubjects();
+    refreshPYQUI();
+    persistNav();
+  }, 120);
   showToast('✅ Category select हो गई: '+board);
 }
 
@@ -1461,6 +1544,7 @@ if(profile && document.getElementById('heroGreeting')){
   document.getElementById('stQz').textContent=allQuizzes.filter(q=>q.board===curBoard).length;
   document.getElementById('stNote').textContent=bc.filter(c=>c.type==='note').length;
 
+  renderPYQHomeCards();
   document.getElementById('subjScroll').innerHTML=(SUBJECTS[curBoard]||[]).map(s=>`
     <div class="subj-card ${s.color}" onclick="openSubjHome('${s.id}')">
       <div class="s-ic">${s.icon}</div>
@@ -1515,6 +1599,7 @@ function showAllSubjects(){
 // ══════════════════════════════════════════
 function loadSubjectContent(type){
   curType=type;
+  persistNav();
   const sub=(SUBJECTS[curBoard]||[]).find(s=>s.id===curSubject);
   if(!sub) return;
   document.getElementById('subjHero').className='hero '+sub.color;
@@ -1647,13 +1732,43 @@ let pyqYearFilter = 'all';
 let pyqSubjFilter = 'all';
 let pyqExamFilter = 'all';
 
+// Home ke PYQ card (jaise Pre-Board) se aane par filter yahan temporarily rakha jaata hai
+let pyqPending = null;
+function openPYQFromHome(examType){
+  pyqPending = {y:'all', s:'all', e:examType};
+  navTo('pyq');
+}
+function refreshPYQUI(){
+  syncPYQYearChips();
+  buildPYQSubjTabs();
+  buildPYQExamTabs();
+  renderPYQ();
+}
+function syncPYQYearChips(){
+  document.querySelectorAll('#pyqBoardTabs .pyq-chip').forEach(c=>{
+    c.classList.toggle('active', c.getAttribute('data-y') === pyqYearFilter);
+  });
+}
+// Active chip ko visible area mein le aao (jaise Pre-Board chip screen ke bahar ho)
+function scrollPYQActiveChips(){
+  ['pyqBoardTabs','pyqSubjTabs','pyqExamTabs'].forEach(id=>{
+    const box = document.getElementById(id);
+    if(!box) return;
+    const el = box.querySelector('.active');
+    if(!el) return;
+    const r = el.getBoundingClientRect(), pr = box.getBoundingClientRect();
+    if(!pr.width) return;
+    box.scrollLeft += (r.left - pr.left) - (pr.width - r.width)/2;
+  });
+}
+
 function buildPYQSubjTabs(){
   const subs = [...new Set(allPYQ.filter(p=>p.board===curBoard).map(p=>p.subject))];
   const subData = SUBJECTS[curBoard]||[];
-  let html = '<div class="pyq-chip active" onclick="filterPYQSubj(\'all\',this)">सभी Subjects</div>';
+  let html = `<div class="pyq-chip ${pyqSubjFilter==='all'?'active':''}" onclick="filterPYQSubj('all',this)">सभी Subjects</div>`;
   subs.forEach(sid=>{
     const s = subData.find(x=>x.id===sid);
-    if(s) html += `<div class="pyq-chip" onclick="filterPYQSubj('${sid}',this)">${s.icon} ${s.name}</div>`;
+    if(s) html += `<div class="pyq-chip ${pyqSubjFilter===sid?'active':''}" onclick="filterPYQSubj('${sid}',this)">${s.icon} ${s.name}</div>`;
   });
   document.getElementById('pyqSubjTabs').innerHTML = html;
 }
@@ -1666,9 +1781,34 @@ function buildPYQExamTabs(){
     ? ['Tier 1','Tier 2','Pre','Mains']
     : ['Board Exam','Pre-Board','Sample Paper','Model Paper'];
   if(label) label.textContent = isComp ? '📝 Exam Stage' : '📝 Paper Type';
-  let html='<div class="pyq-seg-btn active" onclick="filterPYQExam(\'all\',this)">सभी</div>';
-  types.forEach(t=>{ html+=`<div class="pyq-seg-btn" onclick="filterPYQExam('${t}',this)">${t}</div>`; });
+  let html=`<div class="pyq-seg-btn ${pyqExamFilter==='all'?'active':''}" onclick="filterPYQExam('all',this)">सभी</div>`;
+  types.forEach(t=>{ html+=`<div class="pyq-seg-btn ${pyqExamFilter===t?'active':''}" onclick="filterPYQExam('${t}',this)">${t}</div>`; });
   document.getElementById('pyqExamTabs').innerHTML = html;
+}
+
+// Home page ke PYQ cards — har card apne paper type ka filter khulta hai
+function renderPYQHomeCards(){
+  const box = document.getElementById('pyqHomeScroll');
+  if(!box) return;
+  const cards = isCompetitionBoard(curBoard)
+    ? [
+        {ic:'📜', nm:'Tier 1',  ct:'Exam Papers', ex:'Tier 1', c:'sc-orange'},
+        {ic:'📋', nm:'Tier 2',  ct:'Exam Papers', ex:'Tier 2', c:'sc-red'},
+        {ic:'📝', nm:'Pre',     ct:'Exam Papers', ex:'Pre',    c:'sc-purple'},
+        {ic:'🎯', nm:'Mains',   ct:'Exam Papers', ex:'Mains',  c:'sc-teal'}
+      ]
+    : [
+        {ic:'📜', nm:'Previous Year', ct:'Questions',     ex:'Board Exam',   c:'sc-orange'},
+        {ic:'📋', nm:'Sample Papers', ct:'Board Pattern', ex:'Sample Paper', c:'sc-red'},
+        {ic:'📝', nm:'Model Papers',  ct:'Practice Set',  ex:'Model Paper',  c:'sc-purple'},
+        {ic:'🎯', nm:'Pre-Board',     ct:'Exam Papers',   ex:'Pre-Board',    c:'sc-teal'}
+      ];
+  box.innerHTML = cards.map(c=>`
+    <div class="subj-card pyq-home-card ${c.c}" onclick="openPYQFromHome('${c.ex}')">
+      <div class="s-ic">${c.ic}</div>
+      <div class="s-nm">${c.nm}</div>
+      <div class="s-ct">${c.ct}</div>
+    </div>`).join('');
 }
 
 function filterPYQ(year, el){
@@ -1676,6 +1816,7 @@ function filterPYQ(year, el){
   document.querySelectorAll('#pyqBoardTabs .pyq-chip').forEach(t=>t.classList.remove('active'));
   if(el) el.classList.add('active');
   renderPYQ();
+  persistNav();
 }
 
 function filterPYQExam(examType, el){
@@ -1683,6 +1824,7 @@ function filterPYQExam(examType, el){
   document.querySelectorAll('#pyqExamTabs .pyq-seg-btn').forEach(t=>t.classList.remove('active'));
   if(el) el.classList.add('active');
   renderPYQ();
+  persistNav();
 }
 
 function filterPYQSubj(subj, el){
@@ -1690,6 +1832,7 @@ function filterPYQSubj(subj, el){
   document.querySelectorAll('#pyqSubjTabs .pyq-chip').forEach(t=>t.classList.remove('active'));
   if(el) el.classList.add('active');
   renderPYQ();
+  persistNav();
 }
 
 function renderPYQ(){
@@ -1699,7 +1842,7 @@ let items = allPYQ.filter(
 );
   if(pyqYearFilter!=='all') items = items.filter(p=>String(p.year)===pyqYearFilter);
   if(pyqSubjFilter!=='all') items = items.filter(p=>p.subject===pyqSubjFilter||p.subject==='all');
-  if(pyqExamFilter!=='all') items = items.filter(p=>p.examType===pyqExamFilter);
+  if(pyqExamFilter!=='all') items = items.filter(p=>(p.examType || (isCompetitionBoard(curBoard)?'':'Board Exam'))===pyqExamFilter);
   const subData = SUBJECTS[curBoard]||[];
 
   if(document.getElementById('pyqCount'))
@@ -2471,26 +2614,94 @@ function syncStudentToCloud(fcmToken){
   db.collection('students').doc(getStudentDocId()).set(data, {merge:true}).catch(()=>{});
 }
 
-// Notification permission maango — sirf ek baar, profile setup ke turant baad
-// Agar deny kar diya, to custom banner dikhao jo in-app Notifications page ki taraf le jaaye
+// ── Notification permission flow ─────────────────────────────────────
+// 1) Pehle screenshot jaisa "Allow EduSpark to send you notifications?" dialog dikhta hai
+// 2) "Allow" dabane par ASLI browser/Android permission popup aata hai (user-tap se, isliye
+//    browser use block nahi karta)
+// 3) "Don't allow" par 3 din baad dobara poochhte hain; Notifications page ka toggle hamesha rahta hai
+const NOTIF_ASK_COOLDOWN_MS = 3*24*60*60*1000;
+let notifAskTimer = null;
+
+function canAskNotif(){
+  return ('Notification' in window) && ('serviceWorker' in navigator) && Notification.permission === 'default';
+}
+function notifAskDue(){
+  const ts = parseInt(localStorage.getItem('es_notif_ask_ts')||'0', 10);
+  return !ts || (Date.now() - ts) > NOTIF_ASK_COOLDOWN_MS;
+}
+// Koi aur full-screen cheez (splash, profile setup, thought of the day, quiz...) khuli ho to dialog ruk kar dikhao
+function isAppBusy(){
+  const vis = id => { const el = document.getElementById(id); return !!el && getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden'; };
+  if(vis('splash') && !document.getElementById('splash').classList.contains('hide')) return true;
+  if(vis('studentSetup')) return true;
+  if(document.getElementById('thoughtModal').classList.contains('show')) return true;
+  if(document.getElementById('videoModal') && document.getElementById('videoModal').classList.contains('show')) return true;
+  if(document.getElementById('boardSel').classList.contains('show')) return true;
+  if(vis('privacyModal') || vis('quizExitModal')) return true;
+  if(document.body.classList.contains('quiz-mode')) return true;
+  if(document.getElementById('installToast')) return true; // Install banner hat jaaye tab dikhao, dono overlap na hon
+  return false;
+}
+function maybeShowNotifAsk(force){
+  if(!canAskNotif()) return;
+  if(!force && !notifAskDue()) return;
+  if(notifAskTimer) return;
+  let tries = 0;
+  notifAskTimer = setInterval(function(){
+    tries++;
+    const busy = isAppBusy();
+    if(!busy || tries > 40){
+      clearInterval(notifAskTimer); notifAskTimer = null;
+      if(!busy && canAskNotif()) document.getElementById('notifAsk').classList.add('show');
+    }
+  }, 1200);
+}
+function askNativeNotifPermission(){
+  return new Promise(function(resolve){
+    try{
+      const r = Notification.requestPermission(resolve);   // purane browsers: callback
+      if(r && typeof r.then === 'function') r.then(resolve); // naye browsers: promise
+    }catch(e){ resolve(Notification.permission); }
+  });
+}
+function handleNotifPermissionResult(permission){
+  if(permission === 'granted'){
+    registerFcmToken();
+    showToast('✅ Notifications ON हो गईं!');
+  } else if(permission === 'denied'){
+    showNotifBanner();
+  }
+  renderNotifPermCard();
+}
+function notifAskAllow(){
+  document.getElementById('notifAsk').classList.remove('show');
+  localStorage.setItem('es_notif_ask_ts', String(Date.now()));
+  if(!('Notification' in window)) return;
+  askNativeNotifPermission().then(handleNotifPermissionResult);
+}
+function notifAskDeny(){
+  document.getElementById('notifAsk').classList.remove('show');
+  localStorage.setItem('es_notif_ask_ts', String(Date.now()));
+  showNotifBanner();
+}
+
+// Profile setup / naye device par call hota hai
 function requestNotificationPermission(){
   if(!('Notification' in window) || !('serviceWorker' in navigator)) return;
   if(Notification.permission === 'granted'){ registerFcmToken(); return; }
   if(Notification.permission === 'denied'){ showNotifBanner(); return; }
-  Notification.requestPermission().then(permission=>{
-    if(permission === 'granted') registerFcmToken();
-    else showNotifBanner();
-  });
+  maybeShowNotifAsk(true);
 }
 
 // Har app-open par call hota hai — permission pehle se granted ho to silently
-// token refresh + lastActive update kar deta hai, dobara poochta nahi
+// token refresh + lastActive update kar deta hai; 'default' ho to (cooldown ke hisab se) dialog dikhata hai
 function initPushNotifications(){
-  if(!('Notification' in window)){ return; }
+  if(!('Notification' in window)){ syncStudentToCloud(); return; }
   if(Notification.permission === 'granted'){ registerFcmToken(); }
   else {
     syncStudentToCloud(); // permission na ho tab bhi lastActive update ho jaaye
     if(Notification.permission === 'denied') showNotifBanner();
+    else maybeShowNotifAsk(false);
   }
 }
 
@@ -2541,9 +2752,9 @@ function renderNotifPermCard(){
 function onNotifToggleChange(){
   if(!('Notification' in window)) return;
   if(Notification.permission !== 'default') { renderNotifPermCard(); return; }
-  Notification.requestPermission().then(function(permission){
+  askNativeNotifPermission().then(function(permission){
     if(permission === 'granted'){
-      if (typeof registerFcmToken === "function") registerFcmToken();
+      registerFcmToken();
       showToast('✅ Notifications Allow हो गईं!');
     } else {
       showToast('🔕 Notifications allow नहीं हुईं');
@@ -2629,18 +2840,49 @@ function updateNotifBadge(){
     .catch(()=>{});
 }
 
+let fcmForegroundBound = false;
 function registerFcmToken(){
-  if(FCM_VAPID_KEY === "PASTE_YOUR_VAPID_KEY_HERE" || !('serviceWorker' in navigator) || typeof firebase.messaging !== 'function'){
+  if(!('serviceWorker' in navigator) || typeof firebase.messaging !== 'function' ||
+     (typeof firebase.messaging.isSupported === 'function' && !firebase.messaging.isSupported())){
     syncStudentToCloud();
     return;
   }
-  navigator.serviceWorker.getRegistration('/sw.js').then(reg=>{
-    if(!reg){ syncStudentToCloud(); return; }
+  if(!FCM_VAPID_KEY || FCM_VAPID_KEY === "PASTE_YOUR_VAPID_KEY_HERE"){
+    // Bina VAPID key ke FCM token nahi banta, aur token ke bina phone par push nahi aa sakta
+    console.warn('FCM_VAPID_KEY set nahi hai — Firebase Console → Project Settings → Cloud Messaging → Web Push certificates se key paste karein');
+    syncStudentToCloud();
+    return;
+  }
+  // serviceWorker.ready: SW register hone tak ruk kar token banata hai (pehle getRegistration se
+  // pehli baar token kabhi nahi banta tha, kyunki tab tak SW register hi nahi hota tha)
+  const swReady = Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('sw-timeout')), 10000))
+  ]);
+  swReady.then(function(reg){
     const messaging = firebase.messaging();
-    messaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: reg })
-      .then(token=>{ syncStudentToCloud(token || null); })
-      .catch(()=>{ syncStudentToCloud(); });
-  }).catch(()=>{ syncStudentToCloud(); });
+    return messaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: reg }).then(function(token){
+      syncStudentToCloud(token || null);
+      // App khuli ho tab FCM khud notification nahi dikhata — yahan se dikhao
+      if(!fcmForegroundBound){
+        fcmForegroundBound = true;
+        messaging.onMessage(function(payload){
+          const n = (payload && payload.notification) || (payload && payload.data) || {};
+          reg.showNotification(n.title || 'EduSpark', {
+            body: n.body || '',
+            icon: '/icon-192.png',
+            badge: '/icon-192.png',
+            vibrate: [200,100,200],
+            data: { url: '/' }
+          });
+          if (typeof updateNotifBadge === "function") updateNotifBadge();
+        });
+      }
+    });
+  }).catch(function(err){
+    console.warn('FCM token nahi mila:', err && err.message);
+    syncStudentToCloud();
+  });
 }
 
 window.onload = function(){
@@ -2650,9 +2892,12 @@ window.onload = function(){
     localStorage.removeItem('es_board');
     localStorage.setItem('es_app_version','v5');
   }
+  // Refresh par (same session) splash chhota rakho taaki wahi page jaldi wapas dikhe
+  let hadSavedNav = false;
+  try{ const sv = JSON.parse(sessionStorage.getItem('es_nav')||'null'); hadSavedNav = !!(sv && sv.page && sv.page!=='home'); }catch(e){}
   setTimeout(()=>{
     document.getElementById('splash').classList.add('hide');
-    setTimeout(()=>{ document.getElementById('splash').style.display='none'; },500);
+    setTimeout(()=>{ document.getElementById('splash').style.display='none'; }, hadSavedNav ? 150 : 500);
     document.getElementById('app').style.display='flex';
     if (typeof updateBoardPill === "function") updateBoardPill();
 if (typeof renderDoubtSubjects === "function") renderDoubtSubjects();
@@ -2662,6 +2907,9 @@ if (typeof listenDoubts === "function") listenDoubts();
 if (typeof listenPYQ === "function") listenPYQ();
 if (typeof listenLiveClass === "function") listenLiveClass();
 if (typeof listenCommunity === "function") listenCommunity();
+    if (typeof renderPYQHomeCards === "function") renderPYQHomeCards();
+    // Refresh se pehle jis page par the, wahin wapas
+    if (typeof restoreNavState === "function") restoreNavState();
     // Back-gesture guard armed karo — ab back press pehle app ke andar handle hoga
     armBackGuard();
     // Aaj ka Thought of the Day dikhाओ
@@ -2670,7 +2918,7 @@ if (typeof listenCommunity === "function") listenCommunity();
     if (typeof initPushNotifications === "function") initPushNotifications();
     // Topbar bell par unread notifications ka badge dikhाओ
     if (typeof updateNotifBadge === "function") updateNotifBadge();
-  }, 500);
+  }, hadSavedNav ? 120 : 500);
   // Student setup - splash ke baad
   setTimeout(()=>{
     const profile = JSON.parse(localStorage.getItem('es_student')||'null');
