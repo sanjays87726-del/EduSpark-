@@ -57,7 +57,7 @@ db.enablePersistence({synchronizeTabs:true}).catch(function(err){
 
 // 🔔 Firebase Cloud Messaging ke liye VAPID key
 // Firebase Console → Project Settings → Cloud Messaging → Web Push certificates se generate karke yahan paste karein
-const FCM_VAPID_KEY = "BFme7ZNnDPqAhUGLo2tUIPxGVn2_ZUfoowCbrAABz8uff6U5WBgesWWDOcw6L_nkORiLg6UtNmVEmL8rTS0jVMU";
+const FCM_VAPID_KEY = "PASTE_YOUR_VAPID_KEY_HERE";
 </script>
 
 <style>
@@ -282,14 +282,6 @@ body.quiz-mode .content{padding-bottom:14px;}
 .bo-nm{font-size:14px;font-weight:700;color:var(--navy);}
 .bo-sb{font-size:11px;color:var(--g600);}
 
-/* HOME PYQ CARDS — Subjects wale cards se chhote/patle */
-#pyqHomeScroll{gap:10px;}
-.pyq-home-card{min-width:98px;padding:12px 12px;border-radius:14px;}
-.pyq-home-card .s-ic{font-size:21px;margin-bottom:5px;}
-.pyq-home-card .s-nm{font-size:11.5px;line-height:1.3;}
-.pyq-home-card .s-ct{font-size:9.5px;}
-.pyq-home-card::after{width:44px;height:44px;right:-12px;bottom:-12px;}
-
 /* NOTIFICATION PERMISSION DIALOG (Android system dialog jaisa) */
 #notifAsk{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:flex-end;justify-content:center;padding:0 16px 28px;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .25s ease,visibility 0s linear .3s;}
 #notifAsk.show{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .25s ease,visibility 0s linear 0s;}
@@ -443,20 +435,20 @@ body.quiz-mode .content{padding-bottom:14px;}
 .pyq-dl2{background:var(--navy);color:#fff;border:none;border-radius:99px;padding:8px 16px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;}
 .pyq-nolink{font-size:11px;color:var(--g400);font-style:italic;}
 
-/* PYQ PAGE LIST — compact 2-column cards (sirf PYQ page ki list; Home search ke cards wese hi rahenge) */
-#pyqFilteredList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
-#pyqFilteredList .empty{grid-column:1/-1;}
-#pyqFilteredList .pyq-card{margin-bottom:0;padding:10px 10px 10px 11px;border-left-width:4px;display:flex;flex-direction:column;min-width:0;}
-#pyqFilteredList .pyq-card-top{margin-bottom:5px;gap:6px;}
+/* PYQ PAGE LIST — compact single-column cards: [year+icon] [title] [Download] / niche tags.
+   Height ~125px se ~75px, taaki ek screen par zyada card dikhein. Home search ke cards pe asar nahi. */
+#pyqFilteredList .pyq-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"top title foot" "meta meta meta";align-items:center;column-gap:10px;row-gap:6px;margin-bottom:8px;padding:9px 11px 9px 12px;border-left-width:4px;}
+#pyqFilteredList .pyq-card-top{grid-area:top;margin:0;gap:5px;}
 #pyqFilteredList .pyq-yr-badge{font-size:11px;padding:2px 8px;border-radius:5px;}
 #pyqFilteredList .pyq-subj-ic{font-size:14px;}
-#pyqFilteredList .pyq-card-title{font-size:12px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;}
-#pyqFilteredList .pyq-card-meta{gap:4px;margin-top:6px;}
-#pyqFilteredList .pyq-meta-tag{font-size:9px;padding:2px 7px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-#pyqFilteredList .pyq-card-foot{margin-top:auto;padding-top:8px;}
-#pyqFilteredList .pyq-dl2{width:100%;padding:7px 8px;font-size:10.5px;}
-#pyqFilteredList .pyq-nolink{font-size:10px;}
-@media (max-width:330px){#pyqFilteredList{grid-template-columns:1fr;}}
+#pyqFilteredList .pyq-card-title{grid-area:title;font-size:12.5px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;}
+#pyqFilteredList .pyq-card-foot{grid-area:foot;margin:0;}
+#pyqFilteredList .pyq-card-meta{grid-area:meta;margin:0;gap:5px;}
+#pyqFilteredList .pyq-meta-tag{font-size:9.5px;padding:2px 8px;}
+#pyqFilteredList .pyq-dl2{padding:6px 12px;font-size:11px;white-space:nowrap;}
+#pyqFilteredList .pyq-nolink{font-size:10px;white-space:nowrap;}
+#pyqFilteredList .empty{grid-column:auto;}
+
 
 /* THOUGHT OF THE DAY */
 #thoughtModal{position:fixed;inset:0;background:rgba(15,27,53,.55);display:none;align-items:center;justify-content:center;z-index:800;padding:24px;}
@@ -984,6 +976,7 @@ function saveStudentProfile(){
   renderDoubtSubjects();
   showToast('✅ Welcome '+name+'! 🎉');
   if (typeof syncStudentToCloud === "function") syncStudentToCloud();
+  markWelcomePending(name);
   if (typeof requestNotificationPermission === "function") requestNotificationPermission();
 }
 
@@ -1804,7 +1797,7 @@ function renderPYQHomeCards(){
         {ic:'🎯', nm:'Pre-Board',     ct:'Exam Papers',   ex:'Pre-Board',    c:'sc-teal'}
       ];
   box.innerHTML = cards.map(c=>`
-    <div class="subj-card pyq-home-card ${c.c}" onclick="openPYQFromHome('${c.ex}')">
+    <div class="subj-card ${c.c}" onclick="openPYQFromHome('${c.ex}')">
       <div class="s-ic">${c.ic}</div>
       <div class="s-nm">${c.nm}</div>
       <div class="s-ct">${c.ct}</div>
@@ -2565,6 +2558,7 @@ auth.onAuthStateChanged(function(user){
       // Naye device/naye student ko native "Allow Notifications" popup dikhाओ
       // (normal apps ki tarah); purane/returning session par chupchap register karo
       if(isNewOnThisDevice){
+        if(!cloud) markWelcomePending(merged.name); // purana account naye phone par aaya ho to welcome nahi
         if (typeof requestNotificationPermission === "function") requestNotificationPermission();
       } else {
         if (typeof initPushNotifications === "function") initPushNotifications();
@@ -2612,6 +2606,35 @@ function syncStudentToCloud(fcmToken){
   }
   if(fcmToken) data.fcmToken = fcmToken;
   db.collection('students').doc(getStudentDocId()).set(data, {merge:true}).catch(()=>{});
+}
+
+// ── Naye student ko enroll hote hi phone par welcome notification ─────
+// Permission mil jaaye tab turant (system notification ki tarah) dikhta hai; permission
+// abhi baaki ho to allow karte hi dikhta hai. Ek device par sirf ek baar.
+function markWelcomePending(name){
+  if(localStorage.getItem('es_welcome_done')) return;
+  localStorage.setItem('es_welcome_pending', name || 'Student');
+}
+function flushWelcomeNotification(){
+  const name = localStorage.getItem('es_welcome_pending');
+  if(!name || localStorage.getItem('es_welcome_done')) return;
+  if(!('Notification' in window) || Notification.permission !== 'granted' || !('serviceWorker' in navigator)) return;
+  localStorage.setItem('es_welcome_done','1');
+  localStorage.removeItem('es_welcome_pending');
+  navigator.serviceWorker.ready.then(function(reg){
+    return reg.showNotification('🎉 EduSpark में आपका स्वागत है, '+name+'!', {
+      body: 'PDF, Notes, Quiz और PYQ अब आपके फ़ोन पर। रोज़ पढ़ाई करें, आगे बढ़ें 📚',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      vibrate: [200,100,200],
+      tag: 'es-welcome',
+      data: { url: '/' }
+    });
+  }).catch(function(){
+    // SW ready nahi hua to dobara koshish ke liye pending wapas rakho
+    localStorage.removeItem('es_welcome_done');
+    localStorage.setItem('es_welcome_pending', name);
+  });
 }
 
 // ── Notification permission flow ─────────────────────────────────────
@@ -2668,6 +2691,7 @@ function handleNotifPermissionResult(permission){
   if(permission === 'granted'){
     registerFcmToken();
     showToast('✅ Notifications ON हो गईं!');
+    flushWelcomeNotification();
   } else if(permission === 'denied'){
     showNotifBanner();
   }
@@ -2688,7 +2712,7 @@ function notifAskDeny(){
 // Profile setup / naye device par call hota hai
 function requestNotificationPermission(){
   if(!('Notification' in window) || !('serviceWorker' in navigator)) return;
-  if(Notification.permission === 'granted'){ registerFcmToken(); return; }
+  if(Notification.permission === 'granted'){ registerFcmToken(); flushWelcomeNotification(); return; }
   if(Notification.permission === 'denied'){ showNotifBanner(); return; }
   maybeShowNotifAsk(true);
 }
@@ -2697,7 +2721,7 @@ function requestNotificationPermission(){
 // token refresh + lastActive update kar deta hai; 'default' ho to (cooldown ke hisab se) dialog dikhata hai
 function initPushNotifications(){
   if(!('Notification' in window)){ syncStudentToCloud(); return; }
-  if(Notification.permission === 'granted'){ registerFcmToken(); }
+  if(Notification.permission === 'granted'){ registerFcmToken(); flushWelcomeNotification(); }
   else {
     syncStudentToCloud(); // permission na ho tab bhi lastActive update ho jaaye
     if(Notification.permission === 'denied') showNotifBanner();
