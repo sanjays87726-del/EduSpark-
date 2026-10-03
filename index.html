@@ -17,6 +17,10 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <meta name="theme-color" content="#0F1B35"/>
+<script>
+/* Dark mode: saved choice, warna phone ki system setting */
+(function(){try{var t=localStorage.getItem('es_theme');if(t!=='dark'&&t!=='light'){t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();
+</script>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 
 <title>EduSpark – Board Study App</title>
@@ -73,6 +77,20 @@ const FCM_VAPID_KEY = "PASTE_YOUR_VAPID_KEY_HERE";
   --r:14px;--rsm:10px;
   --sh:0 4px 24px rgba(15,27,53,.10);
   --shsm:0 2px 8px rgba(15,27,53,.07);
+  --ink:#0F1B35;      /* headings / dark text (dark mode me light ho jaata hai) */
+  --btn:#0F1B35;      /* chhote dark buttons / active chips (dark mode me blue) */
+  --cardline:#E2E8F0;
+}
+html{color-scheme:light;}
+html[data-theme="dark"]{
+  color-scheme:dark;
+  --white:#151F33;--g50:#0A111F;--g100:#1E2A42;--g200:#2B3A57;
+  --g400:#7F8FAB;--g600:#A6B4CB;--g800:#E6ECF7;
+  --ink:#EEF3FC;--btn:#2F5FD6;--cardline:#2B3A57;
+  --blue:#5B9BFF;--blue-l:#14264A;
+  --saffron-l:#3A2D0C;--green-l:#0E2D24;--purple-l:#241C47;
+  --red:#F87171;--indigo:#818CF8;
+  --sh:0 4px 24px rgba(0,0,0,.45);--shsm:0 2px 8px rgba(0,0,0,.35);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);min-height:100vh;overflow-x:hidden;}
@@ -119,7 +137,7 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
 .stats-row{display:flex;gap:10px;margin:16px 18px 0;}
 .stat-card{flex:1;background:var(--white);border-radius:var(--rsm);padding:12px 8px;box-shadow:var(--shsm);text-align:center;}
 .stat-icon{font-size:18px;}
-.stat-val{font-size:18px;font-weight:800;color:var(--navy);margin-top:3px;}
+.stat-val{font-size:18px;font-weight:800;color:var(--ink);margin-top:3px;}
 .stat-label{font-size:10px;color:var(--g600);}
 
 /* SEARCH */
@@ -129,7 +147,7 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
 .search-box input::placeholder{color:var(--g400);}
 
 /* SECTION TITLE */
-.sec-t{font-size:15px;font-weight:700;color:var(--navy);padding:18px 18px 10px;display:flex;align-items:center;gap:6px;}
+.sec-t{font-size:15px;font-weight:700;color:var(--ink);padding:18px 18px 10px;display:flex;align-items:center;gap:6px;}
 
 /* SUBJECT SCROLL */
 .subj-scroll{display:flex;gap:12px;padding:0 18px 4px;overflow-x:auto;scrollbar-width:none;}
@@ -156,7 +174,7 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
 .ci-note{background:rgba(245,158,11,.1);}
 .ci-quiz{background:rgba(99,102,241,.1);}
 .cnt-info{flex:1;min-width:0;}
-.cnt-info h4{font-size:13px;font-weight:600;color:var(--navy);}
+.cnt-info h4{font-size:13px;font-weight:600;color:var(--ink);}
 .cnt-info p{font-size:11px;color:var(--g600);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .bdg{font-size:9px;font-weight:700;padding:2px 7px;border-radius:99px;display:inline-block;margin-top:3px;}
 .bdg-pdf{background:#FEE2E2;color:var(--red);}
@@ -175,7 +193,7 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
 .sub-btn{width:100%;background:linear-gradient(90deg,#7C3AED,#4F46E5);color:#fff;border:none;border-radius:var(--rsm);padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
 .doubt-item{background:var(--white);border-radius:var(--rsm);padding:13px;margin-bottom:10px;box-shadow:var(--shsm);border-left:3px solid var(--purple);}
 .d-meta{font-size:10px;color:var(--g400);margin-bottom:4px;}
-.d-q{font-size:13px;font-weight:600;color:var(--navy);}
+.d-q{font-size:13px;font-weight:600;color:var(--ink);}
 .d-ans{margin-top:8px;padding:8px 10px;background:var(--purple-l);border-radius:8px;font-size:12px;color:#4F46E5;}
 .d-st{font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;display:inline-block;margin-top:5px;}
 .st-p{background:#FEF3C7;color:#92400E;}
@@ -184,20 +202,20 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
 /* QUIZ */
 .quiz-hero{background:linear-gradient(135deg,#10B981,#059669);padding:22px 18px;color:#fff;border-radius:0 0 22px 22px;}
 .qz-card{background:var(--white);border-radius:var(--rsm);padding:16px;margin-bottom:12px;box-shadow:var(--shsm);}
-.qzc-t{font-size:14px;font-weight:700;color:var(--navy);}
+.qzc-t{font-size:14px;font-weight:700;color:var(--ink);}
 .qzc-s{font-size:11px;color:var(--g600);margin-top:3px;}
 .qzc-meta{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
 .qzc-tag{font-size:10px;font-weight:600;padding:3px 9px;border-radius:99px;background:var(--g100);color:var(--g600);}
 .start-btn{width:100%;margin-top:10px;background:linear-gradient(90deg,#10B981,#059669);color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
 #quizActive{display:none;padding:18px;position:relative;}
-.q-corner-timer{position:absolute;top:14px;right:14px;background:var(--navy);color:#fff;font-size:11px;font-weight:700;padding:5px 10px;border-radius:99px;display:flex;align-items:center;gap:4px;box-shadow:var(--shsm);z-index:5;}
+.q-corner-timer{position:absolute;top:14px;right:14px;background:var(--btn);color:#fff;font-size:11px;font-weight:700;padding:5px 10px;border-radius:99px;display:flex;align-items:center;gap:4px;box-shadow:var(--shsm);z-index:5;}
 .q-timerbar{display:flex;gap:8px;flex-wrap:wrap;margin:0 46px 10px 0;}
-.q-timer-chip{font-size:11px;font-weight:700;padding:5px 10px;border-radius:99px;background:var(--g100);color:var(--navy);}
+.q-timer-chip{font-size:11px;font-weight:700;padding:5px 10px;border-radius:99px;background:var(--g100);color:var(--ink);}
 .q-timer-chip.warn{background:#FEE2E2;color:var(--red);animation:blink 1s infinite;}
 .q-num{font-size:11px;color:var(--g600);margin-bottom:6px;font-weight:600;padding-right:46px;}
 .q-pbar{width:100%;height:5px;background:var(--g200);border-radius:99px;overflow:hidden;margin-bottom:14px;}
 .q-pfill{height:100%;background:linear-gradient(90deg,#10B981,var(--blue));border-radius:99px;transition:.4s;}
-.q-text{font-size:15px;font-weight:700;color:var(--navy);background:var(--white);padding:16px;border-radius:var(--rsm);box-shadow:var(--shsm);margin-bottom:14px;line-height:1.5;}
+.q-text{font-size:15px;font-weight:700;color:var(--ink);background:var(--white);padding:16px;border-radius:var(--rsm);box-shadow:var(--shsm);margin-bottom:14px;line-height:1.5;}
 .q-img{display:none;width:100%;max-height:220px;object-fit:contain;border-radius:var(--rsm);margin:-4px 0 14px;box-shadow:var(--shsm);background:#fff;}
 .q-opts{display:flex;flex-direction:column;gap:10px;}
 .q-opt{background:var(--white);border:1.5px solid var(--g200);border-radius:var(--rsm);padding:12px 15px;font-size:13px;cursor:pointer;transition:.2s;}
@@ -208,13 +226,13 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
 .q-btn{flex:1;padding:12px;border:none;border-radius:var(--rsm);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
 .q-next{background:var(--blue);color:#fff;}
 .q-exit2{background:var(--g100);color:var(--g600);}
-.q-prev{background:var(--g100);color:var(--navy);}
+.q-prev{background:var(--g100);color:var(--ink);}
 .q-prev:disabled{opacity:.4;cursor:default;}
 .q-res{text-align:center;padding:30px 18px;background:var(--white);border-radius:var(--r);margin:18px;box-shadow:var(--sh);}
 
 /* ANSWER KEY */
 .ak-wrap{margin:0 18px 18px;}
-.ak-title{font-size:15px;font-weight:800;color:var(--navy);padding:6px 2px 12px;display:flex;align-items:center;gap:6px;}
+.ak-title{font-size:15px;font-weight:800;color:var(--ink);padding:6px 2px 12px;display:flex;align-items:center;gap:6px;}
 .ak-card{background:var(--white);border-radius:var(--r);padding:14px 16px;margin-bottom:12px;box-shadow:var(--shsm);border-left:4px solid var(--g200);transition:box-shadow .3s;}
 .ak-card.ak-right{border-left-color:var(--green);}
 .ak-card.ak-wrong{border-left-color:var(--red);}
@@ -268,31 +286,71 @@ body.quiz-mode .content{padding-bottom:14px;}
 /* ADMIN PANEL */
 
 /* BOARD SEL */
-#boardSel{position:fixed;inset:0;background:rgba(15,27,53,.6);z-index:150;display:flex;align-items:flex-end;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .3s ease,visibility 0s linear .36s;}
+#boardSel{position:fixed;inset:0;background:rgba(8,14,30,.62);z-index:9990;display:flex;align-items:flex-end;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .3s ease,visibility 0s linear .36s;overflow:hidden;}
 #boardSel.show{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .3s ease,visibility 0s linear 0s;}
-/* Sheet neeche se poora slide-up hoti hai, band hone par wapas neeche slide-down */
-.bs-sheet{background:var(--white);width:100%;max-height:88vh;max-height:88dvh;overflow-y:auto;overscroll-behavior:contain;border-radius:24px 24px 0 0;padding:20px 18px 40px;transform:translate3d(0,100%,0);transition:transform .28s cubic-bezier(.4,0,1,1);will-change:transform;}
+/* Sheet neeche se poora slide-up hoti hai, band hone par wapas neeche slide-down.
+   backdrop-filter hata diya (usse screen ke right edge par patli line/glitch aati thi);
+   scrollbar chhupa diya aur horizontal overflow band — koi line bahar nahi niklegi */
+.bs-sheet{background:var(--white);width:100%;max-width:100%;max-height:88vh;max-height:88dvh;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;border-radius:26px 26px 0 0;padding:14px 16px calc(26px + env(safe-area-inset-bottom,0px));transform:translate3d(0,100%,0);transition:transform .28s cubic-bezier(.4,0,1,1);will-change:transform;box-shadow:0 -10px 40px rgba(0,0,0,.25);}
+.bs-sheet::-webkit-scrollbar{display:none;width:0;height:0;}
 #boardSel.show .bs-sheet{transform:translate3d(0,0,0);transition:transform .38s cubic-bezier(.22,1,.36,1);}
-.a-handle{width:40px;height:4px;background:var(--g200);border-radius:99px;margin:0 auto 16px;}
-.a-title{font-size:16px;font-weight:800;color:var(--navy);margin-bottom:14px;text-align:center;}
-.a-close{width:100%;background:var(--g100);color:var(--navy);border:none;border-radius:var(--rsm);padding:13px 0;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:10px;transition:.15s;}
+.a-handle{width:42px;height:4px;background:var(--g200);border-radius:99px;margin:0 auto 14px;}
+.a-title{font-size:17px;font-weight:800;color:var(--ink);text-align:center;}
+.a-sub{font-size:11.5px;color:var(--g600);text-align:center;margin:3px 0 14px;}
+.a-close{width:100%;background:var(--g100);color:var(--ink);border:none;border-radius:var(--rsm);padding:13px 0;font-size:13.5px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:6px;transition:.15s;}
 .a-close:active{background:var(--g200);transform:scale(.98);}
-.bo{display:flex;align-items:center;gap:14px;padding:14px;border-radius:var(--rsm);margin-bottom:8px;border:2px solid var(--g200);cursor:pointer;transition:.2s;}
+.bo-sec{font-size:12px;font-weight:800;color:var(--g600);letter-spacing:.2px;margin:2px 2px 9px;display:flex;align-items:center;gap:6px;}
+.bo-sec.second{border-top:1.5px solid var(--g200);padding-top:14px;margin-top:6px;}
+.bo{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:14px;margin-bottom:9px;border:1.5px solid var(--g200);background:var(--white);cursor:pointer;transition:border-color .2s,background .2s,transform .12s;min-width:0;max-width:100%;overflow:hidden;-webkit-tap-highlight-color:transparent;}
+.bo:active{transform:scale(.985);}
 .bo.sel{border-color:var(--blue);background:var(--blue-l);}
-.bo-nm{font-size:14px;font-weight:700;color:var(--navy);}
-.bo-sb{font-size:11px;color:var(--g600);}
+.bo-ic{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;background:var(--g100);}
+.bo-tx{flex:1;min-width:0;}
+.bo-nm{font-size:14px;font-weight:700;color:var(--ink);line-height:1.25;overflow-wrap:anywhere;}
+.bo-sb{font-size:11px;color:var(--g600);line-height:1.3;margin-top:1px;overflow-wrap:anywhere;}
+.bo-ck{width:22px;height:22px;border-radius:50%;border:2px solid var(--g200);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:transparent;transition:.2s;}
+.bo.sel .bo-ck{background:var(--blue);border-color:var(--blue);color:#fff;}
+.bo.sel .bo-ic{background:rgba(59,130,246,.16);}
+
+/* DARK MODE overrides */
+body:has(#boardSel.show) #installToast,body:has(#notifAsk.show) #installToast,body:has(#thoughtModal.show) #installToast{display:none !important;}
+html[data-theme="dark"] .bdg-pdf{background:#3A1A1F;color:#F87171;}
+html[data-theme="dark"] .bdg-quiz{background:#232650;color:#A5B4FC;}
+html[data-theme="dark"] .d-ans{color:#C4B5FD;}
+html[data-theme="dark"] .st-p{background:#3A2D0C;color:#FCD34D;}
+html[data-theme="dark"] .st-a,
+html[data-theme="dark"] .q-opt.corr,
+html[data-theme="dark"] .ak-status.right,
+html[data-theme="dark"] .ak-opt.ak-correct{color:#6EE7B7;}
+html[data-theme="dark"] .q-timer-chip.warn,
+html[data-theme="dark"] .q-opt.wrong,
+html[data-theme="dark"] .ak-status.wrong,
+html[data-theme="dark"] .ak-opt.ak-userwrong{background:#3A1A1F;color:#F87171;}
+html[data-theme="dark"] .ak-exp{color:#BFDBFE;}
+html[data-theme="dark"] .q-opt.sel{color:#93C5FD;}
+html[data-theme="dark"] #toast{background:#26354F;border:1px solid var(--g200);}
+html[data-theme="dark"] .pf-card input,
+html[data-theme="dark"] .pf-card select{background:var(--g100);border-color:var(--g200);color:var(--g800);}
+html[data-theme="dark"] .pf-card input::placeholder{color:var(--g400);}
+html[data-theme="dark"] .pyq-seg-btn.active{box-shadow:0 1px 4px rgba(0,0,0,.4);}
+html[data-theme="dark"] .bnav{box-shadow:0 -4px 20px rgba(0,0,0,.4);}
+html[data-theme="dark"] .npc-slider{background:var(--g200);}
+html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
+
+/* Dark mode toggle row (Profile page) */
+.theme-row{display:flex;align-items:center;gap:12px;background:var(--g100);border-radius:var(--rsm);padding:11px 12px;margin-bottom:16px;}
 
 /* NOTIFICATION PERMISSION DIALOG (Android system dialog jaisa) */
 #notifAsk{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:flex-end;justify-content:center;padding:0 16px 28px;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .25s ease,visibility 0s linear .3s;}
 #notifAsk.show{opacity:1;visibility:visible;pointer-events:auto;transition:opacity .25s ease,visibility 0s linear 0s;}
-.na-card{background:#fff;width:100%;max-width:420px;border-radius:28px;overflow:hidden;text-align:center;transform:translate3d(0,40px,0);transition:transform .3s cubic-bezier(.22,1,.36,1);}
+.na-card{background:var(--white);width:100%;max-width:420px;border-radius:28px;overflow:hidden;text-align:center;transform:translate3d(0,40px,0);transition:transform .3s cubic-bezier(.22,1,.36,1);}
 #notifAsk.show .na-card{transform:translate3d(0,0,0);}
 .na-head{padding:26px 24px 20px;}
 .na-ic{font-size:30px;line-height:1;}
-.na-title{font-size:17px;font-weight:600;color:#111;line-height:1.35;margin-top:14px;}
+.na-title{font-size:17px;font-weight:600;color:var(--g800);line-height:1.35;margin-top:14px;}
 .na-sub{font-size:12px;color:var(--g600);line-height:1.5;margin-top:8px;}
-.na-btn{display:block;width:100%;background:none;border:none;border-top:1px solid #e6e8ee;padding:17px 0;font-size:17px;font-weight:500;color:#0b5fe0;cursor:pointer;font-family:inherit;}
-.na-btn:active{background:#f1f4fb;}
+.na-btn{display:block;width:100%;background:none;border:none;border-top:1px solid var(--g200);padding:17px 0;font-size:17px;font-weight:500;color:var(--blue);cursor:pointer;font-family:inherit;}
+.na-btn:active{background:var(--g100);}
 
 /* LIVE CLASS BANNER */
 .live-banner{margin:14px 18px 0;background:linear-gradient(135deg,#DC2626,#991B1B);border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;position:relative;overflow:hidden;animation:pulse-glow 2s infinite;}
@@ -376,17 +434,30 @@ body.quiz-mode .content{padding-bottom:14px;}
 .tb-bell{position:relative;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;cursor:pointer;flex-shrink:0;}
 .tb-bell-dot{position:absolute;top:-2px;right:-2px;background:var(--red);color:#fff;border-radius:99px;min-width:16px;height:16px;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 3px;border:1.5px solid var(--navy);}
 .notif-banner{background:var(--saffron-l);border:1.5px solid var(--saffron);border-radius:var(--rsm);padding:12px 14px;margin:12px 18px 0;display:flex;align-items:center;gap:10px;}
-.notif-banner p{font-size:12px;color:var(--navy);font-weight:600;line-height:1.4;flex:1;}
+.notif-banner p{font-size:12px;color:var(--ink);font-weight:600;line-height:1.4;flex:1;}
 .notif-banner .nb-btn{background:var(--saffron);color:var(--navy);border:none;border-radius:8px;padding:7px 11px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;}
 .notif-banner .nb-close{background:none;border:none;font-size:15px;color:var(--g600);cursor:pointer;flex-shrink:0;padding:0 2px;}
-.notif-item{background:var(--white);border-radius:var(--rsm);padding:13px;margin-bottom:10px;box-shadow:var(--shsm);border-left:3px solid var(--blue);}
-.notif-item .ni-title{font-size:13px;font-weight:700;color:var(--navy);}
-.notif-item .ni-body{font-size:12px;color:var(--g600);margin-top:4px;line-height:1.4;}
+.notif-item{background:var(--white);border-radius:14px;padding:12px;margin-bottom:10px;box-shadow:var(--shsm);border:1.5px solid transparent;display:flex;gap:12px;align-items:flex-start;position:relative;min-width:0;}
+.notif-item.unread{border-color:rgba(59,130,246,.45);background:linear-gradient(135deg,var(--blue-l),var(--white) 70%);}
+.notif-item .ni-ic{width:40px;height:40px;border-radius:12px;background:var(--g100);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.notif-item .ni-tx{flex:1;min-width:0;}
+.notif-item .ni-title{font-size:13px;font-weight:700;color:var(--ink);line-height:1.35;overflow-wrap:anywhere;padding-right:12px;}
+.notif-item .ni-body{font-size:12px;color:var(--g600);margin-top:3px;line-height:1.45;overflow-wrap:anywhere;}
 .notif-item .ni-time{font-size:10px;color:var(--g400);margin-top:6px;}
+.notif-item .ni-dot{position:absolute;top:12px;right:12px;width:8px;height:8px;border-radius:50%;background:var(--blue);}
+.tb-theme{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;cursor:pointer;flex-shrink:0;-webkit-tap-highlight-color:transparent;transition:transform .25s ease,background .2s;}
+.tb-theme:active{transform:rotate(25deg) scale(.92);background:rgba(255,255,255,.28);}
+/* Chhoti screen par topbar ke items aapas me overlap na karein */
+@media (max-width:380px){
+  .tb-left>span:first-child{display:none;}
+  .tb-brand{font-size:16px;}
+  .board-pill{font-size:10px !important;padding:5px 9px !important;max-width:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .tb-bell,.tb-avatar,.tb-theme{width:32px;height:32px;}
+}
 .notif-empty{font-size:12px;color:var(--g600);text-align:center;padding:30px 10px;}
 .notif-perm-card{background:var(--white);border-radius:var(--rsm);box-shadow:var(--shsm);padding:13px 14px;display:flex;align-items:center;gap:12px;margin-bottom:14px;border-left:3px solid var(--saffron);}
 .npc-text{flex:1;}
-.npc-title{font-size:13px;font-weight:700;color:var(--navy);}
+.npc-title{font-size:13px;font-weight:700;color:var(--ink);}
 .npc-sub{font-size:11px;color:var(--g600);margin-top:2px;line-height:1.4;}
 .npc-switch{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;}
 .npc-switch input{opacity:0;width:0;height:0;}
@@ -408,31 +479,31 @@ body.quiz-mode .content{padding-bottom:14px;}
 .pf-card label{font-size:11px;font-weight:700;color:var(--g600);display:block;margin-bottom:6px;}
 .pf-card input,.pf-card select{width:100%;border:1.5px solid var(--g200);border-radius:var(--rsm);padding:11px 14px;font-size:13px;font-family:inherit;color:var(--g800);outline:none;margin-bottom:14px;}
 .pf-lock-hint{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--g100);border-radius:var(--rsm);padding:9px 11px;margin:-8px 0 14px;font-size:11px;font-weight:600;color:var(--g600);line-height:1.4;}
-.pf-lock-hint button{background:var(--navy);color:#fff;border:none;border-radius:7px;padding:6px 11px;font-size:10.5px;font-weight:700;cursor:pointer;flex-shrink:0;font-family:inherit;}
+.pf-lock-hint button{background:var(--btn);color:#fff;border:none;border-radius:7px;padding:6px 11px;font-size:10.5px;font-weight:700;cursor:pointer;flex-shrink:0;font-family:inherit;}
 .pf-save-btn{width:100%;background:linear-gradient(90deg,var(--navy),var(--navy2));color:#fff;border:none;border-radius:var(--rsm);padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
 
 /* PYQ PAGE */
 .pyq-chiprow{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;}
 .pyq-chiprow::-webkit-scrollbar{display:none;}
 .pyq-chip{flex-shrink:0;padding:6px 10px;border-radius:99px;border:1.5px solid var(--g200);background:var(--white);font-size:11px;font-weight:600;color:var(--g600);cursor:pointer;transition:.2s;white-space:nowrap;}
-.pyq-chip.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+.pyq-chip.active{background:var(--btn);border-color:var(--btn);color:#fff;}
 .pyq-seg{display:flex;background:var(--g100);border-radius:99px;padding:3px;gap:2px;overflow-x:auto;scrollbar-width:none;}
 .pyq-seg::-webkit-scrollbar{display:none;}
 .pyq-seg-btn{flex-shrink:0;padding:6px 9px;border-radius:99px;font-size:10.5px;font-weight:700;color:var(--g600);cursor:pointer;transition:.2s;white-space:nowrap;}
 .pyq-seg-btn.active{background:var(--white);color:var(--saffron);box-shadow:0 1px 4px rgba(15,27,53,.15);}
 .pyq-statbar{background:var(--white);border-radius:var(--rsm);padding:12px 14px;box-shadow:var(--shsm);display:flex;align-items:center;gap:10px;}
 .pyq-statbar .psb-ic{font-size:24px;}
-.pyq-statbar .psb-count{font-size:13px;font-weight:800;color:var(--navy);}
+.pyq-statbar .psb-count{font-size:13px;font-weight:800;color:var(--ink);}
 .pyq-statbar .psb-board{font-size:11px;color:var(--g600);margin-top:1px;}
 .pyq-card{position:relative;background:var(--white);border-radius:var(--rsm);box-shadow:var(--shsm);margin-bottom:10px;padding:13px 14px;border-left:5px solid var(--saffron);}
 .pyq-card-top{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
-.pyq-yr-badge{background:var(--navy);color:#fff;font-size:12px;font-weight:800;padding:3px 10px;border-radius:6px;}
+.pyq-yr-badge{background:var(--btn);color:#fff;font-size:12px;font-weight:800;padding:3px 10px;border-radius:6px;}
 .pyq-subj-ic{font-size:16px;}
 .pyq-card-title{font-size:13.5px;font-weight:700;color:var(--g800);line-height:1.4;}
 .pyq-card-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
 .pyq-meta-tag{font-size:10px;font-weight:700;color:var(--g600);background:var(--g100);padding:3px 9px;border-radius:99px;}
 .pyq-card-foot{display:flex;align-items:center;justify-content:flex-end;margin-top:10px;}
-.pyq-dl2{background:var(--navy);color:#fff;border:none;border-radius:99px;padding:8px 16px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;}
+.pyq-dl2{background:var(--btn);color:#fff;border:none;border-radius:99px;padding:8px 16px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit;}
 .pyq-nolink{font-size:11px;color:var(--g400);font-style:italic;}
 
 /* PYQ PAGE LIST — compact single-column cards: [year+icon] [title] [Download] / niche tags.
@@ -472,7 +543,7 @@ body.quiz-mode .content{padding-bottom:14px;}
 /* LEGAL LINKS (Profile page) */
 .legal-links{display:flex;flex-direction:column;gap:10px;margin:18px;padding:16px;background:var(--white);border-radius:var(--r);box-shadow:var(--shsm);}
 .legal-links a{color:var(--g600);font-size:13px;font-weight:600;text-decoration:none;}
-.legal-links a:hover{color:var(--navy);}
+.legal-links a:hover{color:var(--ink);}
 
 </style>
 </head>
@@ -531,6 +602,7 @@ body.quiz-mode .content{padding-bottom:14px;}
       <div class="board-pill" id="boardPill" onclick="openCategorySel()">
 📚 Select Category
 </div>
+      <div class="tb-theme" id="tbTheme" onclick="onThemeToggle(currentTheme()!=='dark')" role="button" aria-label="Dark mode">🌙</div>
       <div class="tb-bell" id="tbBell" onclick="openNotificationsPage()">🔔<span class="tb-bell-dot" id="tbBellDot" style="display:none;">0</span></div>
       <div class="tb-avatar" id="tbAvatar" onclick="openProfilePage()">🙂</div>
     </div>
@@ -702,7 +774,7 @@ body.quiz-mode .content{padding-bottom:14px;}
       <div class="dform">
         <div id="doubtLoginGate" style="display:none;background:var(--saffron-l);border:1.5px solid var(--saffron);border-radius:var(--rsm);padding:12px 14px;margin-bottom:14px;font-size:12.5px;color:var(--g800);">
           🔒 Doubt पूछने और उसे safe रखने के लिए पहले Google से Sign In करें
-          <button onclick="googleSignIn()" style="display:block;margin-top:8px;width:100%;background:var(--navy);color:#fff;border:none;border-radius:var(--rsm);padding:9px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit;">Google से Sign In करें</button>
+          <button onclick="googleSignIn()" style="display:block;margin-top:8px;width:100%;background:var(--btn);color:#fff;border:none;border-radius:var(--rsm);padding:9px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit;">Google से Sign In करें</button>
         </div>
         <label>Subject</label><select id="dSubj"></select>
         <label>Topic / Chapter</label><input type="text" id="dTopic" placeholder="Chapter 5 – Light"/>
@@ -743,7 +815,7 @@ body.quiz-mode .content{padding-bottom:14px;}
       <div id="quizResult" style="display:none;">
         <div class="q-res">
           <div style="font-size:56px;" id="rEmoji"></div>
-          <div style="font-size:34px;font-weight:800;color:var(--navy);margin-top:10px;" id="rScore"></div>
+          <div style="font-size:34px;font-weight:800;color:var(--ink);margin-top:10px;" id="rScore"></div>
           <div style="font-size:13px;color:var(--g600);margin-top:6px;" id="rMsg"></div>
           <button class="start-btn" style="margin-top:20px;" onclick="exitQuiz()">🏠 Quiz List</button>
         </div>
@@ -771,6 +843,16 @@ body.quiz-mode .content{padding-bottom:14px;}
         <div class="pf-sub" id="pfHeroSub">फ़ोटो पर टैप करके बदलें</div>
       </div>
       <div class="pf-card">
+        <div class="theme-row">
+          <div class="npc-text">
+            <div class="npc-title">🌙 Dark Mode</div>
+            <div class="npc-sub">रात में पढ़ाई के लिए आँखों को आराम</div>
+          </div>
+          <label class="npc-switch">
+            <input type="checkbox" id="themeToggle" onchange="onThemeToggle(this.checked)"/>
+            <span class="npc-slider"></span>
+          </label>
+        </div>
         <label>आपका नाम</label>
         <input type="text" id="pfName" placeholder="अपना नाम लिखें..."/>
         <label>Username</label>
@@ -826,6 +908,7 @@ body.quiz-mode .content{padding-bottom:14px;}
   <div class="bs-sheet">
     <div class="a-handle"></div>
     <div class="a-title">Board & Class चुनें</div>
+    <div class="a-sub">अपना category चुनें — content उसी हिसाब से दिखेगा</div>
     <div id="boardOpts"></div>
     <button class="a-close" onclick="closeBS()">✕ बंद करें</button>
   </div>
@@ -854,10 +937,10 @@ body.quiz-mode .content{padding-bottom:14px;}
 <div id="quizExitModal" style="position:fixed;inset:0;background:rgba(15,27,53,.6);z-index:400;display:none;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(3px);">
   <div style="background:var(--white);width:100%;max-width:340px;border-radius:18px;padding:24px 20px 20px;text-align:center;">
     <div style="font-size:38px;">🚪</div>
-    <div style="font-size:15.5px;font-weight:800;color:var(--navy);margin-top:10px;">Quiz छोड़ना चाहते हैं?</div>
+    <div style="font-size:15.5px;font-weight:800;color:var(--ink);margin-top:10px;">Quiz छोड़ना चाहते हैं?</div>
     <div style="font-size:12.5px;color:var(--g600);margin-top:6px;line-height:1.5;">अभी तक की आपकी progress save नहीं होगी और quiz फिर से शुरू करना होगा।</div>
     <div style="display:flex;gap:10px;margin-top:18px;">
-      <button onclick="cancelExitQuiz()" style="flex:1;background:var(--g100);border:none;color:var(--navy);border-radius:12px;padding:12px 0;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">जारी रखें</button>
+      <button onclick="cancelExitQuiz()" style="flex:1;background:var(--g100);border:none;color:var(--ink);border-radius:12px;padding:12px 0;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">जारी रखें</button>
       <button onclick="confirmExitQuiz()" style="flex:1;background:var(--red);border:none;color:#fff;border-radius:12px;padding:12px 0;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">हां, छोड़ें</button>
     </div>
   </div>
@@ -877,7 +960,7 @@ body.quiz-mode .content{padding-bottom:14px;}
 <div id="privacyModal" onclick="closePrivacyOut(event)" style="position:fixed;inset:0;background:rgba(15,27,53,.6);z-index:300;display:none;align-items:flex-end;backdrop-filter:blur(3px);">
   <div style="background:var(--white);width:100%;border-radius:24px 24px 0 0;max-height:85vh;overflow-y:auto;padding:20px 20px 32px;">
     <div style="width:40px;height:4px;background:var(--g200);border-radius:99px;margin:0 auto 18px;"></div>
-    <div style="font-size:18px;font-weight:800;color:var(--navy);margin-bottom:14px;">🔒 Privacy Policy</div>
+    <div style="font-size:18px;font-weight:800;color:var(--ink);margin-bottom:14px;">🔒 Privacy Policy</div>
     <div style="font-size:12.5px;color:var(--g600);line-height:1.7;">
       <p style="margin-bottom:10px;"><b>EduSpark</b> ek free study app hai (CBSE, BSER aur competition exams ke students ke liye). Ye policy batati hai ki hum kaunsa data collect karte hain aur uska use kaise karte hain.</p>
 
@@ -1327,10 +1410,12 @@ function listenPYQ(){
   db.collection('pyq').orderBy('year','desc').onSnapshot(snap=>{
     allPYQ = snap.docs.map(d=>({id:d.id,...d.data()}));
     refreshPYQUI();
+    notifyNewPYQ(allPYQ);
   }, err=>{
     db.collection('pyq').get().then(snap=>{
       allPYQ = snap.docs.map(d=>({id:d.id,...d.data()}));
       refreshPYQUI();
+      notifyNewPYQ(allPYQ);
     }).catch(()=>{});
   });
 }
@@ -1423,40 +1508,30 @@ function restoreNavState(){
 // ══════════════════════════════════════════
 // BOARD SELECTOR
 // ══════════════════════════════════════════
+function boCard(id, icon, name, sub){
+  const sel = curBoard===id;
+  return `<div class="bo ${sel?'sel':''}" onclick="selBoard('${id}')">
+    <div class="bo-ic">${icon}</div>
+    <div class="bo-tx"><div class="bo-nm">${name}</div><div class="bo-sb">${sub}</div></div>
+    <div class="bo-ck">✓</div>
+  </div>`;
+}
 function openCategorySel(){
+  // Install banner sheet ke upar overlap na kare
+  const it = document.getElementById('installToast'); if(it) it.remove();
   document.getElementById('boardOpts').innerHTML=`
-    <div style="margin-bottom:12px;">
-      <div style="font-size:13px;font-weight:700;color:var(--g600);margin-bottom:8px;">🏫 Board Exams</div>
-      <div class="bo ${curBoard==='CBSE-10'?'sel':''}" onclick="selBoard('CBSE-10')">
-        <span style="font-size:26px;">🏫</span><div><div class="bo-nm">CBSE – Class 10</div><div class="bo-sb">Central Board</div></div>
-      </div>
-      <div class="bo ${curBoard==='CBSE-12'?'sel':''}" onclick="selBoard('CBSE-12')">
-        <span style="font-size:26px;">🏫</span><div><div class="bo-nm">CBSE – Class 12</div><div class="bo-sb">Central Board</div></div>
-      </div>
-      <div class="bo ${curBoard==='BSER-10'?'sel':''}" onclick="selBoard('BSER-10')">
-        <span style="font-size:26px;">🎓</span><div><div class="bo-nm">BSER – Class 10</div><div class="bo-sb">Rajasthan Board</div></div>
-      </div>
-      <div class="bo ${curBoard==='BSER-12'?'sel':''}" onclick="selBoard('BSER-12')">
-        <span style="font-size:26px;">🎓</span><div><div class="bo-nm">BSER – Class 12</div><div class="bo-sb">Rajasthan Board</div></div>
-      </div>
-    </div>
-    <div style="border-top:1.5px solid var(--g200);padding-top:12px;">
-      <div style="font-size:13px;font-weight:700;color:var(--g600);margin-bottom:8px;">📋 Competition Exams</div>
-      <div class="bo ${curBoard==='SSC-CHSL'?'sel':''}" onclick="selBoard('SSC-CHSL')">
-        <span style="font-size:26px;">📋</span><div><div class="bo-nm">SSC – CHSL</div><div class="bo-sb">Staff Selection Commission</div></div>
-      </div>
-      <div class="bo ${curBoard==='SSC-CGL'?'sel':''}" onclick="selBoard('SSC-CGL')">
-        <span style="font-size:26px;">📋</span><div><div class="bo-nm">SSC – CGL</div><div class="bo-sb">Staff Selection Commission</div></div>
-      </div>
-      <div class="bo ${curBoard==='BSTC'?'sel':''}" onclick="selBoard('BSTC')">
-        <span style="font-size:26px;">✏️</span><div><div class="bo-nm">BSTC / D.El.Ed</div><div class="bo-sb">Rajasthan</div></div>
-      </div>
-      <div class="bo ${curBoard==='REET'?'sel':''}" onclick="selBoard('REET')">
-        <span style="font-size:26px;">👨‍🏫</span><div><div class="bo-nm">REET</div><div class="bo-sb">Rajasthan Eligibility Test</div></div>
-      </div>
-    </div>
+    <div class="bo-sec">🏫 Board Exams</div>
+    ${boCard('CBSE-10','🏫','CBSE – Class 10','Central Board')}
+    ${boCard('CBSE-12','🏫','CBSE – Class 12','Central Board')}
+    ${boCard('BSER-10','🎓','BSER – Class 10','Rajasthan Board')}
+    ${boCard('BSER-12','🎓','BSER – Class 12','Rajasthan Board')}
+    <div class="bo-sec second">📋 Competition Exams</div>
+    ${boCard('SSC-CHSL','📋','SSC – CHSL','Staff Selection Commission')}
+    ${boCard('SSC-CGL','📋','SSC – CGL','Staff Selection Commission')}
+    ${boCard('BSTC','✏️','BSTC / D.El.Ed','Rajasthan')}
+    ${boCard('REET','👨‍🏫','REET','Rajasthan Eligibility Test')}
   `;
-  
+
   const bsSheet = document.querySelector('#boardSel .bs-sheet');
   if(bsSheet) bsSheet.scrollTop = 0;
   document.getElementById('boardSel').classList.add('show');
@@ -1986,7 +2061,7 @@ function renderQuizList(){
             <span class="qzc-tag">📝 ${totalQFor(q)} Questions</span>
             <span class="qzc-tag">⏱ ${totalTimeFor(q)} min</span>
             ${q.sectional?'<span class="qzc-tag">🧩 Sectional</span>':''}
-            ${q.subject==='fullmock'?'<span class="qzc-tag" style="background:#FEF3C7;color:#92400E;">🎯 Full Mock</span>':''}
+            ${q.subject==='fullmock'?'<span class="qzc-tag" style="background:var(--saffron-l);color:var(--saffron);">🎯 Full Mock</span>':''}
           </div>
           <button class="start-btn" onclick="startQuiz(${i})">▶ Start Quiz</button>
         </div>`).join('')
@@ -2161,6 +2236,7 @@ function showResult(){
   const total=totalQuestionsCount(), pct=total?Math.round((score/total)*100):0;
   document.getElementById('rEmoji').textContent=pct>=80?'🏆':pct>=50?'👍':'💪';
   document.getElementById('rScore').textContent=`${score}/${total} (${pct}%)`;
+  if(typeof notifyQuizDone==='function') notifyQuizDone(score,total,pct);
   document.getElementById('rMsg').textContent=pct>=80?'शानदार! बेहतरीन Performance!':pct>=50?'अच्छा! और practice करें!':'हिम्मत रखें, आप कर सकते हैं!';
   renderAnswerKey();
   renderQPalette();
@@ -2457,14 +2533,14 @@ function showInstallToast(){
     <div style="display:flex;align-items:center;gap:12px;">
       <div style="width:44px;height:44px;background:linear-gradient(135deg,#0F1B35,#1a3a6b);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">📚</div>
       <div style="flex:1;">
-        <div style="font-size:13px;font-weight:700;color:#0F1B35;">EduSpark App Install करें</div>
-        <div style="font-size:11px;color:#64748B;margin-top:2px;">Free • Fast • Offline Support</div>
+        <div style="font-size:13px;font-weight:700;color:var(--ink);">EduSpark App Install करें</div>
+        <div style="font-size:11px;color:var(--g600);margin-top:2px;">Free • Fast • Offline Support</div>
       </div>
-      <button onclick="installApp();document.getElementById('installToast').remove();" style="background:#0F1B35;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">Install</button>
+      <button onclick="installApp();document.getElementById('installToast').remove();" style="background:var(--btn);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0;">Install</button>
     </div>
     <button onclick="document.getElementById('installToast').remove();" style="position:absolute;top:8px;right:10px;background:none;border:none;font-size:16px;cursor:pointer;color:#94A3B8;">✕</button>
   `;
-  toast.style.cssText = `position:fixed;bottom:80px;left:12px;right:12px;background:#fff;border-radius:16px;padding:14px 16px;box-shadow:0 8px 32px rgba(15,27,53,.2);z-index:9998;animation:slideUp .4s ease;border:1.5px solid #E2E8F0;position:fixed;`;
+  toast.style.cssText = `position:fixed;bottom:80px;left:12px;right:12px;background:var(--white);border-radius:16px;padding:14px 16px;box-shadow:0 8px 32px rgba(15,27,53,.2);z-index:9998;animation:slideUp .4s ease;border:1.5px solid var(--cardline);position:fixed;`;
   document.body.appendChild(toast);
   setTimeout(()=>{ if(document.getElementById('installToast')) document.getElementById('installToast').remove(); }, 8000);
 }
@@ -2608,10 +2684,40 @@ function syncStudentToCloud(fcmToken){
   db.collection('students').doc(getStudentDocId()).set(data, {merge:true}).catch(()=>{});
 }
 
+// ── Dark mode ────────────────────────────────────────────────────────
+function currentTheme(){ return document.documentElement.getAttribute('data-theme')==='dark' ? 'dark' : 'light'; }
+function applyTheme(mode, persist){
+  document.documentElement.setAttribute('data-theme', mode);
+  const t = document.getElementById('themeToggle');
+  if(t) t.checked = (mode==='dark');
+  const tb = document.getElementById('tbTheme');
+  if(tb) tb.textContent = (mode==='dark') ? '☀️' : '🌙';
+  if(persist){ try{ localStorage.setItem('es_theme', mode); }catch(e){} }
+}
+function onThemeToggle(on){ applyTheme(on ? 'dark' : 'light', true); }
+document.addEventListener('DOMContentLoaded', function(){
+  const t = document.getElementById('themeToggle');
+  if(t) t.checked = (currentTheme()==='dark');
+  const tb = document.getElementById('tbTheme');
+  if(tb) tb.textContent = (currentTheme()==='dark') ? '☀️' : '🌙';
+});
+// Student ne khud choose nahi kiya ho to phone ki system setting follow karo
+try{
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  const onSys = function(e){ if(!localStorage.getItem('es_theme')) applyTheme(e.matches ? 'dark' : 'light', false); };
+  if(mq.addEventListener) mq.addEventListener('change', onSys); else if(mq.addListener) mq.addListener(onSys);
+}catch(e){}
+
 // ── Naye student ko enroll hote hi phone par welcome notification ─────
 // Permission mil jaaye tab turant (system notification ki tarah) dikhta hai; permission
 // abhi baaki ho to allow karte hi dikhta hai. Ek device par sirf ek baar.
 function markWelcomePending(name){
+  // App ke notification center me bhi welcome + aaj ke reminders turant dikhen
+  try{
+    runSmartNotifs();
+    addLocalNotif('welcome','🎉','EduSpark में आपका स्वागत है, '+(name||'Student')+'!','PDF, Notes, Quiz और PYQ — सब कुछ free। आज ही अपना पहला Quiz दें! 🚀');
+    updateNotifBadge();
+  }catch(e){}
   if(localStorage.getItem('es_welcome_done')) return;
   localStorage.setItem('es_welcome_pending', name || 'Student');
 }
@@ -2812,27 +2918,131 @@ function closeNotificationsPage(){
   back.classList.add('active');
 }
 
+// ── App ki apni notifications (Firestore/GitHub Action ke bina, seedha device par) ─────────
+const LN_KEY = 'es_local_notifs';
+function lnLoad(){ try{ return JSON.parse(localStorage.getItem(LN_KEY)||'[]'); }catch(e){ return []; } }
+function lnSave(a){ try{ localStorage.setItem(LN_KEY, JSON.stringify(a.slice(0,40))); }catch(e){} }
+function addLocalNotif(id, icon, title, body){
+  const a = lnLoad();
+  if(a.some(x=>x.id===id)) return false;
+  a.unshift({id:id, icon:icon, title:title, body:body, createdAt:new Date().toISOString()});
+  lnSave(a);
+  return true;
+}
+function dayKey(d){ d = d || new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+const DAILY_MSGS = [
+  ['📚','आज की पढ़ाई शुरू करें','आज का target: 1 chapter पढ़ें और 1 Quiz दें। छोटी शुरुआत, बड़ी जीत! 💪'],
+  ['📜','आज एक PYQ paper हल करें','पिछले सालों के paper से exam pattern समझ आता है — आज 1 paper try करें।'],
+  ['🧩','Quiz time!','5 मिनट निकालें और आज का Quiz दें — अपनी तैयारी खुद check करें।'],
+  ['⏰','Revision का समय','कल जो पढ़ा था उसे 10 मिनट revise करें — याद रखने का सबसे आसान तरीका।'],
+  ['❓','कोई doubt है?','अटक गए? Doubts section में सवाल पूछें, जवाब वहीं मिलेगा।'],
+  ['🎯','Weekly target','इस हफ्ते कम से कम 3 Quiz और 2 PYQ paper पूरे करने की कोशिश करें।'],
+  ['🌟','Sunday Special','आज हफ्ते भर के कठिन topics दोबारा देखें और एक Quiz से check करें।']
+];
+function updateStudyStreak(){
+  let days = [];
+  try{ days = JSON.parse(localStorage.getItem('es_open_days')||'[]'); }catch(e){}
+  const today = dayKey();
+  if(days[days.length-1] !== today){ days.push(today); days = days.slice(-40); localStorage.setItem('es_open_days', JSON.stringify(days)); }
+  let streak = 0, d = new Date();
+  while(days.indexOf(dayKey(d)) !== -1){ streak++; d.setDate(d.getDate()-1); }
+  return {streak:streak, days:days};
+}
+function runSmartNotifs(){
+  let profile = null;
+  try{ profile = JSON.parse(localStorage.getItem('es_student')||'null'); }catch(e){}
+  if(!profile) return;
+  const name = profile.name || 'Student';
+  const today = dayKey();
+
+  // 1) Purane din ke baad wapsi (3+ din gap)
+  const last = localStorage.getItem('es_last_open_day');
+  if(last && last !== today){
+    const gap = Math.round((new Date(today) - new Date(last)) / 86400000);
+    if(gap >= 3) addLocalNotif('back-'+today,'👋','वापस आए, '+name+'! '+gap+' दिन बाद','कोई बात नहीं — आज फिर से शुरू करें। एक छोटा Quiz देकर warm-up करें।');
+  }
+  localStorage.setItem('es_last_open_day', today);
+
+  // 2) Roz ka study reminder (din ke hisaab se alag message)
+  const m = DAILY_MSGS[new Date().getDay() % DAILY_MSGS.length];
+  addLocalNotif('daily-'+today, m[0], m[1], m[2]);
+
+  // 3) Streak milestones
+  const st = updateStudyStreak();
+  if([2,3,5,7,10,15,21,30].indexOf(st.streak) !== -1){
+    addLocalNotif('streak-'+st.streak,'🔥', st.streak+' दिन की लगातार पढ़ाई!', 'शानदार '+name+'! Streak बनाए रखें — रोज़ थोड़ी पढ़ाई बड़ा फ़र्क़ लाती है।');
+  }
+
+  // 4) Dark mode ka tip (sirf ek baar)
+  addLocalNotif('tip-dark','🌙','Dark Mode आ गया!','ऊपर 🌙 बटन या Profile से ON करें — रात की पढ़ाई में आँखों को आराम।');
+
+  updateNotifBadge();
+}
+// Naye PYQ papers jo is device ने pehle nahi dekhe
+function notifyNewPYQ(list){
+  try{
+    let known = null;
+    try{ known = JSON.parse(localStorage.getItem('es_pyq_known')||'null'); }catch(e){}
+    const ids = list.map(x=>x.id);
+    if(!known){ localStorage.setItem('es_pyq_known', JSON.stringify(ids)); return; } // pehli baar: sirf yaad rakho
+    const fresh = list.filter(x=>known.indexOf(x.id)===-1 && x.board===curBoard);
+    localStorage.setItem('es_pyq_known', JSON.stringify(ids));
+    if(!fresh.length) return;
+    if(fresh.length <= 3){
+      fresh.forEach(x=>addLocalNotif('pyq-'+x.id,'📜','नया PYQ जुड़ा: '+(x.title||'Paper'), [x.year, x.examType, x.subject].filter(Boolean).join(' • ')+' — अभी PYQ section में देखें।'));
+    } else {
+      addLocalNotif('pyq-many-'+dayKey()+'-'+fresh.length,'📜',fresh.length+' नए PYQ papers जुड़े','PYQ section में नए papers आ गए हैं — अभी देखें।');
+    }
+    updateNotifBadge();
+  }catch(e){}
+}
+function notifyQuizDone(score, total, pct){
+  const msg = pct>=80 ? ['🏆','शानदार Performance!','आपने '+score+'/'+total+' ('+pct+'%) score किया। ऐसे ही जारी रखें!']
+            : pct>=50 ? ['👍','अच्छा प्रयास!', 'Score '+score+'/'+total+' ('+pct+'%). थोड़ी और practice से 80%+ पक्का।']
+            : ['💪','हिम्मत रखें!','Score '+score+'/'+total+' ('+pct+'%). Answer Key देखकर गलतियाँ सुधारें और दोबारा try करें।'];
+  addLocalNotif('quiz-'+Date.now(), msg[0], 'Quiz पूरा: '+msg[1], msg[2]);
+  updateNotifBadge();
+}
+
+function notifTs(n){ const t = new Date(n.createdAt).getTime(); return isNaN(t) ? 0 : t; }
+function getQueueNotifs(){
+  return db.collection('notificationQueue').orderBy('createdAt','desc').limit(30).get()
+    .then(snap=>snap.docs.map(d=>d.data()).filter(n=>{
+      return !n.audience || n.audience === 'all' || n.audience === curBoard;
+    }).map(n=>({icon:'📢', title:n.title||'', body:n.body||'', createdAt:n.createdAt})))
+    .catch(()=>null);
+}
+function escHTML(t){ return String(t==null?'':t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
 function renderNotifications(){
   const el = document.getElementById('notifList');
   if(!el) return;
-  el.innerHTML = '<div class="notif-empty">लोड हो रहा है...</div>';
-  db.collection('notificationQueue').orderBy('createdAt','desc').limit(30).get()
-    .then(snap=>{
-      const items = snap.docs.map(d=>d.data()).filter(n=>{
-        return !n.audience || n.audience === 'all' || n.audience === curBoard;
-      });
-      if(!items.length){
-        el.innerHTML = '<div class="notif-empty">🔔 अभी तक कोई notification नहीं है।</div>';
-        return;
-      }
-      el.innerHTML = items.map(n=>`
-        <div class="notif-item">
-          <div class="ni-title">${n.title || ''}</div>
-          <div class="ni-body">${n.body || ''}</div>
+  const prevSeen = localStorage.getItem('es_notif_seen_ts');
+  const prevSeenMs = prevSeen ? new Date(prevSeen).getTime() : 0;
+  const paint = function(items, failed){
+    items.sort((a,b)=>notifTs(b)-notifTs(a));
+    if(!items.length){
+      el.innerHTML = '<div class="notif-empty">'+(failed?'❌ Notifications load नहीं हो पाए।':'🔔 अभी तक कोई notification नहीं है।')+'</div>';
+      return;
+    }
+    el.innerHTML = items.map(n=>`
+      <div class="notif-item ${notifTs(n)>prevSeenMs?'unread':''}">
+        <div class="ni-ic">${n.icon||'🔔'}</div>
+        <div class="ni-tx">
+          <div class="ni-title">${escHTML(n.title)}</div>
+          <div class="ni-body">${escHTML(n.body)}</div>
           <div class="ni-time">${formatNotifTime(n.createdAt)}</div>
-        </div>`).join('');
-    })
-    .catch(()=>{ el.innerHTML = '<div class="notif-empty">❌ Notifications load नहीं हो पाए।</div>'; });
+        </div>
+        ${notifTs(n)>prevSeenMs?'<span class="ni-dot"></span>':''}
+      </div>`).join('');
+  };
+  const local = lnLoad();
+  paint(local.slice(), false);                         // local turant dikhao
+  getQueueNotifs().then(q=>{
+    if(q===null){ paint(local.slice(), local.length===0); return; }
+    paint(local.concat(q), false);
+  });
 }
 
 function formatNotifTime(createdAt){
@@ -2843,25 +3053,22 @@ function formatNotifTime(createdAt){
   }catch(e){ return ''; }
 }
 
-// Topbar par bell ke upar kitni "unread" notifications hain, uska badge
+// Topbar par bell ke upar kitni "unread" notifications hain, uska badge (local + admin dono)
 function updateNotifBadge(){
   const dot = document.getElementById('tbBellDot');
   if(!dot) return;
   const seenTs = localStorage.getItem('es_notif_seen_ts');
-  db.collection('notificationQueue').orderBy('createdAt','desc').limit(30).get()
-    .then(snap=>{
-      const items = snap.docs.map(d=>d.data()).filter(n=>{
-        return !n.audience || n.audience === 'all' || n.audience === curBoard;
-      });
-      const unread = seenTs ? items.filter(n => n.createdAt && n.createdAt > seenTs).length : items.length;
-      if(unread > 0){
-        dot.style.display = 'flex';
-        dot.textContent = unread > 9 ? '9+' : String(unread);
-      } else {
-        dot.style.display = 'none';
-      }
-    })
-    .catch(()=>{});
+  const seenMs = seenTs ? new Date(seenTs).getTime() : 0;
+  const show = function(unread){
+    if(unread > 0){ dot.style.display = 'flex'; dot.textContent = unread > 9 ? '9+' : String(unread); }
+    else { dot.style.display = 'none'; }
+  };
+  const localUnread = lnLoad().filter(n=>notifTs(n)>seenMs).length;
+  show(localUnread);
+  getQueueNotifs().then(q=>{
+    if(q===null) return;
+    show(localUnread + q.filter(n=>n.createdAt && notifTs(n)>seenMs).length);
+  });
 }
 
 let fcmForegroundBound = false;
@@ -2941,6 +3148,7 @@ if (typeof listenCommunity === "function") listenCommunity();
     // Push notification token register/update karo (agar permission pehle se hai)
     if (typeof initPushNotifications === "function") initPushNotifications();
     // Topbar bell par unread notifications ka badge dikhाओ
+    if (typeof runSmartNotifs === "function") runSmartNotifs();
     if (typeof updateNotifBadge === "function") updateNotifBadge();
   }, hadSavedNav ? 120 : 500);
   // Student setup - splash ke baad
