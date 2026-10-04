@@ -17,6 +17,9 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <meta name="theme-color" content="#0F1B35"/>
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin/>
 <script>
 /* Dark mode: saved choice, warna phone ki system setting */
 (function(){try{var t=localStorage.getItem('es_theme');if(t!=='dark'&&t!=='light'){t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();
@@ -33,7 +36,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 
 <!-- Firebase Init - right after SDK scripts -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js"></script>
+
 <script>
 const FB_CFG = {
   apiKey: "AIzaSyD90ruZHQ_VGuOoO__Q6PC2svRga3jyfXs",
@@ -46,7 +49,9 @@ const FB_CFG = {
 };
 if (!firebase.apps.length) { firebase.initializeApp(FB_CFG); }
 
-firebase.analytics();
+function loadAnalytics(){ try{ var a=document.createElement('script'); a.src='https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js'; a.onload=function(){ try{ firebase.analytics(); }catch(e){} }; document.head.appendChild(a); }catch(e){} }
+window.addEventListener('load', function(){ setTimeout(loadAnalytics, 4000); });
+function logEv(n,p){ try{ if(firebase.analytics) firebase.analytics().logEvent(n,p); }catch(e){} }
 
 const auth = firebase.auth();
 const db   = firebase.firestore();
@@ -54,6 +59,7 @@ auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
 // 📴 Offline support: ek baar jo content/quiz/PYQ load ho chuka hai, wo
 // internet na hone par bhi (device ke IndexedDB cache se) dikhta rahega
+try{ db.settings({cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED, experimentalAutoDetectLongPolling:true, merge:true}); }catch(e){}
 db.enablePersistence({synchronizeTabs:true}).catch(function(err){
   // 'failed-precondition' = ek se zyada tabs khule hain, 'unimplemented' = browser support nahi karta
   console.warn('Offline persistence enable nahi hui:', err.code);
@@ -1194,6 +1200,13 @@ function finishSaveProfileEdits(name, username){
 // wahi username unke account se hamesha ke liye juda rahe aur kisi bhi device
 // par sign in karne par wapas mil jaaye) — anonymous students ka naam save ho
 // jaata hai lekin username field locked rehti hai.
+function claimUsername(username, uid){
+  const ref = db.collection('usernames').doc(encodeURIComponent(username.toLowerCase()));
+  return db.runTransaction(function(tx){ return tx.get(ref).then(function(sn){
+    if(sn.exists && sn.data().uid !== uid) throw new Error('taken');
+    if(!sn.exists) tx.set(ref,{uid:uid, username:username, updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+  }); });
+}
 function saveProfileEdits(){
   const name = document.getElementById('pfName').value.trim();
   if(!name){ showToast('❌ नाम खाली है!'); return; }
@@ -1214,33 +1227,24 @@ function saveProfileEdits(){
   const saveBtn = document.querySelector('.pf-save-btn');
   if(saveBtn){ saveBtn.disabled = true; saveBtn.textContent = '⏳ Username check हो रहा है...'; }
 
-  db.collection('students').where('usernameLower','==',usernameLower).get()
-    .then(snap=>{
-      const takenByOther = snap.docs.some(d => {
-        if(d.id === myId) return false;
-        const dd = d.data();
-        if(dd && dd.googleUid === myUid) return false; // wahi account, purana/dusra record
-        return true;
-      });
-      if(saveBtn){ saveBtn.disabled = false; saveBtn.textContent = '💾 Profile Update करें'; }
-      if(takenByOther){
-        showToast('❌ यह Username पहले से लिया जा चुका है, कोई और चुनें');
-        return;
-      }
-      finishSaveProfileEdits(name, username);
-    })
-    .catch(()=>{
-      if(saveBtn){ saveBtn.disabled = false; saveBtn.textContent = '💾 Profile Update करें'; }
-      // Internet issue jaisi स्थिति में bhi profile local save ho jaaye
-      finishSaveProfileEdits(name, username);
-    });
+  const oldU = ((JSON.parse(localStorage.getItem('es_student')||'null')||{}).username||'');
+  const resetBtn = function(){ if(saveBtn){ saveBtn.disabled = false; saveBtn.textContent = '💾 Profile Update करें'; } };
+  claimUsername(username, myUid).then(function(){
+    if(oldU && oldU.toLowerCase() !== usernameLower){ db.collection('usernames').doc(encodeURIComponent(oldU.toLowerCase())).delete().catch(function(){}); }
+    resetBtn();
+    finishSaveProfileEdits(name, username);
+  }).catch(function(e){
+    resetBtn();
+    if(e && e.message === 'taken'){ showToast('❌ यह Username पहले से लिया जा चुका है, कोई और चुनें'); return; }
+    finishSaveProfileEdits(name, username); // internet issue: local save ho jaaye
+  });
 }
 
 // ══════════════════════════════════════════
 // CONSTANTS
 // ══════════════════════════════════════════
 const DEVICE_ID = localStorage.getItem('es_device') || (()=>{ 
-  const id='dev_'+Date.now(); 
+  const id='dev_'+Date.now().toString(36)+Math.random().toString(36).slice(2,10); 
   localStorage.setItem('es_device',id); 
   return id; 
 })();
@@ -1398,9 +1402,14 @@ function listenQuizzes(){
   }, ()=>{});
 }
 
+let doubtsUnsub = null;
 function listenDoubts(){
-  db.collection('doubts').orderBy('date','desc').onSnapshot(snap=>{
-    const doubts = snap.docs.map(d=>({id:d.id,...d.data()}));
+  if(doubtsUnsub){ try{ doubtsUnsub(); }catch(e){} doubtsUnsub = null; }
+  const u = auth.currentUser;
+  if(!u){ renderDoubts([]); return; }
+  doubtsUnsub = db.collection('doubts').where('uid','==',u.uid).limit(100).onSnapshot(snap=>{
+    const doubts = snap.docs.map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
     renderDoubts(doubts);
   }, ()=>{});
 }
@@ -1999,10 +2008,10 @@ function renderDoubts(doubts){
         return `
         <div class="doubt-item">
           <div class="d-meta">
-            ${sub ? sub.name : '?'} • ${d.topic || 'General'} • ${d.name}
+            ${sub ? sub.name : '?'} • ${escHTML(d.topic || 'General')} • ${escHTML(d.name)}
           </div>
-          <div class="d-q">❓ ${d.text}</div>
-          ${d.answer ? `<div class="d-ans">✅ ${d.answer}</div>` : ''}
+          <div class="d-q">❓ ${escHTML(d.text)}</div>
+          ${d.answer ? `<div class="d-ans">✅ ${escHTML(d.answer)}</div>` : ''}
           <span class="d-st ${d.status === 'answered' ? 'st-a' : 'st-p'}">
             ${d.status === 'answered' ? '✅ Answered' : '⏳ Pending'}
           </span>
@@ -2600,6 +2609,7 @@ auth.onAuthStateChanged(function(user){
   const ssBtn = document.getElementById('ssGoogleBtn');
   if (typeof updateUsernameLockUI === "function") updateUsernameLockUI();
   if (typeof updateDoubtLoginGate === "function") updateDoubtLoginGate();
+  if (typeof listenDoubts === "function") listenDoubts();
 
   if(user){
     if(loginBtn) loginBtn.style.display = 'none';
@@ -2622,6 +2632,7 @@ auth.onAuthStateChanged(function(user){
       if(!merged.photo && user.photoURL) merged.photo = user.photoURL;
 
       localStorage.setItem('es_student', JSON.stringify(merged));
+      if(merged.username && localStorage.getItem('es_un_claim')!==merged.username){ claimUsername(merged.username,user.uid).then(function(){ localStorage.setItem('es_un_claim',merged.username); }).catch(function(){}); }
       const setupEl = document.getElementById('studentSetup');
       if(setupEl) setupEl.style.display = 'none';
 
@@ -2680,8 +2691,13 @@ function syncStudentToCloud(fcmToken){
     data.googleUid = auth.currentUser.uid;
     data.email = auth.currentUser.email || null;
   }
-  if(fcmToken) data.fcmToken = fcmToken;
-  db.collection('students').doc(getStudentDocId()).set(data, {merge:true}).catch(()=>{});
+  if(fcmToken){ data.fcmToken = fcmToken; try{ localStorage.setItem('es_fcm_tok', fcmToken); }catch(e){} }
+  // Same data par 6 ghante tak dobara write nahi — 20,000 students par writes/cost bachte hain
+  const sig = [getStudentDocId(), data.name, data.username, data.board, data.googleUid||'', (data.photo||'').length, fcmToken||localStorage.getItem('es_fcm_tok')||''].join('|');
+  let st = null; try{ st = JSON.parse(localStorage.getItem('es_sync_state')||'null'); }catch(e){}
+  if(st && st.sig===sig && Date.now()-st.t < 6*3600*1000) return;
+  try{ localStorage.setItem('es_sync_state', JSON.stringify({sig:sig,t:Date.now()})); }catch(e){}
+  db.collection('students').doc(getStudentDocId()).set(data, {merge:true}).catch(()=>{ try{ localStorage.removeItem('es_sync_state'); }catch(e){} });
 }
 
 // ── Dark mode ────────────────────────────────────────────────────────
@@ -2922,11 +2938,20 @@ function closeNotificationsPage(){
 const LN_KEY = 'es_local_notifs';
 function lnLoad(){ try{ return JSON.parse(localStorage.getItem(LN_KEY)||'[]'); }catch(e){ return []; } }
 function lnSave(a){ try{ localStorage.setItem(LN_KEY, JSON.stringify(a.slice(0,40))); }catch(e){} }
+function showSystemNotif(title, body, tag, url){
+  try{
+    if(!('Notification' in window) || Notification.permission !== 'granted' || !('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.ready.then(function(reg){
+      return reg.showNotification(title, { body:body, icon:'/icon-192.png', badge:'/icon-192.png', vibrate:[200,100,200], tag:tag||undefined, data:{url:url||'/'} });
+    }).catch(function(){});
+  }catch(e){}
+}
 function addLocalNotif(id, icon, title, body){
   const a = lnLoad();
   if(a.some(x=>x.id===id)) return false;
   a.unshift({id:id, icon:icon, title:title, body:body, createdAt:new Date().toISOString()});
   lnSave(a);
+  if(!/^(tip-|welcome)/.test(id)) showSystemNotif(icon+' '+title, body, 'es-'+id);
   return true;
 }
 function dayKey(d){ d = d || new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -3006,12 +3031,15 @@ function notifyQuizDone(score, total, pct){
 }
 
 function notifTs(n){ const t = new Date(n.createdAt).getTime(); return isNaN(t) ? 0 : t; }
+let _qC = null, _qAt = 0, _qBoard = null;
 function getQueueNotifs(){
+  if(_qC && _qBoard===curBoard && Date.now()-_qAt < 5*60*1000) return Promise.resolve(_qC);
   return db.collection('notificationQueue').orderBy('createdAt','desc').limit(30).get()
     .then(snap=>snap.docs.map(d=>d.data()).filter(n=>{
       return !n.audience || n.audience === 'all' || n.audience === curBoard;
     }).map(n=>({icon:'📢', title:n.title||'', body:n.body||'', createdAt:n.createdAt})))
-    .catch(()=>null);
+    .then(r=>{ _qC = r; _qAt = Date.now(); _qBoard = curBoard; return r; })
+    .catch(()=>_qC);
 }
 function escHTML(t){ return String(t==null?'':t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
@@ -3100,6 +3128,7 @@ function registerFcmToken(){
         messaging.onMessage(function(payload){
           const n = (payload && payload.notification) || (payload && payload.data) || {};
           reg.showNotification(n.title || 'EduSpark', {
+            tag: 'fcm-' + ((n.title||'')+(n.body||'')).slice(0,60),
             body: n.body || '',
             icon: '/icon-192.png',
             badge: '/icon-192.png',
@@ -3128,7 +3157,7 @@ window.onload = function(){
   try{ const sv = JSON.parse(sessionStorage.getItem('es_nav')||'null'); hadSavedNav = !!(sv && sv.page && sv.page!=='home'); }catch(e){}
   setTimeout(()=>{
     document.getElementById('splash').classList.add('hide');
-    setTimeout(()=>{ document.getElementById('splash').style.display='none'; }, hadSavedNav ? 150 : 500);
+    setTimeout(()=>{ document.getElementById('splash').style.display='none'; }, hadSavedNav ? 120 : 250);
     document.getElementById('app').style.display='flex';
     if (typeof updateBoardPill === "function") updateBoardPill();
 if (typeof renderDoubtSubjects === "function") renderDoubtSubjects();
@@ -3150,7 +3179,7 @@ if (typeof listenCommunity === "function") listenCommunity();
     // Topbar bell par unread notifications ka badge dikhाओ
     if (typeof runSmartNotifs === "function") runSmartNotifs();
     if (typeof updateNotifBadge === "function") updateNotifBadge();
-  }, hadSavedNav ? 120 : 500);
+  }, hadSavedNav ? 100 : 250);
   // Student setup - splash ke baad
   setTimeout(()=>{
     const profile = JSON.parse(localStorage.getItem('es_student')||'null');
@@ -3164,11 +3193,11 @@ if (typeof listenCommunity === "function") listenCommunity();
         if (typeof showInstallToast === "function") showInstallToast();
       }
     }, 1800);
-  }, 900);
+  }, 450);
 };
 
 window.addEventListener("appinstalled", () => {
-  firebase.analytics().logEvent("app_installed");
+  logEv("app_installed");
   showToast("🎉 EduSpark Installed Successfully!");
 });
 
@@ -3181,9 +3210,56 @@ if(navigator.permissions && navigator.permissions.query){
 }
 
 </script>
+<style>
+#esOff{position:fixed;left:0;right:0;bottom:0;z-index:100000;display:flex;justify-content:center;padding:0 14px calc(14px + env(safe-area-inset-bottom,0px));pointer-events:none;transform:translateY(130%);transition:transform .45s cubic-bezier(.2,.9,.25,1)}
+#esOff.show{transform:none}
+.eso-card{pointer-events:auto;width:100%;max-width:420px;border-radius:22px;padding:18px;color:#fff;font-family:'Poppins',sans-serif;background:linear-gradient(160deg,rgba(26,58,107,.97),rgba(15,27,53,.98));border:1px solid rgba(255,255,255,.14);box-shadow:0 18px 50px rgba(5,10,25,.55);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.eso-row{display:flex;gap:14px;align-items:center}
+.eso-ic{position:relative;flex:0 0 52px;height:52px;border-radius:50%;display:grid;place-items:center;font-size:24px;background:rgba(251,191,36,.16)}
+.eso-ic:before,.eso-ic:after{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid rgba(251,191,36,.5);animation:esoPulse 2.2s ease-out infinite}
+.eso-ic:after{animation-delay:1.1s}
+@keyframes esoPulse{0%{transform:scale(1);opacity:.8}100%{transform:scale(1.7);opacity:0}}
+.eso-t{font-weight:700;font-size:15px;line-height:1.3}
+.eso-s{font-size:12.5px;line-height:1.5;opacity:.82;margin-top:2px}
+.eso-btns{display:flex;gap:10px;margin-top:14px}
+.eso-btns button{flex:1;border:0;border-radius:12px;padding:10px 12px;font:600 13px 'Poppins',sans-serif;cursor:pointer;color:#fff}
+.eso-retry{background:#3B82F6}.eso-ok{background:rgba(255,255,255,.14)}
+#esOffPill,#esOn{position:fixed;left:50%;z-index:100000;color:#fff;font:600 12.5px 'Poppins',sans-serif;border-radius:999px;padding:8px 16px;transition:transform .35s ease,opacity .35s ease;opacity:0;pointer-events:none;white-space:nowrap}
+#esOffPill{top:calc(8px + env(safe-area-inset-top,0px));transform:translate(-50%,-160%);background:rgba(15,27,53,.94);border:1px solid rgba(251,191,36,.55)}
+#esOffPill.show{transform:translate(-50%,0);opacity:1;pointer-events:auto}
+#esOn{bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translate(-50%,160%);background:#16a34a;box-shadow:0 8px 24px rgba(22,163,74,.4)}
+#esOn.show{transform:translate(-50%,0);opacity:1}
+</style>
+<div id="esOff" role="alertdialog" aria-live="assertive" aria-label="Offline"><div class="eso-card">
+  <div class="eso-row"><div class="eso-ic">📡</div><div><div class="eso-t">इंटरनेट बंद है</div><div class="eso-s">कोई बात नहीं! आपके देखे हुए Notes, Quiz और PYQ अभी भी खुलेंगे। नेट चालू होते ही सब अपने आप sync हो जाएगा।</div></div></div>
+  <div class="eso-btns"><button class="eso-ok" onclick="esOffDismiss()">ठीक है</button><button class="eso-retry" id="esoRetry" onclick="esOffRetry()">🔄 फिर से जाँचें</button></div>
+</div></div>
+<div id="esOffPill" onclick="esOffShow()">📴 Offline mode</div>
+<div id="esOn">✅ वापस Online! Content sync हो रहा है</div>
 <script>
+(function(){
+  var card=document.getElementById('esOff'), pill=document.getElementById('esOffPill'), on=document.getElementById('esOn');
+  var offline=false, tm;
+  function probe(){ return new Promise(function(res){
+    if(!navigator.onLine) return res(false);
+    var c=new AbortController(), to=setTimeout(function(){ c.abort(); },4000);
+    fetch('/manifest.json?__probe='+Date.now(),{cache:'no-store',signal:c.signal})
+      .then(function(r){ clearTimeout(to); res(r.status<500); }).catch(function(){ clearTimeout(to); res(false); });
+  }); }
+  function goOffline(){ if(offline) return; offline=true; on.classList.remove('show'); pill.classList.remove('show'); card.classList.add('show'); }
+  function goOnline(){ if(!offline) return; offline=false; card.classList.remove('show'); pill.classList.remove('show'); on.classList.add('show'); clearTimeout(tm); tm=setTimeout(function(){ on.classList.remove('show'); },2800); }
+  function check(){ probe().then(function(up){ up ? goOnline() : goOffline(); }); }
+  window.esOffDismiss=function(){ card.classList.remove('show'); pill.classList.add('show'); };
+  window.esOffShow=function(){ pill.classList.remove('show'); card.classList.add('show'); };
+  window.esOffRetry=function(){ var b=document.getElementById('esoRetry'); b.textContent='⏳ जाँच रहे हैं…';
+    probe().then(function(up){ b.textContent='🔄 फिर से जाँचें'; if(up) goOnline(); else if(typeof showToast==='function') showToast('📴 अभी भी Offline है'); }); };
+  window.addEventListener('offline',goOffline);
+  window.addEventListener('online',function(){ setTimeout(check,600); });
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden && (offline||!navigator.onLine)) check(); });
+  if(!navigator.onLine) goOffline(); else setTimeout(check,3000);
+})();
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('/sw.js');
+  window.addEventListener('load',function(){ navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).catch(function(){}); });
 }
 </script>
 </body>

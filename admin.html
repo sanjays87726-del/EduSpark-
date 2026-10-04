@@ -761,11 +761,14 @@ function saveCommunity(){
 // ══════════════════════════════════════════
 // NOTIFICATIONS (queue — ek background GitHub Action job isko FCM se bhejta hai)
 // ══════════════════════════════════════════
+function esc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 function loadNotifyStats(){
   const el = document.getElementById('notifyStudentCount');
-  db.collection('students').get().then(snap=>{
-    el.textContent = snap.size + ' students';
-  }).catch(()=>{ el.textContent = '—'; });
+  const q = db.collection('students');
+  const fin = n => { el.textContent = n + ' students'; };
+  const full = () => q.get().then(sn=>fin(sn.size));
+  // count() sirf 1 read lagta hai; 20,000 docs padhne ki jagah
+  (typeof q.count === 'function' ? q.count().get().then(sn=>fin(sn.data().count)).catch(full) : full()).catch(()=>{ el.textContent = '—'; });
 }
 
 function saveNotification(){
@@ -878,7 +881,7 @@ function renderADoubts(){
       document.getElementById('aDoubtsList').innerHTML=doubts.length
         ? doubts.map(d=>`
             <div class="mgmt-item" style="flex-direction:column;align-items:flex-start;gap:8px;">
-              <div><div class="mgmt-nm">❓ ${(d.text||'').slice(0,60)}...</div><div class="mgmt-sb">${d.name||''} • ${d.board||''}</div></div>
+              <div><div class="mgmt-nm">❓ ${esc((d.text||'').slice(0,60))}...</div><div class="mgmt-sb">${esc(d.name||'')} • ${esc(d.board||'')}</div></div>
               <div style="display:flex;gap:6px;width:100%;">
                 <input id="ans_${d.id}" placeholder="जवाब लिखें..." style="flex:1;border:1.5px solid var(--g200);border-radius:8px;padding:7px 10px;font-size:12px;font-family:inherit;outline:none;"/>
                 <button class="rply-btn" onclick="replyDoubt('${d.id}')">✅</button>

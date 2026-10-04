@@ -1,117 +1,96 @@
-const CACHE_NAME = "eduspark-v7";
+const CACHE_NAME = "eduspark-v8";
 
-// App shell files jo install hote hi cache ho jaate hain — taaki pehli baar
-// install hone par bhi offline-readiness thodi behtar rahe
-const APP_SHELL = [
-  "/",
-  "/index.html",
-  "/manifest.json"
+const APP_SHELL = ["/", "/index.html", "/manifest.json", "/icon-192.png", "/icon-512.png"];
+
+// Firebase SDK + fonts: pehle ye offline me cache nahi hote the (opaque response ko
+// "ok" nahi mana jaata tha) — isi wajah se internet band hone par app khulta hi nahi tha.
+const CDN_ASSETS = [
+  "https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js",
+  "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js",
+  "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js",
+  "https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js",
+  "https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js",
+  "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
+];
+const CDN_HOSTS = ["www.gstatic.com", "fonts.gstatic.com", "fonts.googleapis.com"];
+
+const API_HOSTS = [
+  "firestore.googleapis.com", "identitytoolkit.googleapis.com", "securetoken.googleapis.com",
+  "firebaseinstallations.googleapis.com", "fcmregistrations.googleapis.com", "firebase.googleapis.com",
+  "www.googleapis.com", "apis.google.com", "accounts.google.com", "firebaseio.com", "firebaseapp.com",
+  "googlesyndication.com", "doubleclick.net", "googleadservices.com", "adservice.google.com",
+  "google-analytics.com", "googletagmanager.com"
 ];
 
 self.addEventListener("install", event => {
   self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache =>
-      Promise.all(APP_SHELL.map(url => cache.add(url).catch(() => {})))
-    )
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => Promise.all([
+    ...APP_SHELL.map(u => cache.add(u).catch(() => {})),
+    ...CDN_ASSETS.map(u => fetch(u, { mode: "no-cors" }).then(r => cache.put(u, r)).catch(() => {}))
+  ])));
 });
 
 self.addEventListener("activate", event => {
   event.waitUntil(
-    // Sirf PURANE cache versions delete karo, current wale ko nahi
-    // (pehle yahan har activate par sab kuch delete ho jaata tha)
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))
-    )
+    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener("fetch", event => {
-  if (event.request.method !== "GET") return;
+  const req = event.request;
+  if (req.method !== "GET") return;
+  const url = new URL(req.url);
+  if (url.searchParams.has("__probe")) return;                       // online-check hamesha asli network se
+  if (API_HOSTS.some(h => url.hostname === h || url.hostname.endsWith("." + h))) return;
+  const isCdn = CDN_HOSTS.includes(url.hostname);
+  if (url.origin !== location.origin && !isCdn) return;              // baaki cross-origin (video/images) cache nahi
 
-  const url = new URL(event.request.url);
-  // Firebase/Firestore/Google API calls ko yahan cache mat karo — yeh dynamic
-  // data hai, uska apna offline cache Firestore SDK khud (enablePersistence
-  // se) sambhalta hai. Service worker sirf app shell/static files cache kare.
-  const isBackendApi = url.hostname.includes("googleapis.com") || url.hostname.includes("firebaseio.com");
-  if (isBackendApi) return;
-
-  // Ad-network requests must never be cached — caching stale ad responses
-  // breaks ad refresh and can violate ad-network policies. Add to this list
-  // if you integrate a different ad network later.
-  const isAdNetwork = [
-    "googlesyndication.com",
-    "doubleclick.net",
-    "googleadservices.com",
-    "adservice.google.com"
-  ].some(h => url.hostname.includes(h));
-  if (isAdNetwork) return;
-
-  // Stale-while-revalidate: pehle jo bhi cache mein already hai wo TURANT
-  // de do (isse load bahut fast feel hota hai, khaas kar refresh par), aur
-  // saath hi background mein network se fresh copy laakar cache update kar do
-  // taaki agli baar aur naya content mile. Pehle yahan "network-first" tha
-  // jisme HAR baar network ka wait karna padta tha — isi wajah se site slow
-  // aur refresh par bhaari lagti thi.
-  event.respondWith(
-    caches.match(event.request).then(cachedResponse => {
-      const networkFetch = fetch(event.request)
-        .then(networkResponse => {
-          if (networkResponse && networkResponse.ok) {
-            const copy = networkResponse.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-          }
-          return networkResponse;
-        })
-        .catch(() =>
-          cachedResponse || (event.request.mode === "navigate" ? caches.match("/index.html") : undefined)
-        );
-
-      return cachedResponse || networkFetch;
-    })
-  );
+  // Stale-while-revalidate: cache se turant, background me fresh copy
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(req, { ignoreSearch: req.mode === "navigate" });
+    const net = fetch(req).then(res => {
+      if (res && (res.status === 200 || (isCdn && res.type === "opaque"))) cache.put(req, res.clone()).catch(() => {});
+      return res;
+    }).catch(() => null);
+    if (cached) { event.waitUntil(net); return cached; }
+    const res = await net;
+    if (res) return res;
+    if (req.mode === "navigate") { const shell = await cache.match("/index.html"); if (shell) return shell; }
+    return new Response("Offline", { status: 503, statusText: "Offline" });
+  })());
 });
 
-// ══════════════════════════════════════════
-// PUSH NOTIFICATIONS
-// (GitHub Actions job FCM ke through push bhejta hai — yahan use
-// notification ki tarah dikhaya jaata hai, chahe app khuli ho ya band)
-// ══════════════════════════════════════════
+// ── PUSH (app band ho tab bhi) ──
 self.addEventListener("push", event => {
   let data = { title: "EduSpark", body: "Naya update aa gaya hai! 📚" };
   if (event.data) {
     try { data = event.data.json(); } catch (e) { data = { body: event.data.text() }; }
   }
-  // FCM payload teen shakl mein aa sakta hai:
-  //   1) { notification: { title, body } }   (notification message)
-  //   2) { data: { title, body, url } }      (data message)
-  //   3) { title, body }                     (seedha)
   const n = data.notification || ((data.data && (data.data.title || data.data.body)) ? data.data : data);
   const title = n.title || "EduSpark";
   const body = n.body || "";
   const url = (data.data && data.data.url) || (data.fcmOptions && data.fcmOptions.link) || "/";
-  event.waitUntil(
-    self.registration.showNotification(title, {
-      body,
-      icon: "https://eduspark.de5.net/icon-192.png",
-      badge: "https://eduspark.de5.net/icon-192.png",
-      vibrate: [200, 100, 200],
-      data: { url }
-    })
-  );
+  event.waitUntil(self.registration.showNotification(title, {
+    body,
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
+    vibrate: [200, 100, 200],
+    tag: "fcm-" + (title + body).slice(0, 60),   // app khuli ho to duplicate notification na bane
+    data: { url }
+  }));
 });
 
 self.addEventListener("notificationclick", event => {
   event.notification.close();
-  const targetUrl = (event.notification.data && event.notification.data.url) || "/";
+  const target = (event.notification.data && event.notification.data.url) || "/";
   event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then(clientList => {
-      for (const client of clientList) {
-        if (client.url.includes("eduspark.de5.net") && "focus" in client) return client.focus();
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => {
+      for (const c of list) {
+        if (new URL(c.url).origin === location.origin && "focus" in c) return c.focus();
       }
-      if (clients.openWindow) return clients.openWindow(targetUrl);
+      return clients.openWindow ? clients.openWindow(target) : undefined;
     })
   );
 });
