@@ -15,7 +15,7 @@
      own cache versioning (see sw.js CACHE_NAME) and could force extra
      reloads inside a Play Store TWA wrapper, hurting offline reliability. -->
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"/>
 <meta name="theme-color" content="#0F1B35"/>
 <link rel="preconnect" href="https://www.gstatic.com" crossorigin/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -264,6 +264,13 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
 .ak-exp{margin-top:8px;background:var(--blue-l);border-radius:8px;padding:9px 12px;font-size:12px;color:#1E40AF;line-height:1.5;}
 .ak-exp b{color:var(--blue);}
 
+html,body{touch-action:manipulation;}
+.ak-filter{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px;}
+.ak-chip{border:1.5px solid var(--g200);background:var(--white);color:var(--g600);border-radius:99px;padding:6px 12px;font:700 11.5px 'Poppins',sans-serif;cursor:pointer;}
+.ak-chip.on{background:var(--btn);border-color:var(--btn);color:#fff;}
+.qp-num.qp-active{outline:3px solid var(--saffron);outline-offset:2px;}
+#qpDetail{margin-top:14px;}
+.q-btn.q-theme{flex:0 0 46px;background:var(--g100);color:var(--ink);padding:12px 0;}
 /* NOTES */
 .notes-hero{background:linear-gradient(135deg,#F59E0B,#D97706);padding:22px 18px;color:#fff;border-radius:0 0 22px 22px;}
 .note-item{background:var(--white);border-radius:var(--rsm);padding:13px;margin-bottom:10px;box-shadow:var(--shsm);border-left:3px solid var(--saffron);}
@@ -814,6 +821,7 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
         <div class="q-opts" id="qOpts"></div>
         <div class="q-nav">
           <button class="q-btn q-exit2" onclick="requestExitQuiz()">✕ छोड़ें</button>
+          <button class="q-btn q-theme" id="qThemeBtn" onclick="quizToggleTheme()" aria-label="Dark mode">🌙</button>
           <button class="q-btn q-prev" id="qPrev" onclick="prevQ()">← पिछला</button>
           <button class="q-btn q-next" id="qNext" onclick="nextQ()">अगला →</button>
         </div>
@@ -828,7 +836,9 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
         <div class="ak-wrap">
           <div class="ak-title">🔢 Question-wise Analysis (टैप करके देखें)</div>
           <div class="q-palette" id="qPalette"></div>
-          <div class="ak-title" style="margin-top:18px;">📋 Answer Key</div>
+          <div id="qpDetail"></div>
+          <div class="ak-title" style="margin-top:18px;">📋 Answers — सभी प्रश्न</div>
+          <div class="ak-filter" id="akFilter"></div>
           <div id="rAnswerKey"></div>
         </div>
       </div>
@@ -948,6 +958,36 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
     <div style="display:flex;gap:10px;margin-top:18px;">
       <button onclick="cancelExitQuiz()" style="flex:1;background:var(--g100);border:none;color:var(--ink);border-radius:12px;padding:12px 0;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">जारी रखें</button>
       <button onclick="confirmExitQuiz()" style="flex:1;background:var(--red);border:none;color:#fff;border-radius:12px;padding:12px 0;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">हां, छोड़ें</button>
+    </div>
+  </div>
+</div>
+
+<!-- SECTIONAL TIMING CHOICE -->
+<div id="qtModal" style="position:fixed;inset:0;background:rgba(15,27,53,.6);z-index:400;display:none;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(3px);">
+  <div style="background:var(--white);width:100%;max-width:340px;border-radius:18px;padding:24px 20px 20px;text-align:center;">
+    <div style="font-size:38px;">⏱</div>
+    <div style="font-size:15.5px;font-weight:800;color:var(--ink);margin-top:10px;">Sectional Timing</div>
+    <div id="qtSub" style="font-size:12.5px;color:var(--g600);margin-top:6px;line-height:1.5;"></div>
+    <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;background:var(--g100);border-radius:12px;padding:12px 14px;font-size:13px;font-weight:700;color:var(--ink);text-align:left;">
+      <span>हर section का अलग timer</span>
+      <input type="checkbox" id="qtOn" style="width:20px;height:20px;"/>
+    </label>
+    <div style="display:flex;gap:10px;margin-top:18px;">
+      <button onclick="cancelTimingChoice()" style="flex:1;background:var(--g100);border:none;color:var(--ink);border-radius:12px;padding:12px 0;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">रद्द करें</button>
+      <button onclick="confirmTimingChoice()" style="flex:1;background:var(--green);border:none;color:#fff;border-radius:12px;padding:12px 0;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">▶ शुरू करें</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP EXIT CONFIRMATION -->
+<div id="appExitModal" style="position:fixed;inset:0;background:rgba(15,27,53,.6);z-index:400;display:none;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(3px);">
+  <div style="background:var(--white);width:100%;max-width:340px;border-radius:18px;padding:24px 20px 20px;text-align:center;">
+    <div style="font-size:38px;">👋</div>
+    <div style="font-size:15.5px;font-weight:800;color:var(--ink);margin-top:10px;">EduSpark बंद करना चाहते हैं?</div>
+    <div style="font-size:12.5px;color:var(--g600);margin-top:6px;line-height:1.5;">आज की पढ़ाई अभी बाकी है — थोड़ी देर और रुकें!</div>
+    <div style="display:flex;gap:10px;margin-top:18px;">
+      <button onclick="document.getElementById('appExitModal').style.display='none'" style="flex:1;background:var(--green);border:none;color:#fff;border-radius:12px;padding:12px 0;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">रुकें</button>
+      <button onclick="confirmAppExit()" style="flex:1;background:var(--g100);border:none;color:var(--ink);border-radius:12px;padding:12px 0;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">बाहर निकलें</button>
     </div>
   </div>
 </div>
@@ -1367,7 +1407,21 @@ function performBack(){
   if(notifPage && notifPage.classList.contains('active')){ closeNotificationsPage(); return true; }
   const profilePage = document.getElementById('pageProfile');
   if(profilePage && profilePage.classList.contains('active')){ closeProfilePage(); return true; }
-  if(curQuiz){ requestExitQuiz(); return true; }
+  const qtM = document.getElementById('qtModal');
+  if(qtM && qtM.style.display==='flex'){ cancelTimingChoice(); return true; }
+  const aeM = document.getElementById('appExitModal');
+  if(aeM && aeM.style.display==='flex'){ aeM.style.display='none'; return true; }
+  if(curQuiz){
+    // Analysis screen par back dabane se bahar nahi jaate — sirf "Quiz List" button se manually
+    const rs = document.getElementById('quizResult');
+    if(rs && rs.style.display==='block'){
+      const pd = document.getElementById('qpDetail');
+      if(pd && pd.innerHTML){ pd.innerHTML=''; _pdOpen=0; syncPalActive(); }
+      else showToast('Analysis से बाहर जाने के लिए "Quiz List" बटन दबाएँ');
+      return true;
+    }
+    requestExitQuiz(); return true;
+  }
   const subjectPage = document.getElementById('pageSubject');
   if(subjectPage && subjectPage.classList.contains('active') && curSubject){ showAllSubjects(); return true; }
   // Home par search khuli ho to pehle usse band karo, seedha app exit na ho
@@ -1378,9 +1432,11 @@ function performBack(){
   }
   const activePage = document.querySelector('.page.active');
   if(activePage && activePage.id !== 'pageHome'){ navTo('home'); return true; }
+  if(aeM){ aeM.style.display='flex'; return true; }
   return false;
 }
 window.addEventListener('popstate', function(){
+  if(window._esExiting){ history.back(); return; }
   const handled = performBack();
   if(handled) armBackGuard();
 });
@@ -1460,7 +1516,8 @@ function navTo(page, instant){
   else if(page==='quiz'){
     newPage=document.getElementById('pageQuiz');
     const activeEl=document.getElementById('quizActive');
-    const quizInProgress = curQuiz && activeEl && activeEl.style.display!=='none';
+    const resEl=document.getElementById('quizResult');
+    const quizInProgress = curQuiz && ((activeEl && activeEl.style.display!=='none') || (resEl && resEl.style.display==='block'));
     // Agar test already chal raha hai to usse reset mat karo — sirf page dikha do
     if(!quizInProgress) renderQuizList();
   }
@@ -2093,6 +2150,46 @@ function startChapterQuiz(contentId){
   launchQuiz();
 }
 function launchQuiz(){
+  syncQuizThemeBtn();
+  if(curQuiz && curQuiz.sectional){ openTimingChoice(); return; }
+  beginQuiz();
+}
+function openTimingChoice(){
+  const comp = !!(curQuiz.timingCompulsory && curQuiz.sectionalTiming);
+  let on = !!curQuiz.sectionalTiming;
+  if(!comp){ try{ const p=localStorage.getItem('es_sec_timing'); if(p==='1'||p==='0') on=(p==='1'); }catch(e){} }
+  const cb=document.getElementById('qtOn'); cb.checked = comp||on; cb.disabled = comp;
+  document.getElementById('qtSub').textContent = comp
+    ? '🔒 इस quiz में Sectional timing compulsory है — इसे बंद नहीं किया जा सकता।'
+    : 'ON: हर section का अपना timer। OFF: पूरे quiz का एक कुल timer।';
+  document.getElementById('qtModal').style.display='flex';
+}
+function cancelTimingChoice(){ document.getElementById('qtModal').style.display='none'; curQuiz=null; }
+function confirmTimingChoice(){
+  const comp = !!(curQuiz.timingCompulsory && curQuiz.sectionalTiming);
+  const on = comp ? true : document.getElementById('qtOn').checked;
+  if(!comp){ try{ localStorage.setItem('es_sec_timing', on?'1':'0'); }catch(e){} }
+  document.getElementById('qtModal').style.display='none';
+  curQuiz = Object.assign({}, curQuiz, {sectionalTiming:on});
+  beginQuiz();
+}
+// Quiz ke andar hi dark/light badlo — test se bahar nahi jaata, quiz khatam hone par app ka purana theme wapas
+let quizThemeOverride=false;
+function syncQuizThemeBtn(){ const b=document.getElementById('qThemeBtn'); if(b) b.textContent = currentTheme()==='dark' ? '☀️' : '🌙'; }
+function quizToggleTheme(){ quizThemeOverride=true; applyTheme(currentTheme()==='dark'?'light':'dark', false); syncQuizThemeBtn(); }
+function restoreQuizTheme(){
+  if(!quizThemeOverride) return; quizThemeOverride=false;
+  let t=null; try{ t=localStorage.getItem('es_theme'); }catch(e){}
+  if(t!=='dark'&&t!=='light') t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';
+  applyTheme(t,false); syncQuizThemeBtn();
+}
+function confirmAppExit(){
+  window._esExiting=true;
+  document.getElementById('appExitModal').style.display='none';
+  history.back();
+  setTimeout(function(){ try{ window.close(); }catch(e){} }, 300);
+}
+function beginQuiz(){
   quizSections=normalizeQuiz(curQuiz); curSection=0; curQ=0; score=0; answered=false;
   userAnswers=new Array(quizSections.reduce((a,s)=>a+s.questions.length,0)).fill(null);
   document.getElementById('quizListSec').style.display='none';
@@ -2256,64 +2353,56 @@ function showResult(){
 // (green = सही, red = गलत, grey = छूटा हुआ), tap karne par us question
 // ke Answer Key card tak seedha scroll ho jaata hai
 // ══════════════════════════════════════════
+let _akItems=[], _akFilter='all', _pdOpen=0;
+function buildAkItems(){
+  _akItems=[]; let gi=0;
+  quizSections.forEach(sec=>{ (sec.questions||[]).forEach(q=>{
+    gi++; const u=userAnswers[gi-1], skip=(u===null||u===undefined);
+    _akItems.push({gi:gi, sec:sec, q:q, u:u, st: skip?'skip':(u===q.ans?'right':'wrong')});
+  }); });
+}
+function akCardHTML(it, pre){
+  const q=it.q, st=it.st;
+  const lbl = st==='skip'?'⭕ छूटा हुआ':(st==='right'?'✅ सही':'❌ गलत');
+  const opts=(q.options||[]).map((o,i)=>{
+    let c='ak-opt'; if(i===q.ans) c+=' ak-correct'; else if(i===it.u) c+=' ak-userwrong';
+    return `<div class="${c}">${String.fromCharCode(65+i)}. ${o}</div>`;
+  }).join('');
+  return `<div class="ak-card ak-${st}" id="${pre}${it.gi}">
+    <div class="ak-qhead"><span class="ak-qnum">प्रश्न ${it.gi}${curQuiz&&curQuiz.sectional?' • '+it.sec.name:''}</span><span class="ak-status ${st}">${lbl}</span></div>
+    <div class="ak-qtext">${q.q||''}</div>
+    ${q.img?`<img class="ak-img" src="${q.img}" alt="Question image"/>`:''}
+    ${opts}
+    ${q.exp?`<div class="ak-exp"><b>💡 व्याख्या:</b> ${q.exp}</div>`:''}
+  </div>`;
+}
+// Palette: number tap karne par question usi jagah (dots ke neeche) khulta hai — scroll/exit nahi
 function renderQPalette(){
-  const box=document.getElementById('qPalette');
-  if(!box) return;
-  let gi=0, html='';
-  quizSections.forEach(sec=>{
-    (sec.questions||[]).forEach(q=>{
-      gi++;
-      const uAns=userAnswers[gi-1];
-      const isSkip = uAns===null || uAns===undefined;
-      const isRight = !isSkip && uAns===q.ans;
-      const cls = isSkip?'qp-skip':(isRight?'qp-right':'qp-wrong');
-      html+=`<div class="qp-num ${cls}" onclick="jumpToAnswer(${gi})">${gi}</div>`;
-    });
-  });
-  box.innerHTML=html;
+  const box=document.getElementById('qPalette'); if(!box) return;
+  box.innerHTML=_akItems.map(it=>`<div class="qp-num qp-${it.st}" data-n="${it.gi}" onclick="jumpToAnswer(${it.gi})">${it.gi}</div>`).join('');
 }
+function syncPalActive(){ document.querySelectorAll('#qPalette .qp-num').forEach(el=>el.classList.toggle('qp-active', +el.dataset.n===_pdOpen)); }
 function jumpToAnswer(n){
-  const el=document.getElementById('akQ'+n);
-  if(!el) return;
-  el.scrollIntoView({behavior:'smooth', block:'center'});
-  el.classList.add('ak-flash');
-  setTimeout(()=>el.classList.remove('ak-flash'), 900);
+  const d=document.getElementById('qpDetail'); if(!d) return;
+  if(_pdOpen===n){ _pdOpen=0; d.innerHTML=''; syncPalActive(); return; }
+  const it=_akItems[n-1]; if(!it) return;
+  _pdOpen=n; d.innerHTML=akCardHTML(it,'pd'); syncPalActive();
 }
-
-// ══════════════════════════════════════════
-// ANSWER KEY (सभी quiz types के लिए)
-// ══════════════════════════════════════════
+// Answers section: sabhi questions + filter (सभी / सही / गलत / छूटे)
 function renderAnswerKey(){
-  const box=document.getElementById('rAnswerKey');
-  if(!box) return;
-  let gi=0, html='';
-  quizSections.forEach(sec=>{
-    (sec.questions||[]).forEach(q=>{
-      gi++;
-      const uAns=userAnswers[gi-1];
-      const isSkip = uAns===null || uAns===undefined;
-      const isRight = !isSkip && uAns===q.ans;
-      const statusCls = isSkip?'skip':(isRight?'right':'wrong');
-      const statusLbl = isSkip?'⭕ छूटा हुआ':(isRight?'✅ सही':'❌ गलत');
-      const optsHtml=(q.options||[]).map((o,i)=>{
-        let cls='ak-opt';
-        if(i===q.ans) cls+=' ak-correct';
-        else if(i===uAns) cls+=' ak-userwrong';
-        return `<div class="${cls}">${String.fromCharCode(65+i)}. ${o}</div>`;
-      }).join('');
-      html+=`<div class="ak-card ak-${statusCls}" id="akQ${gi}">
-        <div class="ak-qhead">
-          <span class="ak-qnum">प्रश्न ${gi}${curQuiz.sectional?' • '+sec.name:''}</span>
-          <span class="ak-status ${statusCls}">${statusLbl}</span>
-        </div>
-        <div class="ak-qtext">${q.q||''}</div>
-        ${q.img?`<img class="ak-img" src="${q.img}" alt="Question image"/>`:''}
-        ${optsHtml}
-        ${q.exp?`<div class="ak-exp"><b>💡 व्याख्या:</b> ${q.exp}</div>`:''}
-      </div>`;
-    });
-  });
-  box.innerHTML=html || '<div class="empty"><div class="ei">📋</div><p>कोई प्रश्न नहीं।</p></div>';
+  buildAkItems(); _akFilter='all'; _pdOpen=0;
+  const d=document.getElementById('qpDetail'); if(d) d.innerHTML='';
+  paintAnswers();
+}
+function setAkFilter(k){ _akFilter=k; paintAnswers(); }
+function paintAnswers(){
+  const box=document.getElementById('rAnswerKey'); if(!box) return;
+  const cnt={all:_akItems.length,right:0,wrong:0,skip:0}; _akItems.forEach(i=>cnt[i.st]++);
+  const f=document.getElementById('akFilter');
+  if(f) f.innerHTML=[['all','सभी'],['right','✅ सही'],['wrong','❌ गलत'],['skip','⭕ छूटे']]
+    .map(c=>`<button class="ak-chip ${_akFilter===c[0]?'on':''}" onclick="setAkFilter('${c[0]}')">${c[1]} (${cnt[c[0]]})</button>`).join('');
+  const list=_akItems.filter(i=>_akFilter==='all'||i.st===_akFilter);
+  box.innerHTML=list.length?list.map(i=>akCardHTML(i,'akQ')).join(''):'<div class="empty"><div class="ei">📋</div><p>इस category में कोई प्रश्न नहीं।</p></div>';
 }
 // Quiz beech mein chhodne se pehle confirmation maangta hai (taaki galti se
 // progress na chali jaaye) — quiz result screen se "Quiz List" par sidha exitQuiz() hi chalta hai
@@ -2335,6 +2424,7 @@ function confirmExitQuiz(){
 }
 function exitQuiz(){
   clearAllTimers();
+  restoreQuizTheme();
   quizSections=[]; curSection=0;
   curQuiz=null; userAnswers=[];
   document.body.classList.remove('quiz-mode');
@@ -3023,10 +3113,26 @@ function notifyNewPYQ(list){
   }catch(e){}
 }
 function notifyQuizDone(score, total, pct){
-  const msg = pct>=80 ? ['🏆','शानदार Performance!','आपने '+score+'/'+total+' ('+pct+'%) score किया। ऐसे ही जारी रखें!']
-            : pct>=50 ? ['👍','अच्छा प्रयास!', 'Score '+score+'/'+total+' ('+pct+'%). थोड़ी और practice से 80%+ पक्का।']
-            : ['💪','हिम्मत रखें!','Score '+score+'/'+total+' ('+pct+'%). Answer Key देखकर गलतियाँ सुधारें और दोबारा try करें।'];
-  addLocalNotif('quiz-'+Date.now(), msg[0], 'Quiz पूरा: '+msg[1], msg[2]);
+  let nm='Student'; try{ const p=JSON.parse(localStorage.getItem('es_student')||'null'); if(p&&p.name) nm=String(p.name).trim().split(/\s+/)[0]; }catch(e){}
+  const pick=a=>a[Math.floor(Math.random()*a.length)];
+  const sc=score+'/'+total+' ('+pct+'%)';
+  const hi=[
+    ['🏆',nm+', आप तो छा गए! 🔥','Score '+sc+' — यही लगन आपको मंज़िल तक पहुँचाएगी।'],
+    ['🌟','वाह '+nm+'! कमाल की तैयारी','Score '+sc+'। टॉपर्स ऐसे ही बनते हैं — रुकना मत!'],
+    ['🚀',nm+', आप रॉकेट की रफ़्तार से आगे हैं','Score '+sc+'। अगला Quiz और भी बड़ा target रखें!'],
+    ['👑','Quiz के बादशाह '+nm+'!','Score '+sc+'। आज की मेहनत कल की सफलता है।']];
+  const mid=[
+    ['👍',nm+', अच्छा प्रयास! 💪','Score '+sc+'। थोड़ी और practice से 80%+ पक्का है।'],
+    ['📈','बढ़ते रहो '+nm+'!','Score '+sc+'। गलतियाँ देखकर सुधार करें — अगली बार और बेहतर।'],
+    ['🎯',nm+', निशाना बस थोड़ा दूर है','Score '+sc+'। Answers देखें और दोबारा try करें।'],
+    ['🔥','अच्छी कोशिश '+nm+'!','Score '+sc+'। रोज़ का एक Quiz आपको टॉप पर ले जाएगा।']];
+  const lo=[
+    ['💪',nm+', हिम्मत मत हारो!','Score '+sc+'। हर गलती एक नया सबक है — Answers देखकर वापसी करें।'],
+    ['🌱','शुरुआत हमेशा छोटी होती है, '+nm,'Score '+sc+'। आज सीखा, कल जीतोगे — एक और Quiz दें!'],
+    ['❤️',nm+', आप कर सकते हैं!','Score '+sc+'। गिरकर उठना ही असली जीत है — दोबारा कोशिश करें।'],
+    ['⚡','चलो '+nm+', comeback का समय!','Score '+sc+'। गलत सवाल revise करें, अगली बार नतीजा बदलेगा।']];
+  const m=pick(pct>=80?hi:pct>=50?mid:lo);
+  addLocalNotif('quiz-'+Date.now(), m[0], m[1], m[2]);
   updateNotifBadge();
 }
 
@@ -3258,6 +3364,8 @@ if(navigator.permissions && navigator.permissions.query){
   document.addEventListener('visibilitychange',function(){ if(!document.hidden && (offline||!navigator.onLine)) check(); });
   if(!navigator.onLine) goOffline(); else setTimeout(check,3000);
 })();
+['gesturestart','gesturechange','gestureend'].forEach(function(e){ document.addEventListener(e,function(ev){ ev.preventDefault(); },{passive:false}); });
+document.addEventListener('touchmove',function(e){ if(e.touches && e.touches.length>1) e.preventDefault(); },{passive:false});
 if('serviceWorker' in navigator){
   window.addEventListener('load',function(){ navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).catch(function(){}); });
 }

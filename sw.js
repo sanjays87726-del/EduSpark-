@@ -1,4 +1,4 @@
-const CACHE_NAME = "eduspark-v8";
+const CACHE_NAME = "eduspark-v9";
 
 const APP_SHELL = ["/", "/index.html", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
@@ -55,7 +55,8 @@ self.addEventListener("fetch", event => {
       return res;
     }).catch(() => null);
     if (cached) { event.waitUntil(net); return cached; }
-    const res = await net;
+    // Data khatam/slow net: network ka intezaar sirf 4 sec — phir cache/shell par fallback (pehle yahan page atak jaata tha)
+    const res = await Promise.race([net, new Promise(r=>setTimeout(()=>r(null),4000))]);
     if (res) return res;
     if (req.mode === "navigate") { const shell = await cache.match("/index.html"); if (shell) return shell; }
     return new Response("Offline", { status: 503, statusText: "Offline" });

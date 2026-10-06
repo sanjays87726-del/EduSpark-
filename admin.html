@@ -206,6 +206,7 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
       </label>
 
       <div id="qSectionalTimingWrap" style="display:none;">
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;"><input type="checkbox" id="qTimingCompulsory" style="width:auto;margin:0;"/> 🔒 Compulsory — student sectional timing बंद नहीं कर पाएगा</label>
         <label style="display:flex;align-items:center;gap:8px;">
           <input type="checkbox" id="qSectionalTiming" style="width:auto;margin:0;"/>
           Sectional Timing ON (हर Section का अपना अलग Timer, बीच में वापस नहीं जा सकते)
@@ -669,6 +670,7 @@ function addQuiz(){
     if(totalQ>100){ showToast('❌ अधिकतम 100 प्रश्न allowed हैं (अभी '+totalQ+' हैं)!'); return; }
     quizData.sections = sections;
     quizData.sectionalTiming = document.getElementById('qSectionalTiming').checked;
+    quizData.timingCompulsory = document.getElementById('qTimingCompulsory').checked;
   } else {
     const raw = document.getElementById('qQs').value.trim();
     if(!raw){ showToast('❌ Questions JSON खाली है!'); return; }
