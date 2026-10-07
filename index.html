@@ -2050,7 +2050,7 @@ function submitDoubt(){
   }).catch(()=>showToast('❌ Error! दोबारा कोशिश करें।'));
 }
 // ── AI se turant jawab (Cloudflare Worker ke through, API key yahan nahi hai) ──
-const AI_WORKER_URL = ''; // Worker deploy karke uska URL yahan daalo, jaise 'https://eduspark-ai.NAAM.workers.dev'
+const AI_WORKER_URL = 'https://bold-dust-6f37.sanjays87726.workers.dev'; // Cloudflare Worker (AI doubt solver)
 let _aiBusy = false;
 async function askAI(){
   const text = document.getElementById('dText').value.trim();
