@@ -794,6 +794,8 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
         <label>Doubt लिखें</label><textarea id="dText" placeholder="अपना doubt विस्तार से लिखें..."></textarea>
         <label>आपका नाम</label><input type="text" id="dName" placeholder="आपका नाम"/>
         <button class="sub-btn" onclick="submitDoubt()">📤 Submit Doubt</button>
+        <button class="sub-btn" id="aiBtn" onclick="askAI()" style="margin-top:8px;background:linear-gradient(90deg,#0EA5E9,#2563EB);">🤖 AI से तुरंत जवाब</button>
+        <div id="aiAnswer" style="display:none;margin-top:10px;background:#F1F5F9;border:1.5px solid #BFDBFE;border-radius:var(--rsm);padding:12px 14px;font-size:13px;line-height:1.6;"></div>
       </div>
       <div class="sec-t"><span>💬</span> सभी Doubts</div>
       <div style="padding:0 18px 18px;" id="doubtsList"></div>
@@ -2046,6 +2048,44 @@ function submitDoubt(){
     document.getElementById('dName').value='';
     showToast('✅ Doubt submit हो गया!');
   }).catch(()=>showToast('❌ Error! दोबारा कोशिश करें।'));
+}
+// ── AI se turant jawab (Cloudflare Worker ke through, API key yahan nahi hai) ──
+const AI_WORKER_URL = ''; // Worker deploy karke uska URL yahan daalo, jaise 'https://eduspark-ai.NAAM.workers.dev'
+let _aiBusy = false;
+async function askAI(){
+  const text = document.getElementById('dText').value.trim();
+  if(!text){ showToast('❌ Doubt खाली है!'); return; }
+  if(!auth.currentUser){
+    showToast('🔒 AI से पूछने के लिए पहले Google से Sign In करें');
+    if(typeof googleSignIn==='function') googleSignIn();
+    return;
+  }
+  if(!AI_WORKER_URL){ showToast('⚠️ AI अभी setup नहीं हुआ'); return; }
+  if(_aiBusy) return;
+  _aiBusy = true;
+  const box = document.getElementById('aiAnswer'), btn = document.getElementById('aiBtn');
+  btn.disabled = true; btn.textContent = '⏳ सोच रहा हूँ...';
+  box.style.display = 'block'; box.textContent = '';
+  try{
+    const sel = document.getElementById('dSubj');
+    const idToken = await auth.currentUser.getIdToken();
+    const res = await fetch(AI_WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        idToken, question:text, board:curBoard,
+        subject: sel && sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '',
+        topic: document.getElementById('dTopic').value.trim()
+      })
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error || 'AI जवाब नहीं दे पाया');
+    box.innerHTML = '<b>🤖 AI जवाब</b> <span style="font-size:11px;color:#64748B;">(गलत हो सकता है — पक्का जवाब चाहिए तो Doubt submit करें)</span>'
+      + '<div style="margin-top:6px;white-space:pre-wrap;">'+escHTML(data.answer)+'</div>';
+  }catch(e){
+    box.textContent = '❌ ' + (e.message || 'Error');
+  }finally{
+    _aiBusy = false; btn.disabled = false; btn.textContent = '🤖 AI से तुरंत जवाब';
+  }
 }
 function renderDoubts(doubts){
   const subs = SUBJECTS[curBoard] || [];
