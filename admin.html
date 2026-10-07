@@ -597,6 +597,35 @@ function updatePYQExamType(){
 }
 
 // ══════════════════════════════════════════
+// QUIZ VALIDATOR — galat quiz Firestore tak pahunchne se pehle pakdo
+// (student app me ans === index se compare hota hai aur options.map chalta hai,
+//  isliye ans string ho ya options missing ho to quiz crash/galat answer deta hai)
+// ══════════════════════════════════════════
+function validateQs(list, prefix){
+  prefix = prefix || '';
+  const errs = [], seen = new Set();
+  list.forEach((x,i)=>{
+    const n = prefix + 'Q' + (i+1);
+    if(!x || typeof x.q!=='string' || !x.q.trim()){ errs.push(n+': q खाली या missing'); return; }
+    if(seen.has(x.q.trim())) errs.push(n+': duplicate question');
+    seen.add(x.q.trim());
+    if(!Array.isArray(x.options) || x.options.length<2){ errs.push(n+': options कम से कम 2 होने चाहिए'); return; }
+    if(x.options.some(o=>typeof o!=='string' || !o.trim())) errs.push(n+': कोई option खाली है');
+    if(new Set(x.options.map(o=>String(o).trim())).size!==x.options.length) errs.push(n+': duplicate options');
+    if(!Number.isInteger(x.ans) || x.ans<0 || x.ans>=x.options.length)
+      errs.push(n+': ans 0 से '+(x.options.length-1)+' के बीच number होना चाहिए (अभी: '+JSON.stringify(x.ans)+')');
+    if(x.img!=null && typeof x.img!=='string') errs.push(n+': img string होना चाहिए');
+    if(x.exp!=null && typeof x.exp!=='string') errs.push(n+': exp string होना चाहिए');
+  });
+  return errs;
+}
+function showQuizErrors(errs){
+  const shown = errs.slice(0,8).join('\n');
+  const more = errs.length>8 ? '\n...और '+(errs.length-8)+' errors' : '';
+  alert('❌ Quiz में '+errs.length+' गलती(याँ) मिलीं — पहले इन्हें ठीक करें:\n\n'+shown+more);
+}
+
+// ══════════════════════════════════════════
 // ADD CONTENT / QUIZ / PYQ / LIVE
 // ══════════════════════════════════════════
 function addContent(){
@@ -621,6 +650,7 @@ function addContent(){
     try{ questions=JSON.parse(raw); } catch{ showToast('❌ JSON format गलत है!'); return; }
     if(!Array.isArray(questions) || questions.length===0){ showToast('❌ कोई questions नहीं मिले!'); return; }
     if(questions.length>100){ showToast('❌ अधिकतम 100 प्रश्न allowed हैं (अभी '+questions.length+' हैं)!'); return; }
+    const qErr=validateQs(questions); if(qErr.length){ showQuizErrors(qErr); return; }
     payload.questions = questions;
     const t=parseInt(document.getElementById('aQuizTime').value);
     payload.timeMinutes = t && t>0 ? t : Math.ceil(questions.length*0.5);
@@ -665,9 +695,12 @@ function addQuiz(){
     if(!raw){ showToast('❌ Sections JSON खाली है!'); return; }
     let sections;
     try{ sections = JSON.parse(raw); } catch{ showToast('❌ Sections JSON format गलत है!'); return; }
+    if(!Array.isArray(sections)){ showToast('❌ Sections JSON array होना चाहिए!'); return; }
     const totalQ = sections.reduce((a,s)=>a+((s.questions||[]).length),0);
     if(totalQ===0){ showToast('❌ कोई questions नहीं मिले!'); return; }
     if(totalQ>100){ showToast('❌ अधिकतम 100 प्रश्न allowed हैं (अभी '+totalQ+' हैं)!'); return; }
+    const sErr=[]; sections.forEach((sec,si)=>{ validateQs(sec.questions||[], (sec.name||('Section '+(si+1)))+' · ').forEach(e=>sErr.push(e)); });
+    if(sErr.length){ showQuizErrors(sErr); return; }
     quizData.sections = sections;
     quizData.sectionalTiming = document.getElementById('qSectionalTiming').checked;
     quizData.timingCompulsory = document.getElementById('qTimingCompulsory').checked;
@@ -678,6 +711,7 @@ function addQuiz(){
     try{ questions = JSON.parse(raw); } catch{ showToast('❌ JSON format गलत है!'); return; }
     if(!Array.isArray(questions) || questions.length===0){ showToast('❌ कोई questions नहीं मिले!'); return; }
     if(questions.length>100){ showToast('❌ अधिकतम 100 प्रश्न allowed हैं (अभी '+questions.length+' हैं)!'); return; }
+    const qErr=validateQs(questions); if(qErr.length){ showQuizErrors(qErr); return; }
     quizData.questions = questions;
     const timeLimit = parseInt(document.getElementById('qTimeLimit').value);
     quizData.timeMinutes = timeLimit && timeLimit>0 ? timeLimit : Math.ceil(questions.length*0.5);
