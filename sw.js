@@ -3,7 +3,7 @@
 // PWA Cache + Firebase Cloud Messaging
 // ══════════════════════════════════════════════════════════════
 
-const CACHE_NAME = "eduspark-v10";
+const CACHE_NAME = "eduspark-v11";
 
 const APP_SHELL = [
   "/",
