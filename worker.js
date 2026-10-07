@@ -55,6 +55,19 @@ export default {
     if (request.method !== 'POST') return reply(405, { error: 'POST only' });
     if (!okOrigin) return reply(403, { error: 'Not allowed' });
 
+    try { return await handle(request, env, reply); }
+    catch (e) {
+      console.error('Worker error', String(e));
+      return reply(500, { error: 'Server में दिक्कत आई, थोड़ी देर बाद कोशिश करें' });
+    }
+  }
+};
+
+async function handle(request, env, reply) {
+    // Setup adhura ho to saaf message (pehle ye crash hoke "Failed to fetch" dikhata tha)
+    if (!env.RATE) return reply(500, { error: 'Setup अधूरा: KV binding "RATE" नहीं जुड़ी' });
+    if (!env.GEMINI_KEY) return reply(500, { error: 'Setup अधूरा: Secret "GEMINI_KEY" नहीं जुड़ा' });
+
     let body;
     try { body = await request.json(); } catch { return reply(400, { error: 'Bad request' }); }
 
@@ -100,8 +113,14 @@ Doubt: """${question}"""`;
           generationConfig: { maxOutputTokens: 700, temperature: 0.4 }
         })
       });
-    } catch { return reply(502, { error: 'AI अभी busy है, थोड़ी देर बाद कोशिश करें' }); }
-    if (!r.ok) return reply(502, { error: 'AI अभी busy है, थोड़ी देर बाद कोशिश करें' });
+    } catch (e) {
+      console.error('Gemini fetch failed', String(e));
+      return reply(502, { error: 'AI अभी busy है, थोड़ी देर बाद कोशिश करें' });
+    }
+    if (!r.ok) {
+      console.error('Gemini error', r.status, (await r.text()).slice(0, 300));  // Cloudflare → Worker → Logs me dikhega
+      return reply(502, { error: 'AI अभी busy है, थोड़ी देर बाद कोशिश करें' });
+    }
 
     const d = await r.json();
     const answer = ((d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts) || [])
@@ -109,5 +128,4 @@ Doubt: """${question}"""`;
     if (!answer) return reply(502, { error: 'AI जवाब नहीं बना पाया, दोबारा कोशिश करें' });
 
     return reply(200, { answer, left: Math.max(0, limit - used - 1) });
-  }
-};
+}
