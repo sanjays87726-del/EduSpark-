@@ -606,11 +606,12 @@ function validateQs(list, prefix){
   const errs = [], seen = new Set();
   list.forEach((x,i)=>{
     const n = prefix + 'Q' + (i+1);
-    if(!x || typeof x.q!=='string' || !x.q.trim()){ errs.push(n+': q खाली या missing'); return; }
-    if(seen.has(x.q.trim())) errs.push(n+': duplicate question');
-    seen.add(x.q.trim());
+    if(!x || typeof x.q!=='string'){ errs.push(n+': q (सवाल) missing'); return; }
+    if(!x.q.trim() && !(typeof x.img==='string' && x.img.trim())){ errs.push(n+': q खाली है (बिना सवाल लिखे सिर्फ़ तब चलेगा जब img हो)'); return; }
+    const qKey = x.q.trim();
+    if(qKey){ if(seen.has(qKey)) errs.push(n+': duplicate question'); seen.add(qKey); }
     if(!Array.isArray(x.options) || x.options.length<2){ errs.push(n+': options कम से कम 2 होने चाहिए'); return; }
-    if(x.options.some(o=>typeof o!=='string' || !o.trim())) errs.push(n+': कोई option खाली है');
+    if(x.options.some(o=>!((typeof o==='string' && o.trim()) || typeof o==='number'))) errs.push(n+': कोई option खाली है');
     if(new Set(x.options.map(o=>String(o).trim())).size!==x.options.length) errs.push(n+': duplicate options');
     if(!Number.isInteger(x.ans) || x.ans<0 || x.ans>=x.options.length)
       errs.push(n+': ans 0 से '+(x.options.length-1)+' के बीच number होना चाहिए (अभी: '+JSON.stringify(x.ans)+')');
