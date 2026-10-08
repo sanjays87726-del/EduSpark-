@@ -52,6 +52,8 @@ export default {
     const reply = (status, obj) => new Response(JSON.stringify(obj), { status, headers });
 
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
+    // Browser me Worker ka URL kholo -> status dikhega (version + binding jude hain ya nahi)
+    if (request.method === 'GET') return reply(200, { worker: 'eduspark-ai', version: 4, RATE: !!env.RATE, GEMINI_KEY: !!env.GEMINI_KEY, DAILY_LIMIT: parseInt(env.DAILY_LIMIT) || 5 });
     if (request.method !== 'POST') return reply(405, { error: 'POST only' });
     if (!okOrigin) return reply(403, { error: 'Not allowed' });
 
@@ -93,6 +95,9 @@ async function handle(request, env, reply) {
     try { await env.RATE.put(rk, String(used + 1), { expirationTtl: 172800 }); }
     catch { return reply(503, { error: 'आज का AI quota पूरा हो गया। कल कोशिश करें, या Doubt submit करें।' }); }
 
+    // Gemini fail ho to student ka attempt wapas (quota error ki wajah se na jale)
+    const refund = async () => { try { await env.RATE.put(rk, String(used), { expirationTtl: 172800 }); } catch {} };
+
     const prompt =
 `You are a friendly teacher for Indian school and college students on the EduSpark app.
 Board/class: ${board || 'not given'}. Subject: ${subject || 'not given'}. Topic: ${topic || 'not given'}.
@@ -110,22 +115,24 @@ Doubt: """${question}"""`;
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_KEY },
         body: JSON.stringify({
           contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 700, temperature: 0.4 }
+          generationConfig: { maxOutputTokens: 1500, temperature: 0.4 }
         })
       });
     } catch (e) {
       console.error('Gemini fetch failed', String(e));
+      await refund();
       return reply(502, { error: 'AI अभी busy है, थोड़ी देर बाद कोशिश करें' });
     }
     if (!r.ok) {
       console.error('Gemini error', r.status, (await r.text()).slice(0, 300));  // Cloudflare → Worker → Logs me dikhega
+      await refund();
       return reply(502, { error: 'AI अभी busy है, थोड़ी देर बाद कोशिश करें' });
     }
 
     const d = await r.json();
     const answer = ((d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts) || [])
       .filter(p => !p.thought).map(p => p.text || '').join('').trim();
-    if (!answer) return reply(502, { error: 'AI जवाब नहीं बना पाया, दोबारा कोशिश करें' });
+    if (!answer) { await refund(); return reply(502, { error: 'AI जवाब नहीं बना पाया, दोबारा कोशिश करें' }); }
 
     return reply(200, { answer, left: Math.max(0, limit - used - 1) });
 }

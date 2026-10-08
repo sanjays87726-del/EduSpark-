@@ -2082,7 +2082,10 @@ async function askAI(){
     box.innerHTML = '<b>🤖 AI जवाब</b> <span style="font-size:11px;color:#64748B;">(गलत हो सकता है — पक्का जवाब चाहिए तो Doubt submit करें)</span>'
       + '<div style="margin-top:6px;white-space:pre-wrap;">'+escHTML(data.answer)+'</div>';
   }catch(e){
-    box.textContent = '❌ ' + (e.message || 'Error');
+    const netFail = (e instanceof TypeError) || /failed to fetch|networkerror|load failed/i.test(e.message||'');
+    box.textContent = netFail
+      ? '❌ AI server तक पहुँच नहीं पाया। Internet देखें और दोबारा कोशिश करें. (app: ' + location.origin + ')'
+      : '❌ ' + (e.message || 'Error');
   }finally{
     _aiBusy = false; btn.disabled = false; btn.textContent = '🤖 AI से तुरंत जवाब';
   }
