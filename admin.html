@@ -130,6 +130,7 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
     <div class="a-tab" onclick="aTab('notify',this)">🔔 Notify</div>
     <div class="a-tab" onclick="aTab('manage',this)">📋 Manage</div>
     <div class="a-tab" onclick="aTab('doubts',this)">💬 Doubts</div>
+    <div class="a-tab" onclick="aTab('img',this)">🖼️ Image</div>
   </div>
 
   <div id="aTab_add">
@@ -286,6 +287,25 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
       <div style="margin-top:10px;">
         <div style="font-size:13px;font-weight:700;color:var(--navy);margin-bottom:8px;">📋 Added PYQs</div>
         <div id="pyqManageList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="aTab_img" style="display:none;">
+    <div class="af">
+      <label>Question की Image चुनें</label>
+      <input type="file" id="imgFile" accept="image/*" onchange="previewImg(this)"/>
+      <img id="imgPrev" alt="" style="display:none;max-width:100%;border-radius:10px;margin:4px 0 12px;"/>
+      <button class="add-btn" id="imgUpBtn" onclick="uploadImage()">⬆️ Upload करें</button>
+      <div id="imgResult" style="display:none;margin-top:14px;">
+        <label>Image URL</label>
+        <input type="text" id="imgUrl" readonly onclick="this.select()"/>
+        <button class="add-btn" onclick="copyImg('url')">📋 URL copy करें</button>
+        <button class="add-btn" onclick="copyImg('json')" style="margin-top:8px;">📋 "img":"..." line copy करें</button>
+        <div style="background:var(--blue-l);border-radius:8px;padding:10px;margin-top:10px;font-size:11px;color:var(--blue);">
+          📌 Copy की हुई line को question के JSON में <b>"q"</b> के बाद paste करें:<br>
+          {"q":"Question?","img":"https://ik.imagekit.io/...","options":[...],"ans":0}
+        </div>
       </div>
     </div>
   </div>
@@ -531,10 +551,75 @@ function adminLogout(){
 // ══════════════════════════════════════════
 // TABS
 // ══════════════════════════════════════════
+// ══════════════════════════════════════════
+// IMAGE UPLOAD (ImageKit) — signature Cloudflare Worker se aati hai, private key yahan nahi hai
+// ══════════════════════════════════════════
+const IK_PUBLIC_KEY = 'public_HjWTlvMwRK/cyLVX+/gDTGcVuxM=';   // ImageKit public key (private key sirf Cloudflare me hai)
+const IK_WORKER = 'https://bold-dust-6f37.sanjays87726.workers.dev';
+let _ikUrl = '';
+function previewImg(inp){
+  const f = inp.files && inp.files[0], img = document.getElementById('imgPrev');
+  document.getElementById('imgResult').style.display = 'none';
+  if(!f){ img.style.display='none'; return; }
+  img.src = URL.createObjectURL(f); img.style.display = 'block';
+}
+// Badi image ko chhota karo (max 1200px) — students ka data aur ImageKit bandwidth bachta hai
+async function shrinkImage(file){
+  if(file.size <= 150*1024) return file;                       // pehle se chhoti hai, jaisi hai waisi
+  const bmp = await createImageBitmap(file);
+  const sc = Math.min(1, 1200/bmp.width);
+  const c = document.createElement('canvas');
+  c.width = Math.round(bmp.width*sc); c.height = Math.round(bmp.height*sc);
+  const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0,0,c.width,c.height);
+  ctx.drawImage(bmp,0,0,c.width,c.height);
+  const blob = await new Promise(res=>c.toBlob(res,'image/jpeg',0.82));
+  return (blob && blob.size < file.size) ? blob : file;
+}
+async function uploadImage(){
+  const f = document.getElementById('imgFile').files[0];
+  if(!f){ showToast('❌ पहले image चुनें'); return; }
+  if(f.size > 10*1024*1024){ showToast('❌ Image 10 MB से छोटी होनी चाहिए'); return; }
+  if(IK_PUBLIC_KEY.indexOf('PASTE')===0){ showToast('⚠️ ImageKit public key अभी नहीं डली'); return; }
+  const btn = document.getElementById('imgUpBtn');
+  btn.disabled = true; btn.textContent = '⏳ Upload हो रही है...';
+  try{
+    const idToken = await auth.currentUser.getIdToken();
+    const ar = await fetch(IK_WORKER+'/imagekit-auth', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({idToken}) });
+    const a = await ar.json().catch(()=>({}));
+    if(!ar.ok) throw new Error(a.error || 'Signature नहीं मिली');
+    const file = await shrinkImage(f);
+    const ext = (file.type==='image/png') ? 'png' : (file.type==='image/webp' ? 'webp' : 'jpg');
+    const fd = new FormData();
+    fd.append('file', file, 'q.'+ext);
+    fd.append('fileName', 'q_'+Date.now()+'.'+ext);
+    fd.append('publicKey', IK_PUBLIC_KEY);
+    fd.append('signature', a.signature); fd.append('expire', a.expire); fd.append('token', a.token);
+    fd.append('folder', '/eduspark/'); fd.append('useUniqueFileName', 'true');
+    const ur = await fetch('https://upload.imagekit.io/api/v1/files/upload', { method:'POST', body: fd });
+    const d = await ur.json().catch(()=>({}));
+    if(!ur.ok || !d.url) throw new Error(d.message || 'Upload fail हो गया');
+    _ikUrl = d.url;
+    document.getElementById('imgUrl').value = _ikUrl;
+    document.getElementById('imgResult').style.display = 'block';
+    showToast('✅ Upload हो गई: '+Math.round(file.size/1024)+' KB');
+  }catch(e){
+    showToast('❌ '+(e.message||'Upload error'));
+  }finally{
+    btn.disabled = false; btn.textContent = '⬆️ Upload करें';
+  }
+}
+function copyImg(kind){
+  if(!_ikUrl) return;
+  const txt = kind==='json' ? '"img":"'+_ikUrl+'",' : _ikUrl;
+  const done = ()=>showToast('📋 Copy हो गया');
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done).catch(()=>{ prompt('Copy करें:', txt); }); }
+  else { prompt('Copy करें:', txt); }
+}
+
 function aTab(tab, el){
   document.querySelectorAll('.a-tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  ['add','quiz','pyq','live','community','notify','manage','doubts'].forEach(t=>{ document.getElementById('aTab_'+t).style.display='none'; });
+  ['add','quiz','pyq','live','community','notify','manage','doubts','img'].forEach(t=>{ document.getElementById('aTab_'+t).style.display='none'; });
   document.getElementById('aTab_'+tab).style.display='block';
   if(tab==='manage'){ renderAManage(); renderQuizManage(); }
   if(tab==='doubts') renderADoubts();
