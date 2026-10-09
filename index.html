@@ -1099,6 +1099,7 @@ function saveStudentProfile(){
   const profile = {name, board, photo: ssPhotoDataUrl || null, date: new Date().toISOString()};
   localStorage.setItem('es_student', JSON.stringify(profile));
   curBoard = board;
+  if(typeof syncBoardListeners==='function') syncBoardListeners();
   localStorage.setItem('es_board', board);
   document.getElementById('studentSetup').style.display='none';
   updateBoardPill();
@@ -1126,6 +1127,7 @@ function checkStudentProfile(){
     },500);
   } else {
     curBoard = profile.board;
+    if(typeof syncBoardListeners==='function') syncBoardListeners();
     localStorage.setItem('es_board', profile.board);
     updateBoardPill();
   }
@@ -1446,17 +1448,35 @@ window.addEventListener('popstate', function(){
 // ══════════════════════════════════════════
 // FIREBASE LISTENERS
 // ══════════════════════════════════════════
+// ── Sirf student ke apne board ke docs padho ──────────────────────────
+// App waise bhi sirf curBoard ka data dikhata hai, to baaki boards ke docs padhna
+// Firestore reads ki barbaadi thi (free limit: 50,000 reads/day). Board badle to
+// listeners dobara lagte hain (syncBoardListeners).
+var _unsubContent=null, _unsubQuizzes=null, _unsubPYQ=null, _listenBoard=null;
+function _unsub(f){ if(f){ try{ f(); }catch(e){} } return null; }
+function _byDateDesc(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); }
+function _byYearDesc(a,b){ return (Number(b.year)||0)-(Number(a.year)||0); }
+function _boardVariants(b){ const x=String(b||''); return Array.from(new Set([x,x.toLowerCase(),x.toUpperCase()])).filter(Boolean); }
+function syncBoardListeners(){
+  if(_listenBoard===null || _listenBoard===curBoard) return;   // listeners abhi start hi nahi hue, ya board wahi hai
+  listenContent(); listenQuizzes(); listenPYQ();
+}
+
 function listenContent(){
-  db.collection('content').orderBy('date','desc').onSnapshot(snap=>{
-    allContent = snap.docs.map(d=>({id:d.id,...d.data()}));
+  _listenBoard = curBoard;
+  _unsubContent = _unsub(_unsubContent);
+  _unsubContent = db.collection('content').where('board','==',curBoard).onSnapshot(snap=>{
+    allContent = snap.docs.map(d=>({id:d.id,...d.data()})).sort(_byDateDesc);
     renderHome();
     if(curSubject) loadSubjectContent(curType);
   }, ()=>{ renderHome(); });
 }
 
 function listenQuizzes(){
-  db.collection('quizzes').orderBy('date','desc').onSnapshot(snap=>{
-    allQuizzes = snap.docs.map(d=>({id:d.id,...d.data()}));
+  _listenBoard = curBoard;
+  _unsubQuizzes = _unsub(_unsubQuizzes);
+  _unsubQuizzes = db.collection('quizzes').where('board','==',curBoard).onSnapshot(snap=>{
+    allQuizzes = snap.docs.map(d=>({id:d.id,...d.data()})).sort(_byDateDesc);
   }, ()=>{});
 }
 
@@ -1474,17 +1494,16 @@ function listenDoubts(){
 
 
 function listenPYQ(){
-  db.collection('pyq').orderBy('year','desc').onSnapshot(snap=>{
-    allPYQ = snap.docs.map(d=>({id:d.id,...d.data()}));
+  _listenBoard = curBoard;
+  _unsubPYQ = _unsub(_unsubPYQ);
+  // PYQ me board ka case alag ho sakta hai (app lowercase se compare karta hai), isliye 3 variants
+  const q = db.collection('pyq').where('board','in',_boardVariants(curBoard));
+  const apply = snap=>{
+    allPYQ = snap.docs.map(d=>({id:d.id,...d.data()})).sort(_byYearDesc);
     refreshPYQUI();
     notifyNewPYQ(allPYQ);
-  }, err=>{
-    db.collection('pyq').get().then(snap=>{
-      allPYQ = snap.docs.map(d=>({id:d.id,...d.data()}));
-      refreshPYQUI();
-      notifyNewPYQ(allPYQ);
-    }).catch(()=>{});
-  });
+  };
+  _unsubPYQ = q.onSnapshot(apply, err=>{ q.get().then(apply).catch(()=>{}); });
 }
 
 // ══════════════════════════════════════════
@@ -1608,6 +1627,7 @@ function openCategorySel(){
 // Board dabane par sirf tabhi list select hoti hai, aur select hote hi sheet band ho jaati hai
 function selBoard(board){
   curBoard = board;
+  if(typeof syncBoardListeners==='function') syncBoardListeners();
   localStorage.setItem('es_board', board);
   const profile = JSON.parse(localStorage.getItem('es_student')||'null');
   if(profile){
@@ -3140,12 +3160,13 @@ function runSmartNotifs(){
 // Naye PYQ papers jo is device ने pehle nahi dekhe
 function notifyNewPYQ(list){
   try{
+    const KEY = 'es_pyq_known_' + String(curBoard).toLowerCase();   // har board ki apni list
     let known = null;
-    try{ known = JSON.parse(localStorage.getItem('es_pyq_known')||'null'); }catch(e){}
+    try{ known = JSON.parse(localStorage.getItem(KEY)||'null'); }catch(e){}
     const ids = list.map(x=>x.id);
-    if(!known){ localStorage.setItem('es_pyq_known', JSON.stringify(ids)); return; } // pehli baar: sirf yaad rakho
+    if(!known || !known.length){ if(ids.length) localStorage.setItem(KEY, JSON.stringify(ids)); return; } // pehli baar: sirf yaad rakho
     const fresh = list.filter(x=>known.indexOf(x.id)===-1 && x.board===curBoard);
-    localStorage.setItem('es_pyq_known', JSON.stringify(ids));
+    localStorage.setItem(KEY, JSON.stringify(ids));
     if(!fresh.length) return;
     if(fresh.length <= 3){
       fresh.forEach(x=>addLocalNotif('pyq-'+x.id,'📜','नया PYQ जुड़ा: '+(x.title||'Paper'), [x.year, x.examType, x.subject].filter(Boolean).join(' • ')+' — अभी PYQ section में देखें।'));
