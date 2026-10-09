@@ -9,7 +9,7 @@
 // phir Gemma ko call karke jawab lautata hai. API key kabhi browser tak nahi pahunchti.
 
 const PROJECT_ID = 'eduspark-41703';
-const ALLOWED_ORIGINS = ['https://sanjays87726-del.github.io'];
+const ALLOWED_ORIGINS = ['https://eduspark.de5.net', 'https://sanjays87726-del.github.io'];
 const MODEL = 'gemma-4-26b-a4b-it';
 const JWKS_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';
 
@@ -53,7 +53,7 @@ export default {
 
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
     // Browser me Worker ka URL kholo -> status dikhega (version + binding jude hain ya nahi)
-    if (request.method === 'GET') return reply(200, { worker: 'eduspark-ai', version: 4, RATE: !!env.RATE, GEMINI_KEY: !!env.GEMINI_KEY, DAILY_LIMIT: parseInt(env.DAILY_LIMIT) || 5 });
+    if (request.method === 'GET') return reply(200, { worker: 'eduspark-ai', version: 5, RATE: !!env.RATE, GEMINI_KEY: !!env.GEMINI_KEY, DAILY_LIMIT: parseInt(env.DAILY_LIMIT) || 5 });
     if (request.method !== 'POST') return reply(405, { error: 'POST only' });
     if (!okOrigin) return reply(403, { error: 'Not allowed' });
 
