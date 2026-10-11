@@ -559,6 +559,14 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
 .legal-links a:hover{color:var(--ink);}
 
 </style>
+<!-- Microsoft Clarity — students ke saath app me kya ho raha hai (screen recording + heatmap) -->
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "yvklbp73fs");
+</script>
 </head>
 <body>
 
@@ -590,7 +598,7 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
       <input type="file" id="ssPhotoInput" accept="image/*" style="display:none;" onchange="handleSSPhotoChange(event)"/>
     </div>
     <label class="ss-label">आपका नाम</label>
-    <input type="text" class="ss-input" id="ssName" placeholder="अपना नाम लिखें..."/>
+    <input type="text" class="ss-input" id="ssName" placeholder="अपना नाम लिखें..." data-clarity-mask="True"/>
     <label class="ss-label">Board चुनें</label>
     <select class="ss-input" id="ssBoard">
       <option value="BSER-10">BSER Class 10</option>
@@ -661,7 +669,7 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
       <div class="search-wrap">
         <div class="search-box">
           <span>🔍</span>
-          <input type="text" id="searchInput" placeholder="Chapter, topic, PYQ, quiz खोजें..." oninput="doSearch()"/>
+          <input type="text" id="searchInput" placeholder="Chapter, topic, PYQ, quiz खोजें..." oninput="doSearch()" data-clarity-mask="True"/>
         </div>
       </div>
       <div id="searchSec" style="display:none;">
@@ -790,12 +798,12 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
           <button onclick="googleSignIn()" style="display:block;margin-top:8px;width:100%;background:var(--btn);color:#fff;border:none;border-radius:var(--rsm);padding:9px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit;">Google से Sign In करें</button>
         </div>
         <label>Subject</label><select id="dSubj"></select>
-        <label>Topic / Chapter</label><input type="text" id="dTopic" placeholder="Chapter 5 – Light"/>
-        <label>Doubt लिखें</label><textarea id="dText" placeholder="अपना doubt विस्तार से लिखें..."></textarea>
-        <label>आपका नाम</label><input type="text" id="dName" placeholder="आपका नाम"/>
+        <label>Topic / Chapter</label><input type="text" id="dTopic" placeholder="Chapter 5 – Light" data-clarity-mask="True"/>
+        <label>Doubt लिखें</label><textarea id="dText" placeholder="अपना doubt विस्तार से लिखें..." data-clarity-mask="True"></textarea>
+        <label>आपका नाम</label><input type="text" id="dName" placeholder="आपका नाम" data-clarity-mask="True"/>
         <button class="sub-btn" onclick="submitDoubt()">📤 Submit Doubt</button>
         <button class="sub-btn" id="aiBtn" onclick="askAI()" style="margin-top:8px;background:linear-gradient(90deg,#0EA5E9,#2563EB);">🤖 AI से तुरंत जवाब</button>
-        <div id="aiAnswer" style="display:none;margin-top:10px;background:#F1F5F9;border:1.5px solid #BFDBFE;border-radius:var(--rsm);padding:12px 14px;font-size:13px;line-height:1.6;"></div>
+        <div id="aiAnswer" data-clarity-mask="True" style="display:none;margin-top:10px;background:#F1F5F9;border:1.5px solid #BFDBFE;border-radius:var(--rsm);padding:12px 14px;font-size:13px;line-height:1.6;"></div>
       </div>
       <div class="sec-t"><span>💬</span> सभी Doubts</div>
       <div style="padding:0 18px 18px;" id="doubtsList"></div>
@@ -872,12 +880,12 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
           </label>
         </div>
         <label>आपका नाम</label>
-        <input type="text" id="pfName" placeholder="अपना नाम लिखें..."/>
+        <input type="text" id="pfName" placeholder="अपना नाम लिखें..." data-clarity-mask="True"/>
         <label>Username</label>
-        <input type="text" id="pfUsername" placeholder="जैसे @rahul_10a" maxlength="20"/>
+        <input type="text" id="pfUsername" placeholder="जैसे @rahul_10a" maxlength="20" data-clarity-mask="True"/>
         <div class="pf-lock-hint" id="pfUsernameHint" style="display:none;"></div>
         <label>Board / Category</label>
-        <input type="text" id="pfBoardDisplay" disabled style="background:var(--g100);color:var(--g600);"/>
+        <input type="text" id="pfBoardDisplay" disabled style="background:var(--g100);color:var(--g600);" data-clarity-mask="True"/>
         <button class="pf-save-btn" onclick="saveProfileEdits()">💾 Profile Update करें</button>
       </div>
       <div class="legal-links">
