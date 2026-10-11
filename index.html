@@ -286,6 +286,10 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
 .ak-opt.ak-correct{border-color:var(--green);background:var(--green-l);color:#065F46;font-weight:700;}
 .ak-opt.ak-userwrong{border-color:var(--red);background:#FEF2F2;color:var(--red);font-weight:700;}
 .ak-exp{margin-top:8px;background:var(--blue-l);border-radius:8px;padding:9px 12px;font-size:12px;color:#1E40AF;line-height:1.5;}
+.ak-ai{margin-top:8px;background:linear-gradient(90deg,#0EA5E9,#2563EB);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+.ak-ai:disabled{opacity:.6;}
+.ak-aiex{margin-top:8px;background:#F1F5F9;border:1.5px solid #BFDBFE;border-radius:8px;padding:10px 12px;font-size:12.5px;line-height:1.6;color:var(--g800);white-space:pre-wrap;}
+html[data-theme="dark"] .ak-aiex{background:#16233F;border-color:#2B4A8A;color:#DCE7FA;}
 .ak-exp b{color:var(--blue);}
 
 html,body{touch-action:manipulation;}
@@ -2152,7 +2156,7 @@ async function askAI(){
     const data = await res.json().catch(()=>({}));
     if(!res.ok) throw new Error(data.error || 'AI जवाब नहीं दे पाया');
     box.innerHTML = '<b>🤖 AI जवाब</b> <span style="font-size:11px;color:#64748B;">(गलत हो सकता है — पक्का जवाब चाहिए तो Doubt submit करें)</span>'
-      + '<div style="margin-top:6px;white-space:pre-wrap;">'+escHTML(data.answer)+'</div>';
+      + '<div style="margin-top:6px;white-space:pre-wrap;">'+escHTML(cleanAI(data.answer))+'</div>';
   }catch(e){
     const netFail = (e instanceof TypeError) || /failed to fetch|networkerror|load failed/i.test(e.message||'');
     box.textContent = netFail
@@ -2476,6 +2480,48 @@ function buildAkItems(){
     _akItems.push({gi:gi, sec:sec, q:q, u:u, st: skip?'skip':(u===q.ans?'right':'wrong')});
   }); });
 }
+// ── Quiz review me "AI se samjho" (wahi Cloudflare Worker; roz ki limit doubts ke saath saajhi hai) ──
+var _aiExCache = {};
+function aiExKey(it){ return ((curQuiz&&curQuiz.id)||'')+'|'+it.gi+'|'+it.u; }
+function cleanAI(t){ return String(t==null?'':t).replace(/\*\*/g,'').replace(/^#+\s*/gm,'').replace(/^\s*\*\s+/gm,'• ').trim(); }
+async function explainQ(gi, pre){
+  const it = _akItems[gi-1]; if(!it) return;
+  const key = aiExKey(it);
+  const box = document.getElementById('aiEx'+pre+gi), btn = document.getElementById('aiExBtn'+pre+gi);
+  if(!box || !btn) return;
+  if(_aiExCache[key]){ box.style.display='block'; box.textContent=_aiExCache[key]; return; }
+  if(!auth.currentUser){
+    showToast('🔒 AI से समझने के लिए पहले Google से Sign In करें');
+    if(typeof googleSignIn==='function') googleSignIn();
+    return;
+  }
+  if(!AI_WORKER_URL){ showToast('⚠️ AI अभी setup नहीं हुआ'); return; }
+  if(_aiBusy) return;
+  _aiBusy = true;
+  const strip = t => String(t==null?'':t).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+  const q = it.q, Lt = i => String.fromCharCode(65+i);
+  const opts = (q.options||[]).map((o,i)=>Lt(i)+') '+strip(o)).join('  ');
+  const mine = (it.u===null||it.u===undefined) ? 'student ne skip kiya' : ('student ne '+Lt(it.u)+' chuna'+(it.st==='right'?' (sahi)':' (galat)'));
+  const text = 'Is quiz question ko samjhao: sahi answer '+Lt(q.ans)+' kyun hai'+(it.st==='right'?'':' aur student ka option kyun galat hai')+'? ('+mine+')\nQuestion: '+strip(q.q)+'\nOptions: '+opts;
+  btn.disabled = true; btn.textContent = '⏳ सोच रहा हूँ...';
+  box.style.display = 'block'; box.textContent = '';
+  try{
+    const idToken = await auth.currentUser.getIdToken();
+    const res = await fetch(AI_WORKER_URL, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ idToken, question:text.slice(0,1000), board:curBoard, subject:(curQuiz&&(curQuiz.subject||curQuiz.title))||'', topic:'' })
+    });
+    const data = await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error || 'AI जवाब नहीं दे पाया');
+    _aiExCache[key] = '🤖 ' + cleanAI(data.answer);
+    box.textContent = _aiExCache[key];
+  }catch(e){
+    const netFail = (e instanceof TypeError) || /failed to fetch|networkerror|load failed/i.test(e.message||'');
+    box.textContent = '❌ ' + (netFail ? 'AI server तक पहुँच नहीं पाया। Internet देखें और दोबारा कोशिश करें।' : (e.message||'Error'));
+  }finally{
+    _aiBusy = false; btn.disabled = false; btn.textContent = '🤖 AI से समझें';
+  }
+}
 function akCardHTML(it, pre){
   const q=it.q, st=it.st;
   const lbl = st==='skip'?'⭕ छूटा हुआ':(st==='right'?'✅ सही':'❌ गलत');
@@ -2489,6 +2535,7 @@ function akCardHTML(it, pre){
     ${q.img?`<img class="ak-img" src="${q.img}" alt="Question image"/>`:''}
     ${opts}
     ${q.exp?`<div class="ak-exp"><b>💡 व्याख्या:</b> ${q.exp}</div>`:''}
+    ${(st!=='right'||!q.exp)?`<button class="ak-ai" id="aiExBtn${pre}${it.gi}" onclick="explainQ(${it.gi},'${pre}')">🤖 AI से समझें</button><div class="ak-aiex" id="aiEx${pre}${it.gi}" style="display:${_aiExCache[aiExKey(it)]?'block':'none'};">${escHTML(_aiExCache[aiExKey(it)]||'')}</div>`:''}
   </div>`;
 }
 // Palette: number tap karne par question usi jagah (dots ke neeche) khulta hai — scroll/exit nahi
