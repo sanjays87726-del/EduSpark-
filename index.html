@@ -1,6 +1,30 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
+<!-- Sentry — app me JS error aaye to alert. Sirf errors: session recording aur tracing band hain -->
+<script src="https://js-de.sentry-cdn.com/78ca2e4dcea1053f99837b94fe13ab6d.min.js" crossorigin="anonymous"></script>
+<script>
+(function(){
+  if(!window.Sentry || !window.Sentry.onLoad) return;                    // blocked ya offline ho to chup-chaap skip
+  if(/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;        // apni testing ke errors nahi
+  window.Sentry.onLoad(function(){
+    window.Sentry.init({
+      environment: 'production',
+      sendDefaultPii: false,          // students ki personal details nahi jaati
+      tracesSampleRate: 0,            // performance tracing band (free quota bachta hai)
+      replaysSessionSampleRate: 0,    // session recording band (Clarity pehle se hai)
+      replaysOnErrorSampleRate: 0,
+      ignoreErrors: ['ResizeObserver loop', 'Script error', 'Non-Error promise rejection', 'Failed to fetch',
+                     'NetworkError', 'Load failed', 'AbortError', 'Could not reach Cloud Firestore backend'],
+      denyUrls: [/extensions\//i, /^chrome:\/\//i, /^moz-extension:\/\//i,
+                 /googlesyndication/i, /doubleclick/i, /googletagmanager/i, /clarity\.ms/i]
+    });
+    // Test ke liye: app ko ...#sentry-test address se kholo, ek test error jayega
+    if(location.hash === '#sentry-test') setTimeout(function(){ throw new Error('Sentry test error — ignore'); }, 1000);
+  });
+})();
+</script>
+
 <meta charset="UTF-8"/>
 
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8171673694157232"
@@ -1018,40 +1042,60 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
     <div style="width:40px;height:4px;background:var(--g200);border-radius:99px;margin:0 auto 18px;"></div>
     <div style="font-size:18px;font-weight:800;color:var(--ink);margin-bottom:14px;">🔒 Privacy Policy</div>
     <div style="font-size:12.5px;color:var(--g600);line-height:1.7;">
-      <p style="margin-bottom:10px;"><b>EduSpark</b> ek free study app hai (CBSE, BSER aur competition exams ke students ke liye). Ye policy batati hai ki hum kaunsa data collect karte hain aur uska use kaise karte hain.</p>
+      <p style="margin-bottom:6px;"><b>EduSpark</b> ek free study app hai (CBSE, BSER aur competition exams ke students ke liye). Ye policy batati hai ki hum kaunsa data collect karte hain aur uska use kaise karte hain।</p>
+      <p style="margin-bottom:10px;font-size:11px;color:var(--g400);">Aakhri update: 11 October 2026</p>
 
       <p style="margin-bottom:6px;"><b>1. Hum kya collect karte hain</b></p>
       <p style="margin-bottom:10px;">
-        • Aapka naam aur chuna hua Board/Class (sirf aapke device par save hota hai)<br>
-        • Agar aap Google से Sign In karte hain, to Google account ka naam aur email Firebase Authentication ke through humein milta hai<br>
-        • Agar aap Doubt submit karte hain, to aapka naam (ya "Anonymous"), sawaal, subject, aur board Firestore database mein save hota hai
+        • Aapka naam, username, profile photo aur chuna hua Board/Class. Ye aapke device par save hota hai, aur dusre device par sign in karne par wapas mil sake isliye hamare Firebase database (Firestore) mein bhi save hota hai<br>
+• Agar aap Google से Sign In karte hain: Google account ka naam, email aur user ID (Firebase Authentication ke through)<br>
+• Device ID aur "last active" ka time<br>
+• Push notification token (sirf agar aap notifications allow karte hain)<br>
+• Doubt submit karne par: aapka naam (ya "Anonymous"), sawaal, subject, topic aur board<br>
+• App ke use ka anonymous data (kaunsa page ya feature kitna use hua) aur app mein aaye technical errors — neeche "Third-party services" dekhein<br>
+• Study progress aur settings mukhya taur par aapke device par save hote hain
       </p>
 
       <p style="margin-bottom:6px;"><b>2. Data ka use kaise hota hai</b></p>
       <p style="margin-bottom:10px;">
-        Ye data sirf app ki study features (content dikhana, doubts ka jawab dena, progress yaad rakhna) ke liye use hota hai। Hum aapka data kisi third party ko bechte ya share nahi karte।
+        Study features ke liye (content dikhana, doubts ka jawab dena, profile aur progress yaad rakhna, notifications bhejna), aur app ko behtar banane tatha errors theek karne ke liye. Hum aapka data bechte nahi hain, aur neeche likhi service providers ke alawa kisi ke saath share nahi karte।
       </p>
 
       <p style="margin-bottom:6px;"><b>3. Third-party services</b></p>
       <p style="margin-bottom:10px;">
-        Ye app <b>Google Firebase</b> (Authentication aur Firestore Database) use karta hai data store karne ke liye। Google ki apni privacy policy alag se apply hoti hai।
+        Ye app in services ka use karta hai. Har ek ki apni privacy policy alag se apply hoti hai:<br>
+• <b>Google Firebase</b> — Authentication, Firestore database, push notifications (Cloud Messaging) aur Analytics (anonymous usage ke aankde)<br>
+• <b>Microsoft Clarity</b> — dikhata hai ki students app ke screens par kaise tap/scroll karte hain (recordings aur heatmaps). Aapka type kiya hua text recordings mein chhupa rehta hai<br>
+• <b>Sentry</b> — app mein aaye errors ka technical record (jaise browser/phone ka type aur error ka message). Isme aapka naam ya email nahi bheja jata<br>
+• <b>Cloudflare</b> — app ke background server (jaise AI jawab ke liye) chalane ke liye<br>
+• <b>ImageKit</b> — quiz ki images load karne ke liye<br>
+• <b>AI doubt solver</b> — jab aap "🤖 AI से तुरंत जवाब" dabate hain, aapka doubt (aur subject, topic, board) Cloudflare ke through Google ke AI model ko jawab banane ke liye bheja jata hai. AI ka jawab galat ho sakta hai, isliye zaruri cheezon ko teacher ya book se check karein. Doubt mein apni personal jaankari (phone number, address) na likhein
       </p>
 
       <p style="margin-bottom:6px;"><b>4. Ads</b></p>
-      <p style="margin-bottom:10px;">Is app mein koi third-party advertisement nahi dikhaya jaata।</p>
+      <p style="margin-bottom:10px;">
+        Is app mein Google AdSense ka code jud hua hai, par abhi koi advertisement dikhaya nahi ja raha. Future mein ads dikhaye gaye to Google cookies ya device identifiers use kar sakta hai, aur hum is policy ko pehle update karenge।
+      </p>
 
       <p style="margin-bottom:6px;"><b>5. Data delete karwana</b></p>
       <p style="margin-bottom:10px;">
-        Agar aap apna data delete karwana chahte hain (jaise submit kiya hua doubt ya profile), to neeche diye contact par sampark karein।
+        Agar aap apna data (profile, sync kiya hua data ya submit kiya hua doubt) delete karwana chahte hain, to neeche diye contact par sampark karein। Hum use hatane ki poori koshish karenge।
       </p>
 
       <p style="margin-bottom:6px;"><b>6. Bachchon ki privacy</b></p>
       <p style="margin-bottom:10px;">
-        Ye app students ke liye bana hai। Hum jaan-boojh kar kisi bhi bachche se unnecessary personal information collect nahi karte। Agar koi minor Google Sign-In use karta hai, ye unke parent/guardian ki janकari mein hona chahiye।
+        Ye app students ke liye bana hai। Hum jaan-boojh kar kisi bhi bachche se zaroorat se zyada personal jaankari collect nahi karte। 18 saal se kam umar ke students apne parent/guardian ki jaankari mein hi app aur Google Sign-In use karein।
       </p>
 
-      <p style="margin-bottom:6px;"><b>7. Sampark करें</b></p>
-      <p style="margin-bottom:4px;">Kisi bhi sawaal ya data delete request ke liye humse Instagram par sampark karein: <a href="https://instagram.com/bhupesh_jatav_02" target="_blank">@bhupesh_jatav_02</a></p>
+      <p style="margin-bottom:6px;"><b>7. Policy mein badlav</b></p>
+      <p style="margin-bottom:10px;">
+        Policy badalne par yahi page update kiya jayega aur upar "Aakhri update" ki date badal jayegi।
+      </p>
+
+      <p style="margin-bottom:6px;"><b>8. Sampark करें</b></p>
+      <p style="margin-bottom:10px;">
+        Kisi bhi sawaal ya data delete request ke liye humse Instagram par sampark karein: <a href="https://instagram.com/bhupesh_jatav_02" target="_blank">@bhupesh_jatav_02</a>
+      </p>
     </div>
     <button onclick="closePrivacy()" style="width:100%;background:var(--g100);color:var(--g800);border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:16px;">✕ बंद करें</button>
   </div>
