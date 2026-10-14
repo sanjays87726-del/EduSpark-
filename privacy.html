@@ -1,77 +1,158 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Privacy Policy – EduSpark</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy | EduSpark</title>
+<meta name="description" content="How EduSpark collects, uses and protects information when students use the app for CBSE, BSER and competitive exam practice.">
+<link rel="canonical" href="https://eduspark.de5.net/privacy.html">
 <style>
-  :root{--bg:#F8FAFC;--card:#fff;--ink:#0F1B35;--mut:#475569;--line:#E2E8F0;--lnk:#2563EB;}
-  @media (prefers-color-scheme:dark){:root{--bg:#0B1220;--card:#111A2E;--ink:#E5ECF8;--mut:#A8B5CC;--line:#22304A;--lnk:#7DB2FF;}}
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Devanagari",sans-serif;line-height:1.7;}
-  main{max-width:720px;margin:0 auto;padding:20px 18px 48px;}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;}
-  h1{font-size:22px;margin:0 0 12px}
-  h2{font-size:15px;margin:20px 0 6px}
-  p{margin:0 0 10px;color:var(--mut);font-size:14px}
-  p.upd{font-size:12px;opacity:.8}
-  a{color:var(--lnk)}
-  .back{display:inline-block;margin-bottom:14px;font-size:14px;text-decoration:none}
-  .nav{margin-top:18px;font-size:13px;color:var(--mut)}
-  .nav a{margin-right:12px}
+  :root {
+    --bg: #ffffff;
+    --surface: #f3f5f9;
+    --text: #1f2933;
+    --muted: #5b6672;
+    --accent: #2f4aa8;
+    --line: #dde2ea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12161d;
+      --surface: #1b212b;
+      --text: #e6e9ee;
+      --muted: #9aa5b3;
+      --accent: #8fa6ff;
+      --line: #2b3340;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 17px/1.65 Georgia, "Times New Roman", serif;
+  }
+  .wrap { max-width: 42rem; margin: 0 auto; padding: 1.5rem 1.25rem 4rem; }
+  .back, .nav a {
+    font: 600 15px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .back { display: inline-block; padding: .5rem 0; }
+  .in-frame .back { display: none; }
+  .back:hover, .nav a:hover { text-decoration: underline; }
+  h1 {
+    font: 700 2rem/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    margin: 1rem 0 .25rem;
+  }
+  .updated {
+    color: var(--muted);
+    font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    margin: 0 0 2rem;
+  }
+  h2 {
+    font: 650 1.2rem/1.3 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    margin: 2.2rem 0 .5rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--line);
+  }
+  p, li { margin: .6rem 0; }
+  ul { padding-left: 1.2rem; }
+  a { color: var(--accent); }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+  .nav { display: flex; flex-wrap: wrap; gap: 1.25rem; margin-top: 3rem; padding-top: 1.2rem; border-top: 1px solid var(--line); }
+  footer {
+    margin-top: 1.5rem;
+    color: var(--muted);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
 </style>
+<script>if (window.self !== window.top) document.documentElement.className += ' in-frame';</script>
 </head>
 <body>
-<main>
-  <a class="back" href="/">← EduSpark par wapas</a>
-  <div class="card">
-    <h1>🔒 Privacy Policy</h1>
-<p><b>EduSpark</b> ek free study app hai (CBSE, BSER aur competition exams ke students ke liye), jise Bhupesh (Jaipur, Rajasthan) ne banaya hai aur chalata hai। Ye policy batati hai ki hum kaunsa data collect karte hain, kyun, aur aap us par kaise control rakh sakte hain।</p>
-<p class="upd">Aakhri update: 13 October 2026</p>
-<h2>1. Hum kya collect karte hain</h2>
-<p>• Aapka naam, username, profile photo aur chuna hua Board/Class. Ye aapke device par save hota hai, aur dusre device par sign in karne par wapas mil sake isliye hamare Firebase database (Firestore) mein bhi save hota hai<br>
-• Agar aap Google से Sign In karte hain: Google account ka naam, email aur user ID (Firebase Authentication ke through)<br>
-• Device ID aur "last active" ka time<br>
-• Push notification token (sirf agar aap notifications allow karte hain)<br>
-• Doubt submit karne par: aapka naam (ya "Anonymous"), sawaal, subject, topic aur board<br>
-• Aapki sahmati (consent) ka record: version, tareekh, umar ka group (18+ ya 18 se kam), aur aapne optional cheezein allow ki ya nahi। Ye sirf aapke device par rehta hai<br>
-• Study progress aur settings mukhya taur par aapke device par save hote hain<br>
-• Optional, sirf aapki permission se: crash reports aur usage analytics (neeche dekhein)</p>
-<h2>2. Data ka use kaise hota hai</h2>
-<p>Study features ke liye (content dikhana, doubts ka jawab dena, profile aur progress yaad rakhna, notifications bhejna), aur app ko behtar banane tatha errors theek karne ke liye। Hum aapka data bechte nahi hain, aur neeche likhi service providers ke alawa kisi ke saath share nahi karte। Aapka data hum aapki sahmati ke aadhar par use karte hain।</p>
-<h2>3. Optional: crash reports aur analytics</h2>
-<p>Ye sirf tab shuru hote hain jab aap app kholte waqt unhe allow karte hain। Allow na karein to app poori tarah chalta hai।<br>
-• <b>Crash reports (Sentry):</b> app mein aayi galtiyon ka technical record (jaise browser/phone ka type aur error ka message)। Isme aapka naam ya email nahi bheja jata<br>
-• <b>Usage analytics (Firebase Analytics) aur screen-interaction recordings/heatmaps (Microsoft Clarity):</b> ye dikhate hain ki app ke kaun se hisse zyada use hote hain। Aapka type kiya hua text recordings mein chhupa rehta hai। Ye abhi sirf <b>18 saal ya usse zyada umar</b> ke users ke liye hai; 18 se kam umar ke liye band rehta hai<br>
-Aap inhe kabhi bhi Profile → Privacy settings mein band kar sakte hain।</p>
-<h2>4. Third-party services</h2>
-<p>Ye app in services ka use karta hai। Har ek ki apni privacy policy alag se apply hoti hai:<br>
-• <b>Google Firebase</b> — Authentication, Firestore database aur push notifications (Cloud Messaging)<br>
-• <b>Cloudflare</b> — app ke background server (jaise AI jawab ke liye) chalane ke liye<br>
-• <b>ImageKit</b> — quiz ki images load karne ke liye<br>
-• <b>AI doubt solver</b> — jab aap "🤖 AI से तुरंत जवाब" ya "AI से समझें" dabate hain, aapka doubt/sawaal (aur subject, topic, board) Cloudflare ke through Google ke AI model ko jawab banane ke liye bheja jata hai। AI ka jawab galat ho sakta hai, isliye zaruri cheezein teacher ya book se check karein। Doubt mein apni personal jaankari (phone number, address) na likhein<br>
-• Optional (aapki permission se): <b>Sentry</b>, <b>Firebase Analytics</b>, <b>Microsoft Clarity</b> — upar section 3 dekhein</p>
-<h2>5. Ads</h2>
-<p>Is app mein Google AdSense ka code jud hua hai, par abhi koi advertisement dikhaya nahi ja raha। Future mein ads dikhaye gaye to Google cookies ya device identifiers use kar sakta hai, hum bachchon ko targeted ads nahi dikhayenge, aur is policy ko pehle update karenge।</p>
-<h2>6. Aapke adhikaar (rights)</h2>
-<p>• Aap apna profile Profile page par khud dekh aur badal sakte hain<br>
-• Aap apna <b>account aur data kabhi bhi delete</b> kar sakte hain: Profile → "Account और data delete करें"। Isse aapka profile, username, photo, notification token, saare doubts aur login account hata diye jate hain<br>
-• App tak access na ho to <a href="/delete-account.html">Account Delete page</a> par bataya tareeka use karein<br>
-• Sahmati wapas lene ke liye Profile → Privacy settings</p>
-<h2>7. Data kitne samay tak rehta hai</h2>
-<p>Jab tak aapka account hai ya aap use delete na karein। Delete karne par upar likha data hata diya jata hai। Analytics/crash data (agar aapne allow kiya ho) Google, Microsoft aur Sentry ke apne niyamon ke hisaab se rehta hai, aur hum use aapke naam se nahi jodte।</p>
-<h2>8. Bachchon ki privacy</h2>
-<p>Ye app students ke liye bana hai। 18 saal se kam umar ke users apne parent/guardian ki jaankari mein hi app aur Google Sign-In use karein। Hum kam umar ke users ke liye usage analytics aur screen recordings band rakhte hain, aur kisi ko bhi targeted ads nahi dikhate। Hum jaan-boojh kar zaroorat se zyada personal jaankari collect nahi karte।</p>
-<h2>9. Suraksha</h2>
-<p>Data Google Firebase par access rules ke saath rakha jata hai aur HTTPS se transfer hota hai। Firebase ke servers India ke bahar bhi ho sakte hain। Koi bhi system 100% surakshit nahi hota, isliye apna Google account surakshit rakhein।</p>
-<h2>10. Policy mein badlav</h2>
-<p>Policy badalne par yahi page update kiya jayega aur upar "Aakhri update" ki date badal jayegi। Bade badlav par app aapse dobara sahmati maang sakta hai।</p>
-<h2>11. Sampark aur shikayat</h2>
-<p>Privacy ya data se judi kisi bhi shikayat/sawaal ke liye Instagram par sampark karein: <a href="https://instagram.com/bhupesh_jatav_02" target="_blank" rel="noopener">@bhupesh_jatav_02</a>। Hum jaldi se jaldi (aam taur par 7 din ke andar) jawab dene ki koshish karte hain।</p>
+<main class="wrap">
+  <a class="back" href="/">&larr; Back to EduSpark</a>
 
-    <div class="nav"><a href="/privacy.html">Privacy Policy</a><a href="/terms.html">Terms of Use</a><a href="/delete-account.html">Account Delete</a></div>
-  </div>
+  <h1>Privacy Policy</h1>
+  <p class="updated">Last updated: 15 October 2026</p>
+
+  <p>EduSpark (<a href="https://eduspark.de5.net/">eduspark.de5.net</a>) is a free study app for students preparing for CBSE and BSER Class 10/12 and competitive exams such as SSC, BSTC and REET. This page explains what information the app collects, why, and the choices you have.</p>
+
+  <h2>1. Information we collect</h2>
+  <ul>
+    <li><strong>Profile.</strong> Your name, username, profile photo and the board and class you choose. This is saved on your device, and also in our Firebase (Firestore) database so you can get it back when you sign in on another device.</li>
+    <li><strong>Google Sign-In.</strong> If you sign in with Google, we receive your Google account name, email address and user ID through Firebase Authentication.</li>
+    <li><strong>Device information.</strong> A device ID and the time you were last active.</li>
+    <li><strong>Notifications.</strong> A push notification token, only if you allow notifications.</li>
+    <li><strong>Doubts.</strong> When you submit a doubt: your name (or "Anonymous"), the question, subject, topic and board.</li>
+    <li><strong>Consent record.</strong> The policy version you accepted, the date, your age group (18+ or under 18) and the optional features you allowed. This stays on your device.</li>
+    <li><strong>Study progress and settings.</strong> Mostly stored on your device.</li>
+  </ul>
+  <p>We do not ask for your phone number, home address or payment details.</p>
+
+  <h2>2. How we use it</h2>
+  <p>To run the app: show study content, answer doubts, remember your profile and progress, and send notifications. We also use it to improve the app and fix errors. We process your data on the basis of your consent.</p>
+
+  <h2>3. Optional crash reports and analytics</h2>
+  <p>These start only if you allow them when you first open the app. The app works fully without them, and you can turn them off any time in Profile &rarr; Privacy settings.</p>
+  <ul>
+    <li><strong>Crash reports (Sentry).</strong> A technical record of errors, such as browser or phone type and the error message. Your name and email are not sent.</li>
+    <li><strong>Usage analytics (Firebase Analytics) and screen-interaction recordings and heatmaps (Microsoft Clarity).</strong> These show which parts of the app are used most. Text you type is masked in recordings. They are available only to users aged 18 or above and stay off for users under 18.</li>
+  </ul>
+
+  <h2>4. Services we use</h2>
+  <p>Each service below has its own privacy policy.</p>
+  <ul>
+    <li><strong>Google Firebase</strong> for Authentication, the Firestore database and push notifications (Cloud Messaging).</li>
+    <li><strong>Cloudflare</strong> to run the app's background server, for example for AI answers.</li>
+    <li><strong>AI doubt solver.</strong> When you tap the AI answer button, your doubt (with its subject, topic and board) is sent through Cloudflare to a Google AI model that writes the answer. AI answers can be wrong, so please check important things with a teacher or textbook. Do not put personal details such as a phone number or address in a doubt.</li>
+    <li><strong>ImageKit</strong> to load images used in quizzes.</li>
+    <li><strong>UptimeRobot</strong> to check that the site is online. It does not receive information about individual users.</li>
+    <li><strong>Sentry, Firebase Analytics and Microsoft Clarity</strong>, only with your permission, as described above.</li>
+    <li><strong>Google AdSense</strong>, as described below.</li>
+  </ul>
+
+  <h2>5. Advertising</h2>
+  <p>EduSpark includes Google AdSense, and ads may be shown in the app. Third-party vendors, including Google, use cookies or device identifiers to serve ads based on a user's previous visits to this and other websites. Google's use of advertising cookies enables it and its partners to serve ads to you based on your visit to EduSpark and other sites on the internet.</p>
+  <p>You can opt out of personalised advertising in <a href="https://adssettings.google.com" rel="noopener">Google Ads Settings</a>, or visit <a href="https://www.aboutads.info" rel="noopener">aboutads.info</a> to opt out of some third-party vendors' use of cookies for personalised advertising. To learn how Google uses data from sites that use its services, see <a href="https://policies.google.com/technologies/partner-sites" rel="noopener">policies.google.com/technologies/partner-sites</a>.</p>
+  <p>We do not intend to show personalised ads to children or to users who tell us they are under 18.</p>
+
+  <h2>6. Sharing</h2>
+  <p>We do not sell your personal information. We share it only with the service providers listed above so the app can work, when the law requires it, or to protect the security of EduSpark and its users.</p>
+
+  <h2>7. Your choices and deleting your data</h2>
+  <ul>
+    <li>You can view and change your profile on the Profile page.</li>
+    <li>You can delete your account and data at any time from Profile &rarr; "Delete account and data". This removes your profile, username, photo, notification token, doubts and login account.</li>
+    <li>If you cannot open the app, follow the steps on the <a href="/delete-account.html">Account Delete page</a> or email us.</li>
+    <li>You can withdraw your consent in Profile &rarr; Privacy settings.</li>
+  </ul>
+
+  <h2>8. How long we keep data</h2>
+  <p>As long as your account exists or until you delete it. After deletion, the data listed above is removed. Analytics and crash data, if you allowed them, stay with Google, Microsoft and Sentry under their own rules, and we do not link them to your name.</p>
+
+  <h2>9. Students and children</h2>
+  <p>EduSpark is made for students. Users under 18 should use the app and Google Sign-In with the knowledge of a parent or guardian. We keep usage analytics and screen recordings off for users under 18, and we do not knowingly collect more personal information than the app needs.</p>
+
+  <h2>10. Security</h2>
+  <p>Data is stored in Google Firebase with access rules and is sent over HTTPS. Firebase servers may be located outside India. No online system is completely secure, so please keep your Google account safe.</p>
+
+  <h2>11. Content and copyright</h2>
+  <p>EduSpark is an independent study app. It is not affiliated with or approved by CBSE, BSER, SSC or any other examination body. If you believe any content in EduSpark infringes your copyright, email us with the details and the location of the content, and we will review it and remove it promptly where appropriate.</p>
+
+  <h2>12. Changes to this policy</h2>
+  <p>If this policy changes, this page will be updated and the date above will change. For larger changes the app may ask for your consent again.</p>
+
+  <h2>13. Contact</h2>
+  <p>For privacy questions, deletion requests or copyright notices, email <a href="mailto:bhupeshkumar36882@gmail.com">bhupeshkumar36882@gmail.com</a> or message <a href="https://instagram.com/bhupesh_jatav_02" rel="noopener">@bhupesh_jatav_02</a> on Instagram. We try to reply within 7 days.</p>
+
+  <nav class="nav" aria-label="Legal pages">
+    <a href="/terms.html">Terms of Use</a>
+    <a href="/delete-account.html">Account Delete</a>
+    <a href="/">EduSpark home</a>
+  </nav>
+  <footer>&copy; 2026 EduSpark</footer>
 </main>
-<script>/* app ke andar (iframe) khule to 'wapas' link chhupao — app ka apna wapas button hai */ if(window.top!==window.self){var b=document.querySelector('.back');if(b)b.style.display='none';}</script>
 </body>
 </html>
