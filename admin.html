@@ -374,7 +374,10 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
         <option value="BSER-12">BSER Class 12</option>
         <option value="CBSE-10">CBSE Class 10</option>
         <option value="CBSE-12">CBSE Class 12</option>
-      </select>
+          <option value="REET">REET</option>
+          <option value="SSC-CGL">SSC CGL</option>
+          <option value="SSC-CHSL">SSC CHSL</option>
+        </select>
       <button class="add-btn" onclick="saveNotification()">🔔 Notification भेजें</button>
       <div style="font-size:10.5px;color:var(--g600);margin-top:8px;line-height:1.6;">
         Note: Notification turant queue mein chala jaata hai, aur agle 15-30 min ke andar students ke phone par pahunch jaata hai (GitHub Actions background job ke through — ये bilkul free hai).
@@ -916,7 +919,7 @@ function renderNotifyHistory(){
       <div class="mgmt-item">
         <div>
           <div class="mgmt-nm">${n.title}</div>
-          <div class="mgmt-sb">${n.body} • ${n.audience==='all'?'सभी':n.audience} • ${n.status==='sent'?'✅ भेज दिया':'⏳ Pending'}</div>
+          <div class="mgmt-sb">${n.body} • ${n.audience==='all'?'सभी':n.audience} • ${n.status==='sent'?(n.sentCount>0?'✅ '+n.sentCount+' को भेजा':'⚠️ 0 को गया ('+(n.note||'किसी के पास token नहीं')+')'):(n.status==='failed'?'❌ Fail: '+(n.lastError||''):'⏳ Pending')}</div>
         </div>
       </div>`).join('') : '<div style="font-size:11px;color:var(--g600);padding:8px 0;">अभी तक कोई notification नहीं भेजा।</div>';
   }).catch(()=>{ el.innerHTML=''; });

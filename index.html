@@ -646,11 +646,20 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
 </div>
 
 <!-- STUDENT SETUP -->
+<!-- LEGAL / INFO PAGES — app ke andar khulte hain, isliye wapas aane par app dobara load nahi hota -->
+<div id="legalOverlay" style="display:none;position:fixed;inset:0;z-index:99999;background:var(--white);flex-direction:column;">
+  <div style="display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;border-bottom:1px solid var(--g200);background:var(--white);">
+    <button onclick="closeLegal()" style="border:none;background:var(--g100);color:var(--g800);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">← वापस</button>
+    <div id="legalTitle" style="font-size:14px;font-weight:700;color:var(--g800);"></div>
+  </div>
+  <iframe id="legalFrame" title="EduSpark" style="flex:1;border:0;width:100%;background:var(--white);" onload="legalFrameLoaded()"></iframe>
+</div>
+
 <!-- SAHMATI (CONSENT) — pehli baar app kholne par (aur policy badalne par) -->
 <div id="consentSheet" style="display:none;position:fixed;inset:0;z-index:99995;background:rgba(15,27,53,.82);align-items:flex-end;justify-content:center;">
   <div class="cs-card" role="dialog" aria-modal="true" aria-labelledby="csTitle">
     <div class="cs-title" id="csTitle">🔒 आपकी privacy, आपका control</div>
-    <div class="cs-text">EduSpark चलाने के लिए हम आपका नाम, board और (Google से sign in करने पर) email, साथ ही आपके doubts Firebase (Google) पर रखते हैं। AI से जवाब माँगने पर आपका doubt Google के AI model को भेजा जाता है। पूरी जानकारी: <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> • <a href="/terms.html" target="_blank" rel="noopener">Terms of Use</a></div>
+    <div class="cs-text">EduSpark चलाने के लिए हम आपका नाम, board और (Google से sign in करने पर) email, साथ ही आपके doubts Firebase (Google) पर रखते हैं। AI से जवाब माँगने पर आपका doubt Google के AI model को भेजा जाता है। पूरी जानकारी: <a href="/privacy.html" onclick="return openLegal('/privacy.html','Privacy Policy')">Privacy Policy</a> • <a href="/terms.html" onclick="return openLegal('/terms.html','Terms of Use')">Terms of Use</a></div>
     <div class="cs-q">आपकी उम्र?</div>
     <div class="cs-row">
       <label class="cs-opt"><input type="radio" name="csAge" value="adult" onchange="csUpdate()"> 18 साल या ज़्यादा</label>
@@ -804,7 +813,7 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
       <div style="text-align:center;padding:18px 18px 6px;">
         <span onclick="openPrivacy()" style="font-size:11px;color:var(--g400);text-decoration:underline;cursor:pointer;">Privacy Policy</span>
         <span style="font-size:11px;color:var(--g400);"> • </span>
-        <a href="/terms.html" style="font-size:11px;color:var(--g400);text-decoration:underline;">Terms of Use</a>
+        <a href="/terms.html" onclick="return openLegal('/terms.html','Terms of Use')" style="font-size:11px;color:var(--g400);text-decoration:underline;">Terms of Use</a>
         <div style="font-size:10.5px;color:var(--g400);margin-top:8px;line-height:1.5;">EduSpark एक independent study app है। यह CBSE, BSER, SSC या किसी सरकारी संस्था से जुड़ा या उनके द्वारा approved नहीं है। AI के जवाब गलत हो सकते हैं — ज़रूरी बातें किताब/teacher से जाँच लें।</div>
       </div>
 
@@ -1004,11 +1013,11 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
         <button class="pf-acc-btn danger" id="pfDeleteBtn" onclick="deleteMyAccount()">🗑 Account और data delete करें</button>
       </div>
       <div class="legal-links">
-        <a href="/about.html">ℹ️ About EduSpark</a>
-        <a href="/contact.html">✉️ Contact / Help</a>
-        <a href="/privacy.html">🔒 Privacy Policy</a>
-        <a href="/terms.html">📄 Terms of Use</a>
-        <a href="/delete-account.html">🗑 Account Delete (जानकारी)</a>
+        <a href="/about.html" onclick="return openLegal('/about.html','About EduSpark')">ℹ️ About EduSpark</a>
+        <a href="/contact.html" onclick="return openLegal('/contact.html','Contact / Help')">✉️ Contact / Help</a>
+        <a href="/privacy.html" onclick="return openLegal('/privacy.html','Privacy Policy')">🔒 Privacy Policy</a>
+        <a href="/terms.html" onclick="return openLegal('/terms.html','Terms of Use')">📄 Terms of Use</a>
+        <a href="/delete-account.html" onclick="return openLegal('/delete-account.html','Account Delete')">🗑 Account Delete (जानकारी)</a>
       </div>
 
     </div>
@@ -1183,7 +1192,7 @@ Aap inhe kabhi bhi Profile → Privacy settings mein band kar sakte hain।
       <p style="margin-bottom:10px;">
         • Aap apna profile Profile page par khud dekh aur badal sakte hain<br>
 • Aap apna <b>account aur data kabhi bhi delete</b> kar sakte hain: Profile → "Account और data delete करें"। Isse aapka profile, username, photo, notification token, saare doubts aur login account hata diye jate hain<br>
-• App tak access na ho to <a href="/delete-account.html">Account Delete page</a> par bataya tareeka use karein<br>
+• App tak access na ho to <a href="/delete-account.html" onclick="return openLegal('/delete-account.html','Account Delete')">Account Delete page</a> par bataya tareeka use karein<br>
 • Sahmati wapas lene ke liye Profile → Privacy settings
       </p>
 
@@ -1345,6 +1354,28 @@ function updateUsernameLockUI(){
 }
 
 let profileReturnPageId = 'pageHome';
+// ── Legal/info pages app ke andar kholo (iframe) ──
+function openLegal(url, title){
+  const o = document.getElementById('legalOverlay'), f = document.getElementById('legalFrame');
+  if(!o || !f) return true;                       // overlay nahi mila to normal link chale
+  document.getElementById('legalTitle').textContent = title || '';
+  f.src = url; o.style.display = 'flex';
+  return false;
+}
+function closeLegal(){
+  const o = document.getElementById('legalOverlay'), f = document.getElementById('legalFrame');
+  if(o) o.style.display = 'none';
+  if(f) f.src = 'about:blank';
+}
+// Agar iframe ke andar koi link app (home page) par le jaaye to overlay band karo — app ke andar app nahi
+function legalFrameLoaded(){
+  try{
+    const f = document.getElementById('legalFrame');
+    if(!f || f.src === 'about:blank' || f.src === '' ) return;
+    const p = f.contentWindow.location.pathname;
+    if(p === '/' || p === '/index.html') closeLegal();
+  }catch(e){}
+}
 // ══════════════════════════════════════════
 // SAHMATI (CONSENT), LOGOUT, ACCOUNT DELETE
 // ══════════════════════════════════════════
@@ -1677,6 +1708,8 @@ function armBackGuard(){
   history.pushState({guard:true}, '', location.href);
 }
 function performBack(){
+  const legalO = document.getElementById('legalOverlay');
+  if(legalO && legalO.style.display==='flex'){ closeLegal(); return true; }
   const videoModal = document.getElementById('videoModal');
   const privacyModal = document.getElementById('privacyModal');
   const boardSel = document.getElementById('boardSel');
@@ -3260,7 +3293,7 @@ function isAppBusy(){
   if(document.getElementById('thoughtModal').classList.contains('show')) return true;
   if(document.getElementById('videoModal') && document.getElementById('videoModal').classList.contains('show')) return true;
   if(document.getElementById('boardSel').classList.contains('show')) return true;
-  if(vis('privacyModal') || vis('quizExitModal')) return true;
+  if(vis('privacyModal') || vis('quizExitModal') || vis('consentSheet') || vis('legalOverlay')) return true;
   if(document.body.classList.contains('quiz-mode')) return true;
   if(document.getElementById('installToast')) return true; // Install banner hat jaaye tab dikhao, dono overlap na hon
   return false;
@@ -3594,6 +3627,26 @@ function updateNotifBadge(){
   });
 }
 
+// Roz ek baar jaanch: kya cloud me hamara token hai? Server kharab (expired) token student ke record se
+// hata deta hai — tab purana token dobara likhne se kuch nahi hota, isliye naya token banate hain.
+function ensureCloudToken(messaging, reg, token){
+  if(!token) return Promise.resolve(token);
+  const last = parseInt(localStorage.getItem('es_tok_check')||'0', 10);
+  if(Date.now() - last < 20*3600*1000) return Promise.resolve(token);
+  return db.collection('students').doc(getStudentDocId()).get().then(function(snap){
+    try{ localStorage.setItem('es_tok_check', String(Date.now())); }catch(e){}
+    const cloud = snap.exists ? ((snap.data()||{}).fcmToken || null) : null;
+    if(cloud === token) return token;
+    if(snap.exists && !cloud && localStorage.getItem('es_fcm_tok') === token){
+      // Server ne ye token bekaar bata kar hata diya tha — naya token banao
+      return messaging.deleteToken().catch(function(){}).then(function(){
+        return messaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: reg });
+      }).then(function(nt){ try{ localStorage.removeItem('es_sync_state'); }catch(e){} return nt || token; });
+    }
+    try{ localStorage.removeItem('es_sync_state'); }catch(e){}    // cloud me token alag/nahi hai — 6 ghante wala rok hata kar likho
+    return token;
+  }).catch(function(){ return token; });   // bina-login students apna record padh nahi sakte — chupchap aage badho
+}
 let fcmForegroundBound = false;
 function registerFcmToken(){
   if(!('serviceWorker' in navigator) || typeof firebase.messaging !== 'function' ||
@@ -3611,11 +3664,13 @@ function registerFcmToken(){
   // pehli baar token kabhi nahi banta tha, kyunki tab tak SW register hi nahi hota tha)
   const swReady = Promise.race([
     navigator.serviceWorker.ready,
-    new Promise((_,reject)=>setTimeout(()=>reject(new Error('sw-timeout')), 10000))
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error('sw-timeout')), 30000))
   ]);
   swReady.then(function(reg){
     const messaging = firebase.messaging();
-    return messaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: reg }).then(function(token){
+    return messaging.getToken({ vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: reg })
+    .then(function(token){ return ensureCloudToken(messaging, reg, token); })
+    .then(function(token){
       syncStudentToCloud(token || null);
       // App khuli ho tab FCM khud notification nahi dikhata — yahan se dikhao
       if(!fcmForegroundBound){
@@ -3640,7 +3695,11 @@ function registerFcmToken(){
   });
 }
 
-window.onload = function(){
+// Splash pehle 'window.onload' par hatta tha — wo AdSense, fonts aur dusri scripts poori load hone tak
+// ruka rehta hai, isliye dhimi/blocked net par app splash par atak jaata tha. Ab DOM taiyar hote hi chalta hai.
+var _esBooted = false;
+function esBoot(){
+  if(_esBooted) return; _esBooted = true;
   // Version check — purana data clear karo
   if(localStorage.getItem('es_app_version')!=='v5'){
     localStorage.removeItem('es_student');
@@ -3689,7 +3748,10 @@ if (typeof listenCommunity === "function") listenCommunity();
       }
     }, 1800);
   }, 450);
-};
+}
+if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', esBoot); else esBoot();
+window.addEventListener('load', esBoot);          // purane tareeke se bhi (ek hi baar chalega)
+setTimeout(esBoot, 3500);                         // safety: kuch bhi ho, 3.5 sec me app khul jaaye
 
 window.addEventListener("appinstalled", () => {
   logEv("app_installed");
@@ -3756,7 +3818,8 @@ if(navigator.permissions && navigator.permissions.query){
 ['gesturestart','gesturechange','gestureend'].forEach(function(e){ document.addEventListener(e,function(ev){ ev.preventDefault(); },{passive:false}); });
 document.addEventListener('touchmove',function(e){ if(e.touches && e.touches.length>1) e.preventDefault(); },{passive:false});
 if('serviceWorker' in navigator){
-  window.addEventListener('load',function(){ navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).catch(function(){}); });
+  // Pehle 'load' ka intezaar tha — load late hone par SW (aur push token) bhi late/fail ho jaata tha
+  navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).catch(function(){});
 }
 </script>
 </body>

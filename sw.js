@@ -1,4 +1,4 @@
-const CACHE_NAME = "eduspark-v16";
+const CACHE_NAME = "eduspark-v17";
 
 const APP_SHELL = ["/", "/index.html", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
@@ -72,7 +72,8 @@ self.addEventListener("push", event => {
   const n = data.notification || ((data.data && (data.data.title || data.data.body)) ? data.data : data);
   const title = n.title || "EduSpark";
   const body = n.body || "";
-  const url = (data.data && data.data.url) || (data.fcmOptions && data.fcmOptions.link) || "/";
+  let url = (data.data && data.data.url) || (data.fcmOptions && data.fcmOptions.link) || "/";
+  try { const u = new URL(url, self.location.origin); url = (u.origin === self.location.origin) ? u.href : "/"; } catch (e) { url = "/"; }   // purane domain ka link ho to bhi app hi khule
   event.waitUntil(self.registration.showNotification(title, {
     body,
     icon: "/icon-192.png",
