@@ -2,15 +2,19 @@
   "name": "EduSpark – Board Study App",
   "short_name": "EduSpark",
   "description": "CBSE & BSER Class 10 & 12 Free Study App",
+  "lang": "en-IN",
   "start_url": "/",
   "id": "/",
   "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#0F1B35",
   "theme_color": "#0F1B35",
-  "orientation": "portrait",
   "dir": "auto",
-  "categories": ["education"],
+  "categories": [
+    "education"
+  ],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icon-192.png",

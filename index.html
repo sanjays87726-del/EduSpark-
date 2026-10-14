@@ -1,28 +1,56 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-<!-- Sentry — app me JS error aaye to alert. Sirf errors: session recording aur tracing band hain -->
-<script src="https://js-de.sentry-cdn.com/78ca2e4dcea1053f99837b94fe13ab6d.min.js" crossorigin="anonymous"></script>
+<!-- Sahmati (consent) + third-party loader: Clarity / Sentry / Firebase Analytics sirf student ki permission ke baad chalte hain -->
 <script>
-(function(){
-  if(!window.Sentry || !window.Sentry.onLoad) return;                    // blocked ya offline ho to chup-chaap skip
-  if(/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;        // apni testing ke errors nahi
-  window.Sentry.onLoad(function(){
-    window.Sentry.init({
-      environment: 'production',
-      sendDefaultPii: false,          // students ki personal details nahi jaati
-      tracesSampleRate: 0,            // performance tracing band (free quota bachta hai)
-      replaysSessionSampleRate: 0,    // session recording band (Clarity pehle se hai)
-      replaysOnErrorSampleRate: 0,
-      ignoreErrors: ['ResizeObserver loop', 'Script error', 'Non-Error promise rejection', 'Failed to fetch',
-                     'NetworkError', 'Load failed', 'AbortError', 'Could not reach Cloud Firestore backend'],
-      denyUrls: [/extensions\//i, /^chrome:\/\//i, /^moz-extension:\/\//i,
-                 /googlesyndication/i, /doubleclick/i, /googletagmanager/i, /clarity\.ms/i]
+var ES_CONSENT_VERSION = 1;
+var ES_ANALYTICS_ADULTS_ONLY = true;   // true: usage analytics + screen recordings sirf 18+ ke liye (bachchon ki privacy). false karne se sabke liye allowed
+function getConsent(){ try{ return JSON.parse(localStorage.getItem('es_consent')||'null'); }catch(e){ return null; } }
+function needConsent(){ var c=getConsent(); return !(c && c.v>=ES_CONSENT_VERSION && c.agreed); }
+function hasAnalyticsConsent(){ var c=getConsent(); return !!(c && c.v>=ES_CONSENT_VERSION && c.analytics && (!ES_ANALYTICS_ADULTS_ONLY || c.age==='adult')); }
+function hasCrashConsent(){ var c=getConsent(); return !!(c && c.v>=ES_CONSENT_VERSION && c.crash); }
+function loadClarity(){
+  if(window._clLoaded) return; window._clLoaded = true;
+  (function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+  })(window, document, "clarity", "script", "yvklbp73fs");
+}
+function loadSentry(){
+  if(window._seLoaded) return; window._seLoaded = true;
+  if(/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return;          // apni testing ke errors nahi
+  var sc = document.createElement('script');
+  sc.src = 'https://js-de.sentry-cdn.com/78ca2e4dcea1053f99837b94fe13ab6d.min.js';
+  sc.crossOrigin = 'anonymous'; sc.async = true;
+  sc.onload = function(){
+    if(!window.Sentry || !window.Sentry.onLoad) return;
+    window.Sentry.onLoad(function(){
+      window.Sentry.init({
+        environment: 'production',
+        sendDefaultPii: false,          // students ki personal details nahi jaati
+        tracesSampleRate: 0,            // performance tracing band
+        replaysSessionSampleRate: 0,    // session recording band
+        replaysOnErrorSampleRate: 0,
+        ignoreErrors: ['ResizeObserver loop', 'Script error', 'Non-Error promise rejection', 'Failed to fetch',
+                       'NetworkError', 'Load failed', 'AbortError', 'Could not reach Cloud Firestore backend'],
+        denyUrls: [/extensions\//i, /^chrome:\/\//i, /^moz-extension:\/\//i,
+                   /googlesyndication/i, /doubleclick/i, /googletagmanager/i, /clarity\.ms/i]
+      });
+      // Test ke liye: app ko ...#sentry-test address se kholo, ek test error jayega
+      if(location.hash === '#sentry-test') setTimeout(function(){ throw new Error('Sentry test error — ignore'); }, 1000);
     });
-    // Test ke liye: app ko ...#sentry-test address se kholo, ek test error jayega
-    if(location.hash === '#sentry-test') setTimeout(function(){ throw new Error('Sentry test error — ignore'); }, 1000);
-  });
-})();
+  };
+  document.head.appendChild(sc);
+}
+function loadThirdParty(){
+  if(hasAnalyticsConsent()){
+    loadClarity();
+    if(!window._anTimer){ window._anTimer = setTimeout(function(){ if(typeof loadAnalytics==='function') loadAnalytics(); }, 4000); }
+  }
+  if(hasCrashConsent()) loadSentry();
+}
+loadThirdParty();
 </script>
 
 <meta charset="UTF-8"/>
@@ -73,8 +101,8 @@ const FB_CFG = {
 };
 if (!firebase.apps.length) { firebase.initializeApp(FB_CFG); }
 
-function loadAnalytics(){ try{ var a=document.createElement('script'); a.src='https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js'; a.onload=function(){ try{ firebase.analytics(); }catch(e){} }; document.head.appendChild(a); }catch(e){} }
-window.addEventListener('load', function(){ setTimeout(loadAnalytics, 4000); });
+function loadAnalytics(){ if(window._anLoaded || !hasAnalyticsConsent()) return; window._anLoaded=true; try{ var a=document.createElement('script'); a.src='https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics-compat.js'; a.onload=function(){ try{ firebase.analytics(); }catch(e){} }; document.head.appendChild(a); }catch(e){} }
+// Analytics ab loadThirdParty() se, sirf sahmati milne par shuru hota hai
 function logEv(n,p){ try{ if(firebase.analytics) firebase.analytics().logEvent(n,p); }catch(e){} }
 
 const auth = firebase.auth();
@@ -290,6 +318,25 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
 .ak-ai:disabled{opacity:.6;}
 .ak-aiex{margin-top:8px;background:#F1F5F9;border:1.5px solid #BFDBFE;border-radius:8px;padding:10px 12px;font-size:12.5px;line-height:1.6;color:var(--g800);white-space:pre-wrap;}
 html[data-theme="dark"] .ak-aiex{background:#16233F;border-color:#2B4A8A;color:#DCE7FA;}
+/* ── Sahmati (consent) sheet + account buttons ── */
+.cs-card{background:var(--white);width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom,0px));max-height:94vh;overflow-y:auto;box-shadow:0 -10px 40px rgba(0,0,0,.35);}
+.cs-title{font-size:17px;font-weight:800;color:var(--g800);margin-bottom:8px;}
+.cs-text{font-size:12.5px;line-height:1.65;color:var(--g600);margin-bottom:12px;}
+.cs-text a{color:var(--blue);font-weight:700;}
+.cs-q{font-size:12px;font-weight:700;color:var(--g800);margin-bottom:6px;}
+.cs-row{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+.cs-opt{flex:1;min-width:130px;display:flex;align-items:center;gap:8px;border:1.5px solid var(--g200);border-radius:10px;padding:9px 10px;font-size:12.5px;color:var(--g800);cursor:pointer;}
+.cs-chk{display:flex;gap:10px;align-items:flex-start;font-size:12px;line-height:1.55;color:var(--g600);margin-bottom:10px;cursor:pointer;}
+.cs-chk input{margin-top:2px;flex:none;width:18px;height:18px;}
+.cs-chk.cs-off{opacity:.5;}
+.cs-opt-title{font-size:11px;font-weight:700;color:var(--g400);letter-spacing:.4px;margin:12px 0 8px;}
+.cs-btn{width:100%;background:var(--btn);color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:6px;}
+.cs-btn:disabled{opacity:.45;cursor:not-allowed;}
+.cs-foot{font-size:10.5px;color:var(--g400);text-align:center;margin-top:8px;}
+.pf-acc-btn{width:100%;margin-top:10px;border:1.5px solid var(--g200);background:var(--white);color:var(--g800);border-radius:12px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+.pf-acc-btn.danger{border-color:#FCA5A5;color:#DC2626;}
+.pf-acc-btn:disabled{opacity:.55;}
+
 .ak-exp b{color:var(--blue);}
 
 html,body{touch-action:manipulation;}
@@ -587,14 +634,6 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
 .legal-links a:hover{color:var(--ink);}
 
 </style>
-<!-- Microsoft Clarity — students ke saath app me kya ho raha hai (screen recording + heatmap) -->
-<script type="text/javascript">
-    (function(c,l,a,r,i,t,y){
-        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-    })(window, document, "clarity", "script", "yvklbp73fs");
-</script>
 </head>
 <body>
 
@@ -607,6 +646,25 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
 </div>
 
 <!-- STUDENT SETUP -->
+<!-- SAHMATI (CONSENT) — pehli baar app kholne par (aur policy badalne par) -->
+<div id="consentSheet" style="display:none;position:fixed;inset:0;z-index:99995;background:rgba(15,27,53,.82);align-items:flex-end;justify-content:center;">
+  <div class="cs-card" role="dialog" aria-modal="true" aria-labelledby="csTitle">
+    <div class="cs-title" id="csTitle">🔒 आपकी privacy, आपका control</div>
+    <div class="cs-text">EduSpark चलाने के लिए हम आपका नाम, board और (Google से sign in करने पर) email, साथ ही आपके doubts Firebase (Google) पर रखते हैं। AI से जवाब माँगने पर आपका doubt Google के AI model को भेजा जाता है। पूरी जानकारी: <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a> • <a href="/terms.html" target="_blank" rel="noopener">Terms of Use</a></div>
+    <div class="cs-q">आपकी उम्र?</div>
+    <div class="cs-row">
+      <label class="cs-opt"><input type="radio" name="csAge" value="adult" onchange="csUpdate()"> 18 साल या ज़्यादा</label>
+      <label class="cs-opt"><input type="radio" name="csAge" value="minor" onchange="csUpdate()"> 18 साल से कम</label>
+    </div>
+    <label class="cs-chk"><input type="checkbox" id="csAgree" onchange="csUpdate()"><span>मैंने Terms of Use और Privacy Policy पढ़ ली हैं और मैं सहमत हूँ। अगर मेरी उम्र 18 साल से कम है, तो मैं अपने parent/guardian की जानकारी में app use कर रहा/रही हूँ।</span></label>
+    <div class="cs-opt-title">वैकल्पिक — इनके बिना भी app पूरा चलेगा</div>
+    <label class="cs-chk"><input type="checkbox" id="csCrash"><span>Crash/error reports भेजें (Sentry) — app की गलतियाँ ठीक करने के लिए। इसमें आपका नाम या email नहीं जाता।</span></label>
+    <label class="cs-chk cs-off" id="csAnLabel"><input type="checkbox" id="csAnalytics" disabled><span>Usage analytics और screen-interaction recordings की अनुमति (Firebase Analytics, Microsoft Clarity)। आपका लिखा text छुपा रहता है। <i id="csAnNote">सिर्फ़ 18+ के लिए।</i></span></label>
+    <button class="cs-btn" id="csBtn" onclick="acceptConsent()" disabled>✅ आगे बढ़ें</button>
+    <div class="cs-foot">आप ये सेटिंग कभी भी Profile → Privacy settings में बदल सकते हैं।</div>
+  </div>
+</div>
+
 <div id="studentSetup" style="display:none;position:fixed;inset:0;background:#0F1B35;z-index:9500;flex-direction:column;align-items:center;justify-content:center;padding:24px;">
   <div class="ss-logo">👋</div>
   <div class="ss-title">EduSpark में स्वागत है!</div>
@@ -745,7 +803,11 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
       </div>
       <div style="text-align:center;padding:18px 18px 6px;">
         <span onclick="openPrivacy()" style="font-size:11px;color:var(--g400);text-decoration:underline;cursor:pointer;">Privacy Policy</span>
+        <span style="font-size:11px;color:var(--g400);"> • </span>
+        <a href="/terms.html" style="font-size:11px;color:var(--g400);text-decoration:underline;">Terms of Use</a>
+        <div style="font-size:10.5px;color:var(--g400);margin-top:8px;line-height:1.5;">EduSpark एक independent study app है। यह CBSE, BSER, SSC या किसी सरकारी संस्था से जुड़ा या उनके द्वारा approved नहीं है। AI के जवाब गलत हो सकते हैं — ज़रूरी बातें किताब/teacher से जाँच लें।</div>
       </div>
+
       </div><!-- #homeBrowseSec -->
     </div>
 
@@ -916,11 +978,39 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
         <input type="text" id="pfBoardDisplay" disabled style="background:var(--g100);color:var(--g600);" data-clarity-mask="True"/>
         <button class="pf-save-btn" onclick="saveProfileEdits()">💾 Profile Update करें</button>
       </div>
+      <div class="pf-card" style="margin-top:0;">
+        <div class="npc-title" style="margin-bottom:8px;">🔒 Privacy और Account</div>
+        <div class="theme-row" style="margin-bottom:8px;">
+          <div class="npc-text">
+            <div class="npc-title">Crash reports</div>
+            <div class="npc-sub">App की गलतियाँ ठीक करने में मदद (Sentry)</div>
+          </div>
+          <label class="npc-switch">
+            <input type="checkbox" id="pfCrashToggle" onchange="setPrivacyPref('crash',this.checked)"/>
+            <span class="npc-slider"></span>
+          </label>
+        </div>
+        <div class="theme-row">
+          <div class="npc-text">
+            <div class="npc-title">Usage analytics</div>
+            <div class="npc-sub" id="pfAnSub">Analytics और screen recordings (सिर्फ़ 18+)</div>
+          </div>
+          <label class="npc-switch">
+            <input type="checkbox" id="pfAnalyticsToggle" onchange="setPrivacyPref('analytics',this.checked)"/>
+            <span class="npc-slider"></span>
+          </label>
+        </div>
+        <button class="pf-acc-btn" id="pfLogoutBtn" onclick="logoutUser()">🚪 Logout</button>
+        <button class="pf-acc-btn danger" id="pfDeleteBtn" onclick="deleteMyAccount()">🗑 Account और data delete करें</button>
+      </div>
       <div class="legal-links">
         <a href="/about.html">ℹ️ About EduSpark</a>
         <a href="/contact.html">✉️ Contact / Help</a>
         <a href="/privacy.html">🔒 Privacy Policy</a>
+        <a href="/terms.html">📄 Terms of Use</a>
+        <a href="/delete-account.html">🗑 Account Delete (जानकारी)</a>
       </div>
+
     </div>
 
     <!-- NOTIFICATIONS -->
@@ -1046,8 +1136,8 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
     <div style="width:40px;height:4px;background:var(--g200);border-radius:99px;margin:0 auto 18px;"></div>
     <div style="font-size:18px;font-weight:800;color:var(--ink);margin-bottom:14px;">🔒 Privacy Policy</div>
     <div style="font-size:12.5px;color:var(--g600);line-height:1.7;">
-      <p style="margin-bottom:6px;"><b>EduSpark</b> ek free study app hai (CBSE, BSER aur competition exams ke students ke liye). Ye policy batati hai ki hum kaunsa data collect karte hain aur uska use kaise karte hain।</p>
-      <p style="margin-bottom:10px;font-size:11px;color:var(--g400);">Aakhri update: 11 October 2026</p>
+      <p style="margin-bottom:6px;"><b>EduSpark</b> ek free study app hai (CBSE, BSER aur competition exams ke students ke liye), jise Bhupesh (Jaipur, Rajasthan) ne banaya hai aur chalata hai। Ye policy batati hai ki hum kaunsa data collect karte hain, kyun, aur aap us par kaise control rakh sakte hain।</p>
+      <p style="margin-bottom:10px;font-size:11px;color:var(--g400);">Aakhri update: 13 October 2026</p>
 
       <p style="margin-bottom:6px;"><b>1. Hum kya collect karte hain</b></p>
       <p style="margin-bottom:10px;">
@@ -1056,49 +1146,70 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
 • Device ID aur "last active" ka time<br>
 • Push notification token (sirf agar aap notifications allow karte hain)<br>
 • Doubt submit karne par: aapka naam (ya "Anonymous"), sawaal, subject, topic aur board<br>
-• App ke use ka anonymous data (kaunsa page ya feature kitna use hua) aur app mein aaye technical errors — neeche "Third-party services" dekhein<br>
-• Study progress aur settings mukhya taur par aapke device par save hote hain
+• Aapki sahmati (consent) ka record: version, tareekh, umar ka group (18+ ya 18 se kam), aur aapne optional cheezein allow ki ya nahi। Ye sirf aapke device par rehta hai<br>
+• Study progress aur settings mukhya taur par aapke device par save hote hain<br>
+• Optional, sirf aapki permission se: crash reports aur usage analytics (neeche dekhein)
       </p>
 
       <p style="margin-bottom:6px;"><b>2. Data ka use kaise hota hai</b></p>
       <p style="margin-bottom:10px;">
-        Study features ke liye (content dikhana, doubts ka jawab dena, profile aur progress yaad rakhna, notifications bhejna), aur app ko behtar banane tatha errors theek karne ke liye. Hum aapka data bechte nahi hain, aur neeche likhi service providers ke alawa kisi ke saath share nahi karte।
+        Study features ke liye (content dikhana, doubts ka jawab dena, profile aur progress yaad rakhna, notifications bhejna), aur app ko behtar banane tatha errors theek karne ke liye। Hum aapka data bechte nahi hain, aur neeche likhi service providers ke alawa kisi ke saath share nahi karte। Aapka data hum aapki sahmati ke aadhar par use karte hain।
       </p>
 
-      <p style="margin-bottom:6px;"><b>3. Third-party services</b></p>
+      <p style="margin-bottom:6px;"><b>3. Optional: crash reports aur analytics</b></p>
       <p style="margin-bottom:10px;">
-        Ye app in services ka use karta hai. Har ek ki apni privacy policy alag se apply hoti hai:<br>
-• <b>Google Firebase</b> — Authentication, Firestore database, push notifications (Cloud Messaging) aur Analytics (anonymous usage ke aankde)<br>
-• <b>Microsoft Clarity</b> — dikhata hai ki students app ke screens par kaise tap/scroll karte hain (recordings aur heatmaps). Aapka type kiya hua text recordings mein chhupa rehta hai<br>
-• <b>Sentry</b> — app mein aaye errors ka technical record (jaise browser/phone ka type aur error ka message). Isme aapka naam ya email nahi bheja jata<br>
+        Ye sirf tab shuru hote hain jab aap app kholte waqt unhe allow karte hain। Allow na karein to app poori tarah chalta hai।<br>
+• <b>Crash reports (Sentry):</b> app mein aayi galtiyon ka technical record (jaise browser/phone ka type aur error ka message)। Isme aapka naam ya email nahi bheja jata<br>
+• <b>Usage analytics (Firebase Analytics) aur screen-interaction recordings/heatmaps (Microsoft Clarity):</b> ye dikhate hain ki app ke kaun se hisse zyada use hote hain। Aapka type kiya hua text recordings mein chhupa rehta hai। Ye abhi sirf <b>18 saal ya usse zyada umar</b> ke users ke liye hai; 18 se kam umar ke liye band rehta hai<br>
+Aap inhe kabhi bhi Profile → Privacy settings mein band kar sakte hain।
+      </p>
+
+      <p style="margin-bottom:6px;"><b>4. Third-party services</b></p>
+      <p style="margin-bottom:10px;">
+        Ye app in services ka use karta hai। Har ek ki apni privacy policy alag se apply hoti hai:<br>
+• <b>Google Firebase</b> — Authentication, Firestore database aur push notifications (Cloud Messaging)<br>
 • <b>Cloudflare</b> — app ke background server (jaise AI jawab ke liye) chalane ke liye<br>
 • <b>ImageKit</b> — quiz ki images load karne ke liye<br>
-• <b>AI doubt solver</b> — jab aap "🤖 AI से तुरंत जवाब" dabate hain, aapka doubt (aur subject, topic, board) Cloudflare ke through Google ke AI model ko jawab banane ke liye bheja jata hai. AI ka jawab galat ho sakta hai, isliye zaruri cheezon ko teacher ya book se check karein. Doubt mein apni personal jaankari (phone number, address) na likhein
+• <b>AI doubt solver</b> — jab aap "🤖 AI से तुरंत जवाब" ya "AI से समझें" dabate hain, aapka doubt/sawaal (aur subject, topic, board) Cloudflare ke through Google ke AI model ko jawab banane ke liye bheja jata hai। AI ka jawab galat ho sakta hai, isliye zaruri cheezein teacher ya book se check karein। Doubt mein apni personal jaankari (phone number, address) na likhein<br>
+• Optional (aapki permission se): <b>Sentry</b>, <b>Firebase Analytics</b>, <b>Microsoft Clarity</b> — upar section 3 dekhein
       </p>
 
-      <p style="margin-bottom:6px;"><b>4. Ads</b></p>
+      <p style="margin-bottom:6px;"><b>5. Ads</b></p>
       <p style="margin-bottom:10px;">
-        Is app mein Google AdSense ka code jud hua hai, par abhi koi advertisement dikhaya nahi ja raha. Future mein ads dikhaye gaye to Google cookies ya device identifiers use kar sakta hai, aur hum is policy ko pehle update karenge।
+        Is app mein Google AdSense ka code jud hua hai, par abhi koi advertisement dikhaya nahi ja raha। Future mein ads dikhaye gaye to Google cookies ya device identifiers use kar sakta hai, hum bachchon ko targeted ads nahi dikhayenge, aur is policy ko pehle update karenge।
       </p>
 
-      <p style="margin-bottom:6px;"><b>5. Data delete karwana</b></p>
+      <p style="margin-bottom:6px;"><b>6. Aapke adhikaar (rights)</b></p>
       <p style="margin-bottom:10px;">
-        Agar aap apna data (profile, sync kiya hua data ya submit kiya hua doubt) delete karwana chahte hain, to neeche diye contact par sampark karein। Hum use hatane ki poori koshish karenge।
+        • Aap apna profile Profile page par khud dekh aur badal sakte hain<br>
+• Aap apna <b>account aur data kabhi bhi delete</b> kar sakte hain: Profile → "Account और data delete करें"। Isse aapka profile, username, photo, notification token, saare doubts aur login account hata diye jate hain<br>
+• App tak access na ho to <a href="/delete-account.html">Account Delete page</a> par bataya tareeka use karein<br>
+• Sahmati wapas lene ke liye Profile → Privacy settings
       </p>
 
-      <p style="margin-bottom:6px;"><b>6. Bachchon ki privacy</b></p>
+      <p style="margin-bottom:6px;"><b>7. Data kitne samay tak rehta hai</b></p>
       <p style="margin-bottom:10px;">
-        Ye app students ke liye bana hai। Hum jaan-boojh kar kisi bhi bachche se zaroorat se zyada personal jaankari collect nahi karte। 18 saal se kam umar ke students apne parent/guardian ki jaankari mein hi app aur Google Sign-In use karein।
+        Jab tak aapka account hai ya aap use delete na karein। Delete karne par upar likha data hata diya jata hai। Analytics/crash data (agar aapne allow kiya ho) Google, Microsoft aur Sentry ke apne niyamon ke hisaab se rehta hai, aur hum use aapke naam se nahi jodte।
       </p>
 
-      <p style="margin-bottom:6px;"><b>7. Policy mein badlav</b></p>
+      <p style="margin-bottom:6px;"><b>8. Bachchon ki privacy</b></p>
       <p style="margin-bottom:10px;">
-        Policy badalne par yahi page update kiya jayega aur upar "Aakhri update" ki date badal jayegi।
+        Ye app students ke liye bana hai। 18 saal se kam umar ke users apne parent/guardian ki jaankari mein hi app aur Google Sign-In use karein। Hum kam umar ke users ke liye usage analytics aur screen recordings band rakhte hain, aur kisi ko bhi targeted ads nahi dikhate। Hum jaan-boojh kar zaroorat se zyada personal jaankari collect nahi karte।
       </p>
 
-      <p style="margin-bottom:6px;"><b>8. Sampark करें</b></p>
+      <p style="margin-bottom:6px;"><b>9. Suraksha</b></p>
       <p style="margin-bottom:10px;">
-        Kisi bhi sawaal ya data delete request ke liye humse Instagram par sampark karein: <a href="https://instagram.com/bhupesh_jatav_02" target="_blank">@bhupesh_jatav_02</a>
+        Data Google Firebase par access rules ke saath rakha jata hai aur HTTPS se transfer hota hai। Firebase ke servers India ke bahar bhi ho sakte hain। Koi bhi system 100% surakshit nahi hota, isliye apna Google account surakshit rakhein।
+      </p>
+
+      <p style="margin-bottom:6px;"><b>10. Policy mein badlav</b></p>
+      <p style="margin-bottom:10px;">
+        Policy badalne par yahi page update kiya jayega aur upar "Aakhri update" ki date badal jayegi। Bade badlav par app aapse dobara sahmati maang sakta hai।
+      </p>
+
+      <p style="margin-bottom:6px;"><b>11. Sampark aur shikayat</b></p>
+      <p style="margin-bottom:10px;">
+        Privacy ya data se judi kisi bhi shikayat/sawaal ke liye Instagram par sampark karein: <a href="https://instagram.com/bhupesh_jatav_02" target="_blank" rel="noopener">@bhupesh_jatav_02</a>। Hum jaldi se jaldi (aam taur par 7 din ke andar) jawab dene ki koshish karte hain।
       </p>
     </div>
     <button onclick="closePrivacy()" style="width:100%;background:var(--g100);color:var(--g800);border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:16px;">✕ बंद करें</button>
@@ -1234,6 +1345,120 @@ function updateUsernameLockUI(){
 }
 
 let profileReturnPageId = 'pageHome';
+// ══════════════════════════════════════════
+// SAHMATI (CONSENT), LOGOUT, ACCOUNT DELETE
+// ══════════════════════════════════════════
+function csUpdate(){
+  const age = (document.querySelector('input[name="csAge"]:checked')||{}).value || '';
+  const agree = document.getElementById('csAgree').checked;
+  document.getElementById('csBtn').disabled = !(agree && age);
+  const an = document.getElementById('csAnalytics'), lab = document.getElementById('csAnLabel'), note = document.getElementById('csAnNote');
+  const allowed = !ES_ANALYTICS_ADULTS_ONLY || age==='adult';
+  an.disabled = !allowed; lab.classList.toggle('cs-off', !allowed);
+  if(!allowed) an.checked = false;
+  note.style.display = (ES_ANALYTICS_ADULTS_ONLY && age!=='adult') ? 'inline' : 'none';
+}
+function showConsentIfNeeded(){
+  if(!needConsent()) return;
+  const el = document.getElementById('consentSheet');
+  if(el){ el.style.display = 'flex'; csUpdate(); }
+}
+function acceptConsent(){
+  const age = (document.querySelector('input[name="csAge"]:checked')||{}).value || '';
+  if(!age || !document.getElementById('csAgree').checked) return;
+  const adultOk = !ES_ANALYTICS_ADULTS_ONLY || age==='adult';
+  const c = { v:ES_CONSENT_VERSION, agreed:true, age:age, crash:!!document.getElementById('csCrash').checked,
+              analytics: adultOk && !!document.getElementById('csAnalytics').checked, t:new Date().toISOString() };
+  try{ localStorage.setItem('es_consent', JSON.stringify(c)); }catch(e){}
+  document.getElementById('consentSheet').style.display = 'none';
+  loadThirdParty();
+}
+document.addEventListener('DOMContentLoaded', showConsentIfNeeded);
+
+// Profile → Privacy settings: baad me bhi sahmati badal/wapas le sakte hain
+function setPrivacyPref(kind, on){
+  const c = getConsent(); if(!c) return;
+  if(kind==='analytics' && on && ES_ANALYTICS_ADULTS_ONLY && c.age!=='adult'){
+    document.getElementById('pfAnalyticsToggle').checked = false;
+    showToast('ℹ️ Usage analytics सिर्फ़ 18+ के लिए है');
+    return;
+  }
+  c[kind] = !!on;
+  try{ localStorage.setItem('es_consent', JSON.stringify(c)); }catch(e){}
+  if(on){ loadThirdParty(); showToast('✅ चालू हो गया'); }
+  else { showToast('✅ बंद हो गया — app दोबारा खुलने पर लागू होगा'); setTimeout(function(){ location.reload(); }, 900); }
+}
+function updateAccountUI(){
+  const lo = document.getElementById('pfLogoutBtn');
+  if(lo) lo.textContent = auth.currentUser ? '🚪 Logout (Google account)' : '🔄 इस device से profile हटाएँ';
+  const c = getConsent() || {};
+  const cr = document.getElementById('pfCrashToggle'); if(cr) cr.checked = !!c.crash;
+  const an = document.getElementById('pfAnalyticsToggle'), sub = document.getElementById('pfAnSub');
+  if(an){ an.checked = hasAnalyticsConsent(); an.disabled = (ES_ANALYTICS_ADULTS_ONLY && c.age!=='adult'); }
+  if(sub) sub.textContent = (ES_ANALYTICS_ADULTS_ONLY && c.age!=='adult') ? '18 साल से कम के लिए बंद रहता है' : 'Analytics और screen recordings (Firebase Analytics, Clarity)';
+}
+// Is device se student ka data hatao (consent, theme aur device ID chhod kar)
+function clearLocalUserData(full){
+  const keep = full ? [] : ['es_theme','es_device','es_consent','es_app_version','es_board'];
+  Object.keys(localStorage).filter(function(k){ return k.indexOf('es_')===0 && keep.indexOf(k)<0; })
+    .forEach(function(k){ try{ localStorage.removeItem(k); }catch(e){} });
+}
+async function logoutUser(){
+  const signed = !!auth.currentUser;
+  const msg = signed
+    ? 'Logout करना चाहते हैं?\n\nइस device से आपकी profile हट जाएगी। आपका data cloud पर सुरक्षित रहेगा — दोबारा Google से Sign In करने पर सब वापस मिल जाएगा।'
+    : 'इस device से आपकी profile हटानी है?\n\nइस device पर save किया हुआ नाम, photo वगैरह हट जाएगा।';
+  if(!confirm(msg)) return;
+  try{
+    if(signed){
+      // Shared phone par logout ke baad purane account ke notifications na aayein
+      try{ await db.collection('students').doc(auth.currentUser.uid).set({fcmToken:null},{merge:true}); }catch(e){}
+      try{ await firebase.messaging().deleteToken(); }catch(e){}
+      await auth.signOut();
+    }
+  }catch(e){}
+  clearLocalUserData(false);
+  showToast('✅ Logout हो गया');
+  setTimeout(function(){ location.reload(); }, 600);
+}
+async function deleteMyAccount(){
+  if(!confirm('⚠️ आपका profile, username, photo, सारे doubts और login account हमेशा के लिए delete हो जाएँगे।\n\nयह undo नहीं हो सकता। आगे बढ़ें?')) return;
+  const typed = prompt('पक्का करने के लिए DELETE लिखें:');
+  if(!typed || typed.trim().toUpperCase()!=='DELETE'){ showToast('Delete रद्द किया गया'); return; }
+  const btn = document.getElementById('pfDeleteBtn');
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ Delete हो रहा है...'; }
+  try{
+    const user = auth.currentUser;
+    // Suraksha: Google account hai to pehle dobara sign-in karwao (cancel karne par kuch delete nahi hota)
+    if(user){ await user.reauthenticateWithPopup(new firebase.auth.GoogleAuthProvider()); }
+    const uid = user ? user.uid : null;
+    const prof = JSON.parse(localStorage.getItem('es_student')||'null') || {};
+    // 1) Doubts
+    if(uid){
+      const snap = await db.collection('doubts').where('uid','==',uid).get();
+      await Promise.all(snap.docs.map(function(d){ return d.ref.delete(); }));
+    }
+    // 2) Username
+    if(uid && prof.username){ try{ await db.collection('usernames').doc(encodeURIComponent(prof.username.toLowerCase())).delete(); }catch(e){} }
+    // 3) Notification token
+    try{ await firebase.messaging().deleteToken(); }catch(e){}
+    // 4) Student record(s)
+    await db.collection('students').doc(getStudentDocId()).delete();
+    if(uid){ try{ await db.collection('students').doc(DEVICE_ID).delete(); }catch(e){} }   // login se pehle ka device record
+    // 5) Login account
+    if(user){ await user.delete(); }
+    try{ localStorage.clear(); }catch(e){}
+    showToast('✅ Account और data delete हो गया');
+    setTimeout(function(){ location.replace('/'); }, 900);
+  }catch(e){
+    const code = (e && (e.code||e.message)) || 'error';
+    if(btn){ btn.disabled = false; btn.textContent = '🗑 Account और data delete करें'; }
+    showToast(/popup-closed|cancelled|popup-blocked/i.test(code)
+      ? '❌ Google sign-in पूरा नहीं हुआ — कुछ भी delete नहीं हुआ'
+      : '❌ Delete पूरा नहीं हो पाया ('+code+'). दोबारा कोशिश करें या Contact पर बताएँ');
+  }
+}
+
 function openProfilePage(){
   const profile = JSON.parse(localStorage.getItem('es_student')||'null');
   const curActive = document.querySelector('.page.active');
@@ -1249,6 +1474,7 @@ function openProfilePage(){
   document.getElementById('pfHeroName').textContent = profile ? profile.name : 'Student';
   document.getElementById('pfHeroSub').textContent = profile && profile.username ? '@'+profile.username : 'फ़ोटो पर टैप करके बदलें';
   updateUsernameLockUI();
+  if(typeof updateAccountUI==='function') updateAccountUI();
 
   const av = document.getElementById('pfAvatarCircle');
   if(profile && profile.photo){
