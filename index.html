@@ -907,9 +907,9 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
           <button onclick="googleSignIn()" style="display:block;margin-top:8px;width:100%;background:var(--btn);color:#fff;border:none;border-radius:var(--rsm);padding:9px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit;">Google से Sign In करें</button>
         </div>
         <label>Subject</label><select id="dSubj"></select>
-        <label>Topic / Chapter</label><input type="text" id="dTopic" placeholder="Chapter 5 – Light" data-clarity-mask="True"/>
-        <label>Doubt लिखें</label><textarea id="dText" placeholder="अपना doubt विस्तार से लिखें..." data-clarity-mask="True"></textarea>
-        <label>आपका नाम</label><input type="text" id="dName" placeholder="आपका नाम" data-clarity-mask="True"/>
+        <label>Topic / Chapter</label><input type="text" id="dTopic" maxlength="200" placeholder="Chapter 5 – Light" data-clarity-mask="True"/>
+        <label>Doubt लिखें</label><textarea id="dText" maxlength="2000" placeholder="अपना doubt विस्तार से लिखें..." data-clarity-mask="True"></textarea>
+        <label>आपका नाम</label><input type="text" id="dName" maxlength="100" placeholder="आपका नाम" data-clarity-mask="True"/>
         <button class="sub-btn" onclick="submitDoubt()">📤 Submit Doubt</button>
         <button class="sub-btn" id="aiBtn" onclick="askAI()" style="margin-top:8px;background:linear-gradient(90deg,#0EA5E9,#2563EB);">🤖 AI से तुरंत जवाब</button>
         <div id="aiAnswer" data-clarity-mask="True" style="display:none;margin-top:10px;background:#F1F5F9;border:1.5px solid #BFDBFE;border-radius:var(--rsm);padding:12px 14px;font-size:13px;line-height:1.6;"></div>
@@ -1239,6 +1239,243 @@ Aap inhe kabhi bhi Profile → Privacy settings mein band kar sakte hain।
 <div id="toast"></div>
 
 <!-- ALL JS at the bottom -->
+<script>
+/* ══════════════════════════════════════════════════════════════
+   EduSpark Ops toolkit — Batch 1 (reliability + observability)
+   Timeouts • Retries • Exponential backoff • Idempotency • Circuit breaker
+   Client-side rate limiting • Feature flags • Logging • Metrics (latency,
+   p95/p99, throughput) • SLI/SLO/error budget • Health (liveness/readiness)
+   Koi personal data (doubt ka text, naam, email) log/metrics me nahi jaata.
+   ══════════════════════════════════════════════════════════════ */
+(function (g) {
+  'use strict';
+  var ES = g.ES = g.ES || {};
+
+  function online() { return typeof navigator === 'undefined' || navigator.onLine !== false; }
+  function now() { return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); }
+  function coded(code, msg) { var e = new Error(msg || code); e.code = code; return e; }
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function hash(s) {
+    s = String(s); var h = 5381;
+    for (var i = 0; i < s.length; i++) { h = ((h << 5) + h + s.charCodeAt(i)) | 0; }
+    return (h >>> 0).toString(36) + ':' + s.length;
+  }
+
+  /* ── 1) Logging (structured, in-memory ring buffer) ───────────── */
+  var LOG_MAX = 100, logBuf = [];
+  function log(level, op, data) {
+    var e = { t: Date.now(), level: level, op: op };
+    if (data) { for (var k in data) { if (Object.prototype.hasOwnProperty.call(data, k)) e[k] = data[k]; } }
+    logBuf.push(e); if (logBuf.length > LOG_MAX) logBuf.shift();
+    // Sentry breadcrumb: sirf tab jab Sentry (crash-consent ke baad) load hua ho
+    try {
+      if (g.Sentry && typeof g.Sentry.addBreadcrumb === 'function') {
+        g.Sentry.addBreadcrumb({ category: 'es', level: level === 'error' ? 'error' : (level === 'warn' ? 'warning' : 'info'), message: op, data: data || undefined });
+      }
+    } catch (_) {}
+    if (level === 'warn' || level === 'error') {
+      try { (level === 'error' ? console.error : console.warn)('[ES]', op, data || ''); } catch (_) {}
+    }
+  }
+
+  /* ── 2) Metrics: latency, throughput, p95/p99, SLI/SLO, error budget ── */
+  var MET_MAX = 200, metrics = {};
+  var SLO = { ai: 0.99, doubt_write: 0.995 };      // target success ratio (per session)
+  function slot(op) { return metrics[op] || (metrics[op] = { ok: 0, fail: 0, lat: [], t0: Date.now() }); }
+  function record(op, ok, ms) {
+    var x = slot(op);
+    if (ok) x.ok++; else x.fail++;
+    x.lat.push(Math.round(ms)); if (x.lat.length > MET_MAX) x.lat.shift();
+  }
+  function pct(arr, p) {              // nearest-rank percentile
+    if (!arr.length) return null;
+    var s = arr.slice().sort(function (a, b) { return a - b; });
+    var i = Math.ceil(p / 100 * s.length) - 1;
+    return s[Math.min(s.length - 1, Math.max(0, i))];
+  }
+  function report() {
+    var out = {};
+    Object.keys(metrics).forEach(function (op) {
+      var x = metrics[op], n = x.ok + x.fail;
+      var mins = Math.max(1 / 60, (Date.now() - x.t0) / 60000);
+      var r = {
+        total: n, ok: x.ok, fail: x.fail,
+        sli: n ? x.ok / n : null,
+        p50: pct(x.lat, 50), p95: pct(x.lat, 95), p99: pct(x.lat, 99),
+        throughputPerMin: +(n / mins).toFixed(2)
+      };
+      var target = SLO[op];
+      if (target != null && n) {
+        var allowed = n * (1 - target);                       // itne failures SLO ke andar allowed
+        r.slo = target;
+        r.sloMet = r.sli >= target;
+        r.errorBudgetLeft = allowed > 0 ? Math.max(0, Math.min(1, 1 - x.fail / allowed)) : (x.fail ? 0 : 1);
+      }
+      out[op] = r;
+    });
+    return out;
+  }
+  // fn() ek Promise return kare — uska latency + success/fail record karta hai
+  function timed(op, fn) {
+    var t0 = now();
+    return Promise.resolve().then(fn).then(function (v) {
+      record(op, true, now() - t0); log('info', op, { ok: true, ms: Math.round(now() - t0) }); return v;
+    }, function (e) {
+      record(op, false, now() - t0); log('error', op, { ok: false, ms: Math.round(now() - t0), code: (e && e.code) || '' }); throw e;
+    });
+  }
+
+  /* ── 3) Timeout (poori request + body padhne tak) ─────────────── */
+  async function fetchJSON(url, opts, ms) {
+    var ctl = new AbortController();
+    var timer = setTimeout(function () { ctl.abort(); }, ms);
+    try {
+      var res = await fetch(url, Object.assign({}, opts, { signal: ctl.signal }));
+      var data = await res.json().catch(function (e) { if (ctl.signal.aborted) throw e; return {}; });
+      return { res: res, data: data };
+    } catch (e) {
+      if (ctl.signal.aborted || (e && e.name === 'AbortError')) throw coded('timeout', 'timeout');
+      if (e instanceof TypeError) throw coded('network', e.message);
+      throw e;
+    } finally { clearTimeout(timer); }
+  }
+
+  /* ── 4) Retries + exponential backoff (equal jitter) ──────────── */
+  async function retry(fn, o) {
+    o = o || {};
+    var max = o.retries == null ? 2 : o.retries, base = o.baseMs || 600, cap = o.capMs || 8000;
+    for (var attempt = 0; ; attempt++) {
+      try { return await fn(attempt); }
+      catch (e) {
+        if (attempt >= max || (o.shouldRetry && !o.shouldRetry(e))) throw e;
+        var exp = Math.min(cap, base * Math.pow(2, attempt));
+        var delay = exp / 2 + Math.random() * exp / 2;
+        log('warn', 'retry', { op: o.op || '', attempt: attempt + 1, delayMs: Math.round(delay), code: (e && e.code) || '' });
+        await sleep(delay);
+      }
+    }
+  }
+
+  /* ── 5) Circuit breaker (closed → open → half-open) ───────────── */
+  function Breaker(name, o) {
+    o = o || {};
+    this.name = name; this.threshold = o.threshold || 3; this.cooldownMs = o.cooldownMs || 30000;
+    this.state = 'closed'; this.fails = 0; this.openedAt = 0; this.probing = false;
+  }
+  Breaker.prototype.canPass = function () {
+    if (this.state === 'open') {
+      if (Date.now() - this.openedAt >= this.cooldownMs) { this.state = 'half'; this.probing = false; }
+      else return false;
+    }
+    if (this.state === 'half') { if (this.probing) return false; this.probing = true; return true; }
+    return true;
+  };
+  Breaker.prototype.success = function () { this.fails = 0; this.state = 'closed'; this.probing = false; };
+  Breaker.prototype.failure = function () {
+    this.probing = false;
+    if (this.state === 'half') { this.trip(); return; }
+    this.fails++;
+    if (this.fails >= this.threshold) this.trip();
+  };
+  Breaker.prototype.release = function () { if (this.state === 'half') this.probing = false; };
+  Breaker.prototype.trip = function () { this.state = 'open'; this.openedAt = Date.now(); log('warn', 'breaker_open', { name: this.name }); };
+  Breaker.prototype.retryInSec = function () { return Math.max(1, Math.ceil((this.cooldownMs - (Date.now() - this.openedAt)) / 1000)); };
+
+  /* ── 6) Client-side rate limit (token bucket) ─────────────────── */
+  function Bucket(capacity, refillPerSec) { this.cap = capacity; this.tokens = capacity; this.rate = refillPerSec; this.t = Date.now(); }
+  Bucket.prototype.refill = function () {
+    var n = Date.now();
+    this.tokens = Math.min(this.cap, this.tokens + (n - this.t) / 1000 * this.rate); this.t = n;
+  };
+  Bucket.prototype.take = function () { this.refill(); if (this.tokens >= 1) { this.tokens -= 1; return true; } return false; };
+  Bucket.prototype.waitSec = function () { this.refill(); return Math.max(1, Math.ceil((1 - this.tokens) / this.rate)); };
+
+  /* ── 7) Idempotency (double-tap / dobara submit se duplicate nahi) ── */
+  var inflight = {}, done = {};
+  function once(key, fn, ttlMs) {
+    var ttl = ttlMs || 30000, n = Date.now();
+    Object.keys(done).forEach(function (k) { if (n - done[k] >= ttl) delete done[k]; });
+    if (inflight[key] || (done[key] && n - done[key] < ttl)) return Promise.reject(coded('duplicate', 'duplicate'));
+    var p = Promise.resolve().then(fn).then(function (v) { done[key] = Date.now(); delete inflight[key]; return v; },
+                                            function (e) { delete inflight[key]; throw e; });
+    inflight[key] = p;
+    return p;
+  }
+
+  /* ── 8) Feature flags (Firestore _config/flags; sirf explicit false = OFF) ── */
+  var flagDefaults = { ai: true, doubts: true };
+  var flags = Object.assign({}, flagDefaults);
+  function flag(k) { return flags[k] !== false; }
+  function startFlags(db) {
+    try {
+      db.collection('_config').doc('flags').onSnapshot(function (d) {
+        flags = Object.assign({}, flagDefaults, d.exists ? d.data() : {});
+        log('info', 'flags', { ai: flag('ai'), doubts: flag('doubts') });
+      }, function () {});
+    } catch (e) {}
+  }
+
+  /* ── 9) AI request: flag → breaker → rate limit → timeout → retry ── */
+  var aiBreaker = new Breaker('ai', { threshold: 3, cooldownMs: 30000 });
+  var aiBucket = new Bucket(5, 1 / 6);          // burst 5, phir har 6 sec me 1 (server par alag se 5/din ki limit hai)
+  var doubtBucket = new Bucket(3, 1 / 10);
+  function transient(e) {
+    return online() && e && (e.code === 'network' || e.code === 'http_502' || e.code === 'http_503' || e.code === 'http_504');
+  }
+  async function aiRequest(url, body, o) {
+    o = o || {};
+    if (!flag('ai')) throw coded('ai_disabled', 'AI अभी बंद है — थोड़ी देर बाद कोशिश करें');
+    if (!online()) throw coded('offline', 'Internet बंद है — चालू करके दोबारा कोशिश करें');
+    if (!aiBreaker.canPass()) throw coded('circuit_open', 'AI अभी जवाब नहीं दे रहा — ' + aiBreaker.retryInSec() + ' सेकंड बाद कोशिश करें');
+    if (!aiBucket.take()) { aiBreaker.release(); throw coded('rate_limited', 'थोड़ा रुकें — ' + aiBucket.waitSec() + ' सेकंड बाद दोबारा कोशिश करें'); }
+    var t0 = now();
+    try {
+      var out = await retry(async function () {
+        var r = await fetchJSON(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }, o.timeoutMs || 30000);
+        if (r.res.status === 502 || r.res.status === 503 || r.res.status === 504) throw coded('http_' + r.res.status, 'AI server busy है');
+        return r;
+      }, { op: 'ai', retries: o.retries == null ? 2 : o.retries, baseMs: o.baseMs || 600, capMs: 5000, shouldRetry: transient });
+      var ms = now() - t0;
+      if (out.res.status >= 500) {                                   // server kharab — breaker ko batao
+        aiBreaker.failure(); record('ai', false, ms); log('error', 'ai', { status: out.res.status, ms: Math.round(ms) });
+        throw coded('http_' + out.res.status, (out.data && out.data.error) || 'AI जवाब नहीं दे पाया');
+      }
+      aiBreaker.success(); record('ai', true, ms);                   // 2xx/4xx: server zinda hai (4xx = limit/auth jaisi baat)
+      log('info', 'ai', { status: out.res.status, ms: Math.round(ms) });
+      if (!out.res.ok) { var e4 = coded('http_' + out.res.status, (out.data && out.data.error) || 'AI जवाब नहीं दे पाया'); e4.status = out.res.status; throw e4; }
+      return out.data;
+    } catch (e) {
+      if (e && e.code && /^(timeout|network|http_50[234])$/.test(e.code)) {   // retries ke baad bhi fail
+        aiBreaker.failure(); record('ai', false, now() - t0); log('error', 'ai', { code: e.code, ms: Math.round(now() - t0) });
+      } else if (aiBreaker.state === 'half' && aiBreaker.probing) { aiBreaker.release(); }
+      throw e;
+    }
+  }
+  function errMsg(e, withOrigin) {
+    var c = e && e.code;
+    var net = c === 'network' || (!c && e && (e instanceof TypeError || /failed to fetch|networkerror|load failed/i.test(e.message || '')));
+    if (net) return 'AI server तक पहुँच नहीं पाया। Internet देखें और दोबारा कोशिश करें।' + (withOrigin && typeof location !== 'undefined' ? ' (app: ' + location.origin + ')' : '');
+    if (c === 'timeout') return 'AI को जवाब देने में ज़्यादा समय लग रहा है। थोड़ी देर बाद कोशिश करें।';
+    return (e && e.message) || 'Error';
+  }
+
+  /* ── 10) Health: liveness + readiness ─────────────────────────── */
+  function health() {
+    var b = aiBreaker.state;
+    return { live: true, ready: online() && b !== 'open', online: online(), aiBreaker: b, flags: Object.assign({}, flags) };
+  }
+  function debug() { return { health: health(), metrics: report(), logs: logBuf.slice(-30) }; }
+
+  /* ── export ───────────────────────────────────────────────────── */
+  ES.coded = coded; ES.hash = hash; ES.log = log; ES.timed = timed; ES.report = report; ES.pct = pct;
+  ES.fetchJSON = fetchJSON; ES.retry = retry; ES.once = once; ES.flag = flag; ES.startFlags = startFlags;
+  ES.aiRequest = aiRequest; ES.errMsg = errMsg; ES.health = health; ES.debug = debug;
+  ES.takeDoubt = function () { return doubtBucket.take(); };
+  ES.doubtWait = function () { return doubtBucket.waitSec(); };
+  ES._internals = { Breaker: Breaker, Bucket: Bucket, aiBreaker: aiBreaker, aiBucket: aiBucket, record: record, SLO: SLO };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
 <script>
 
 // ══════════════════════════════════════════
@@ -2381,18 +2618,29 @@ function submitDoubt(){
     if(typeof googleSignIn==='function') googleSignIn();
     return;
   }
-  db.collection('doubts').add({
+  if(!ES.flag('doubts')){ showToast('⚠️ Doubts अभी बंद हैं — थोड़ी देर बाद कोशिश करें'); return; }
+  const d = {
     board:curBoard,subject:document.getElementById('dSubj').value,
     topic:document.getElementById('dTopic').value.trim(),text,
     name:document.getElementById('dName').value.trim()||auth.currentUser.displayName||'Anonymous',
     date:new Date().toISOString(),status:'pending',answer:'',
     uid:auth.currentUser.uid, deviceId:DEVICE_ID,
+  };
+  // Idempotency: double-tap / dobara submit se same doubt do baar save nahi hoga
+  const idemKey = ES.hash([d.uid,d.board,d.subject,d.topic,d.text,d.name].join('|'));
+  ES.once(idemKey, function(){
+    if(!ES.takeDoubt()) throw ES.coded('rate_limited','थोड़ा रुकें — '+ES.doubtWait()+' सेकंड बाद दोबारा submit करें');
+    return ES.timed('doubt_write', function(){ return db.collection('doubts').add(d); });
   }).then(()=>{
     document.getElementById('dTopic').value='';
     document.getElementById('dText').value='';
     document.getElementById('dName').value='';
     showToast('✅ Doubt submit हो गया!');
-  }).catch(()=>showToast('❌ Error! दोबारा कोशिश करें।'));
+  }).catch(function(e){
+    if(e && e.code==='duplicate'){ showToast('ℹ️ यह doubt पहले ही भेजा जा चुका है'); return; }
+    if(e && e.code==='rate_limited'){ showToast('⏳ '+e.message); return; }
+    showToast('❌ Error! दोबारा कोशिश करें।');
+  });
 }
 // ── AI se turant jawab (Cloudflare Worker ke through, API key yahan nahi hai) ──
 const AI_WORKER_URL = 'https://bold-dust-6f37.sanjays87726.workers.dev'; // Cloudflare Worker (AI doubt solver)
@@ -2414,23 +2662,15 @@ async function askAI(){
   try{
     const sel = document.getElementById('dSubj');
     const idToken = await auth.currentUser.getIdToken();
-    const res = await fetch(AI_WORKER_URL, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
+    const data = await ES.aiRequest(AI_WORKER_URL, {
         idToken, question:text, board:curBoard,
         subject: sel && sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '',
         topic: document.getElementById('dTopic').value.trim()
-      })
     });
-    const data = await res.json().catch(()=>({}));
-    if(!res.ok) throw new Error(data.error || 'AI जवाब नहीं दे पाया');
     box.innerHTML = '<b>🤖 AI जवाब</b> <span style="font-size:11px;color:#64748B;">(गलत हो सकता है — पक्का जवाब चाहिए तो Doubt submit करें)</span>'
       + '<div style="margin-top:6px;white-space:pre-wrap;">'+escHTML(cleanAI(data.answer))+'</div>';
   }catch(e){
-    const netFail = (e instanceof TypeError) || /failed to fetch|networkerror|load failed/i.test(e.message||'');
-    box.textContent = netFail
-      ? '❌ AI server तक पहुँच नहीं पाया। Internet देखें और दोबारा कोशिश करें. (app: ' + location.origin + ')'
-      : '❌ ' + (e.message || 'Error');
+    box.textContent = '❌ ' + ES.errMsg(e, true);
   }finally{
     _aiBusy = false; btn.disabled = false; btn.textContent = '🤖 AI से तुरंत जवाब';
   }
@@ -2776,17 +3016,11 @@ async function explainQ(gi, pre){
   box.style.display = 'block'; box.textContent = '';
   try{
     const idToken = await auth.currentUser.getIdToken();
-    const res = await fetch(AI_WORKER_URL, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ idToken, question:text.slice(0,1000), board:curBoard, subject:(curQuiz&&(curQuiz.subject||curQuiz.title))||'', topic:'' })
-    });
-    const data = await res.json().catch(()=>({}));
-    if(!res.ok) throw new Error(data.error || 'AI जवाब नहीं दे पाया');
+    const data = await ES.aiRequest(AI_WORKER_URL, { idToken, question:text.slice(0,1000), board:curBoard, subject:(curQuiz&&(curQuiz.subject||curQuiz.title))||'', topic:'' });
     _aiExCache[key] = '🤖 ' + cleanAI(data.answer);
     box.textContent = _aiExCache[key];
   }catch(e){
-    const netFail = (e instanceof TypeError) || /failed to fetch|networkerror|load failed/i.test(e.message||'');
-    box.textContent = '❌ ' + (netFail ? 'AI server तक पहुँच नहीं पाया। Internet देखें और दोबारा कोशिश करें।' : (e.message||'Error'));
+    box.textContent = '❌ ' + ES.errMsg(e);
   }finally{
     _aiBusy = false; btn.disabled = false; btn.textContent = '🤖 AI से समझें';
   }
@@ -3731,6 +3965,7 @@ if (typeof listenDoubts === "function") listenDoubts();
 if (typeof listenPYQ === "function") listenPYQ();
 if (typeof listenLiveClass === "function") listenLiveClass();
 if (typeof listenCommunity === "function") listenCommunity();
+if (window.ES && ES.startFlags) ES.startFlags(db);
     if (typeof renderPYQHomeCards === "function") renderPYQHomeCards();
     // Refresh se pehle jis page par the, wahin wapas
     if (typeof restoreNavState === "function") restoreNavState();
