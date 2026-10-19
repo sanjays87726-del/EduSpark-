@@ -1,0 +1,34 @@
+name: Deploy Firestore Rules
+
+# Haath se chalta hai. Secret: FIREBASE_SERVICE_ACCOUNT (role: Firebase Rules Admin). Sirf rules deploy hote hain (indexes nahi).
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type DEPLOY-RULES'
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  rules:
+    if: inputs.confirm == 'DEPLOY-RULES'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node tools/check-repo.js
+      - name: Deploy rules
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+          chmod 600 "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          npx --yes firebase-tools@13 deploy --only firestore:rules --project eduspark-41703 --non-interactive
+          rm -f "$RUNNER_TEMP/sa.json"

@@ -1241,7 +1241,7 @@ Aap inhe kabhi bhi Profile → Privacy settings mein band kar sakte hain।
 <!-- ALL JS at the bottom -->
 <script>
 /* ══════════════════════════════════════════════════════════════
-   EduSpark Ops toolkit — Batch 1 (reliability + observability)
+   EduSpark Ops toolkit — reliability, security, data, release helpers
    Timeouts • Retries • Exponential backoff • Idempotency • Circuit breaker
    Client-side rate limiting • Feature flags • Logging • Metrics (latency,
    p95/p99, throughput) • SLI/SLO/error budget • Health (liveness/readiness)
@@ -1277,6 +1277,23 @@ Aap inhe kabhi bhi Profile → Privacy settings mein band kar sakte hain।
       try { (level === 'error' ? console.error : console.warn)('[ES]', op, data || ''); } catch (_) {}
     }
   }
+
+  /* ── 1b) Pub/Sub: chhota in-app event bus (module aapas me jude bina baat kar sakein) ── */
+  var handlers = {};
+  var bus = {
+    on: function (name, fn) { (handlers[name] = handlers[name] || []).push(fn); return function () { bus.off(name, fn); }; },   // return = unsubscribe
+    once: function (name, fn) { var off = bus.on(name, function (p) { off(); fn(p); }); return off; },
+    off: function (name, fn) {
+      var a = handlers[name]; if (!a) return;
+      var i = a.indexOf(fn); if (i >= 0) a.splice(i, 1);
+      if (!a.length) delete handlers[name];
+    },
+    emit: function (name, payload) {                         // ek subscriber crash kare to baaki chalte rahein
+      var a = (handlers[name] || []).slice();
+      a.forEach(function (f) { try { f(payload); } catch (e) { log('error', 'bus_handler', { name: name }); } });
+      return a.length;
+    }
+  };
 
   /* ── 2) Metrics: latency, throughput, p95/p99, SLI/SLO, error budget ── */
   var MET_MAX = 200, metrics = {};
@@ -1378,7 +1395,7 @@ Aap inhe kabhi bhi Profile → Privacy settings mein band kar sakte hain।
     if (this.fails >= this.threshold) this.trip();
   };
   Breaker.prototype.release = function () { if (this.state === 'half') this.probing = false; };
-  Breaker.prototype.trip = function () { this.state = 'open'; this.openedAt = Date.now(); log('warn', 'breaker_open', { name: this.name }); };
+  Breaker.prototype.trip = function () { this.state = 'open'; this.openedAt = Date.now(); log('warn', 'breaker_open', { name: this.name }); bus.emit('breaker:open', { name: this.name }); };
   Breaker.prototype.retryInSec = function () { return Math.max(1, Math.ceil((this.cooldownMs - (Date.now() - this.openedAt)) / 1000)); };
 
   /* ── 6) Client-side rate limit (token bucket) ─────────────────── */
@@ -1411,17 +1428,49 @@ Aap inhe kabhi bhi Profile → Privacy settings mein band kar sakte hain।
       db.collection('_config').doc('flags').onSnapshot(function (d) {
         flags = Object.assign({}, flagDefaults, d.exists ? d.data() : {});
         log('info', 'flags', { ai: flag('ai'), doubts: flag('doubts') });
+        bus.emit('flags', Object.assign({}, flags));
       }, function () {});
     } catch (e) {}
+  }
+
+  /* ── 8b) Canary rollout: _config/flags me  newThing: 10  => 10% students ko (stable bucket) ── */
+  // ES.flag(k)    = kill-switch (default ON, sirf explicit false = OFF)
+  // ES.rollout(k) = naya feature (default OFF): true = sabko, number 0-100 = itne % ko, baaki = kisi ko nahi
+  function bucket(id, name) { return parseInt(hash(String(id) + '|' + name).split(':')[0], 36) % 100; }   // 0..99, har student ke liye sthir
+  function deviceKey() { try { return (typeof localStorage !== 'undefined' && localStorage.getItem('es_device')) || ''; } catch (e) { return ''; } }
+  function rollout(name, id) {
+    var v = flags[name];
+    if (v === true) return true;
+    if (typeof v === 'number') return bucket(id == null ? deviceKey() : id, name) < v;
+    return false;
+  }
+
+  /* ── 8c) Chaos engineering: console se fault inject (sirf is session me, sessionStorage) ── */
+  var CHAOS_MODES = ['ai-fail', 'ai-502', 'ai-429', 'ai-slow'];
+  function chaosMode() { try { return (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('es_chaos')) || ''; } catch (e) { return ''; } }
+  var chaos = {
+    modes: CHAOS_MODES.slice(), get: chaosMode,
+    set: function (m) {
+      if (m && CHAOS_MODES.indexOf(m) < 0) throw new Error('modes: ' + CHAOS_MODES.join(', '));
+      try { if (m) sessionStorage.setItem('es_chaos', m); else sessionStorage.removeItem('es_chaos'); } catch (e) {}
+      log('warn', 'chaos', { mode: m || 'off' });
+    }
+  };
+  function chaosFetch(mode, ms) {
+    log('warn', 'chaos_inject', { mode: mode });
+    if (mode === 'ai-fail') return Promise.reject(coded('network', 'chaos: Failed to fetch'));
+    if (mode === 'ai-502') return Promise.resolve({ res: { status: 502, ok: false }, data: { error: 'chaos: AI अभी busy है', rid: 'chaos' } });
+    if (mode === 'ai-429') return Promise.resolve({ res: { status: 429, ok: false }, data: { error: 'chaos: daily limit' } });
+    return new Promise(function (_, rej) { setTimeout(function () { rej(coded('timeout', 'timeout')); }, ms); });    // ai-slow
   }
 
   /* ── 9) AI request: flag → breaker → rate limit → timeout → retry ── */
   var aiBreaker = new Breaker('ai', { threshold: 3, cooldownMs: 30000 });
   var aiBucket = new Bucket(5, 1 / 6);          // burst 5, phir har 6 sec me 1 (server par alag se 5/din ki limit hai)
   var doubtBucket = new Bucket(3, 1 / 10);
-  function transient(e) {
-    return online() && e && (e.code === 'network' || e.code === 'http_502' || e.code === 'http_503' || e.code === 'http_504');
-  }
+  // Sirf network error retry hota hai (request server tak pahunchi hi nahi). Worker ke 502 (Gemini fail)
+  // aur 503 (KV daily quota) retry nahi hote: har attempt Worker ke KV me 2 writes lagata hai (free: 1000/din).
+  function transient(e) { return !!(online() && e && e.code === 'network'); }
   async function aiRequest(url, body, o) {
     o = o || {};
     if (!flag('ai')) throw coded('ai_disabled', 'AI अभी बंद है — थोड़ी देर बाद कोशिश करें');
@@ -1430,22 +1479,23 @@ Aap inhe kabhi bhi Profile → Privacy settings mein band kar sakte hain।
     if (!aiBucket.take()) { aiBreaker.release(); throw coded('rate_limited', 'थोड़ा रुकें — ' + aiBucket.waitSec() + ' सेकंड बाद दोबारा कोशिश करें'); }
     var t0 = now();
     try {
-      var out = await retry(async function () {
-        var r = await fetchJSON(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }, o.timeoutMs || 30000);
-        if (r.res.status === 502 || r.res.status === 503 || r.res.status === 504) throw coded('http_' + r.res.status, 'AI server busy है');
-        return r;
+      var out = await retry(function () {
+        var cm = chaosMode();
+        if (cm) return chaosFetch(cm, o.timeoutMs || 30000);
+        return fetchJSON(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }, o.timeoutMs || 30000);
       }, { op: 'ai', retries: o.retries == null ? 2 : o.retries, baseMs: o.baseMs || 600, capMs: 5000, shouldRetry: transient });
       var ms = now() - t0;
-      if (out.res.status >= 500) {                                   // server kharab — breaker ko batao
-        aiBreaker.failure(); record('ai', false, ms); log('error', 'ai', { status: out.res.status, ms: Math.round(ms) });
+      // 503 = Worker ka "aaj ka AI quota khatam" (outage nahi) — 4xx ki tarah: server zinda hai, message student ko dikhao
+      if (out.res.status >= 500 && out.res.status !== 503) {         // server kharab — breaker ko batao
+        aiBreaker.failure(); record('ai', false, ms); log('error', 'ai', { status: out.res.status, ms: Math.round(ms), rid: (out.data && out.data.rid) || '' });   // rid = Worker log wala request ID
         throw coded('http_' + out.res.status, (out.data && out.data.error) || 'AI जवाब नहीं दे पाया');
       }
-      aiBreaker.success(); record('ai', true, ms);                   // 2xx/4xx: server zinda hai (4xx = limit/auth jaisi baat)
+      aiBreaker.success(); record('ai', true, ms);                   // 2xx/4xx/503(quota): server zinda hai
       log('info', 'ai', { status: out.res.status, ms: Math.round(ms) });
       if (!out.res.ok) { var e4 = coded('http_' + out.res.status, (out.data && out.data.error) || 'AI जवाब नहीं दे पाया'); e4.status = out.res.status; throw e4; }
       return out.data;
     } catch (e) {
-      if (e && e.code && /^(timeout|network|http_50[234])$/.test(e.code)) {   // retries ke baad bhi fail
+      if (e && (e.code === 'timeout' || e.code === 'network')) {      // retries ke baad bhi fail
         aiBreaker.failure(); record('ai', false, now() - t0); log('error', 'ai', { code: e.code, ms: Math.round(now() - t0) });
       } else if (aiBreaker.state === 'half' && aiBreaker.probing) { aiBreaker.release(); }
       throw e;
@@ -1459,14 +1509,102 @@ Aap inhe kabhi bhi Profile → Privacy settings mein band kar sakte hain।
     return (e && e.message) || 'Error';
   }
 
+  /* ── 9b) Security helpers: XSS-safe text, attribute, URL ───────── */
+  var ENT = /&(?!(?:#\d{1,7}|#x[0-9a-fA-F]{1,6}|[a-zA-Z][a-zA-Z0-9]{1,31});)/g;     // valid entity (&times; &deg; ...) ko mat chhedo
+  var TAGS = /&lt;(\/?)(b|i|u|em|strong|sub|sup|code|small|br)\s*(\/?)&gt;/gi;       // sirf ye bina-attribute wale tags wapas chalenge
+  // Text context ke liye: baaki sab HTML escape; <sub>/<sup>/<b>/<i>/<u>/<em>/<strong>/<code>/<small>/<br> allowed (balanced)
+  function sanitize(s) {
+    var e = String(s == null ? '' : s).replace(ENT, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    var stack = [];
+    var out = e.replace(TAGS, function (m, close, tag, self) {
+      tag = tag.toLowerCase();
+      if (tag === 'br') return close ? '' : '<br>';
+      if (!close) { if (self) return ''; stack.push(tag); return '<' + tag + '>'; }
+      var idx = stack.lastIndexOf(tag);
+      if (idx < 0) return '';                                   // bina khule band tag — hata do
+      var res = '';
+      while (stack.length - 1 > idx) res += '</' + stack.pop() + '>';
+      stack.pop();
+      return res + '</' + tag + '>';
+    });
+    while (stack.length) out += '</' + stack.pop() + '>';       // khule reh gaye tags band karo
+    return out;
+  }
+  // Attribute value (double-quoted) ke liye
+  function escAttr(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  // Sirf http(s) link — javascript:, data: waghera '' ban jaate hain
+  function safeUrl(u) {
+    try {
+      var base = (typeof location !== 'undefined' && location.origin && location.origin !== 'null') ? location.origin : 'https://eduspark.de5.net';
+      var raw = String(u == null ? '' : u).trim();
+      if (!raw) return '';                                        // khali link ko base URL na bana do
+      var x = new URL(raw, base);
+      return (x.protocol === 'https:' || x.protocol === 'http:') ? x.href : '';
+    } catch (e) { return ''; }
+  }
+
+  /* ── 9c) Data helpers: batching, bounded cache, saga ─────────── */
+  // Bade list ko n ke tukdon me todo (Firestore batch me max 500 writes) — N+1 ki jagah ceil(N/n) round trips
+  function chunk(arr, n) { var out = []; for (var i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n)); return out; }
+  // Object-as-cache ko max keys tak rakho (sabse purani keys hatao) — memory dheere-dheere na badhe
+  function capObject(obj, max) { var ks = Object.keys(obj); while (ks.length > max) delete obj[ks.shift()]; return obj; }
+  // Orchestrated saga (forward recovery): steps order me chalte hain; fail hone par step ka naam milta hai aur
+  // dobara chalane par pehle ho chuke steps skip hote hain (state.done). Steps idempotent hone chahiye.
+  async function saga(steps, state, onProgress) {
+    state = state || { done: [] };
+    for (var i = 0; i < steps.length; i++) {
+      var st = steps[i];
+      if (state.done.indexOf(st.name) !== -1) continue;
+      try { await st.run(); }
+      catch (e) { log('error', 'saga_step', { step: st.name, code: (e && e.code) || '' }); return { ok: false, step: st.name, error: e, state: state }; }
+      state.done.push(st.name);
+      if (onProgress) { try { onProgress(state); } catch (_) {} }
+    }
+    return { ok: true, state: state };
+  }
+
+  /* ── 9d) Cost visibility: Firestore reads (approx) — free limit 50,000/din ── */
+  var readStats = {};
+  function countReads(name, snap) {
+    try {
+      var st = readStats[name] || (readStats[name] = { snapshots: 0, docs: 0, cachedSnapshots: 0 });
+      st.snapshots++;
+      if (snap && snap.metadata && snap.metadata.fromCache) { st.cachedSnapshots++; return; }     // cache se = bill nahi
+      st.docs += snap && typeof snap.docChanges === 'function' ? snap.docChanges().length : ((snap && snap.size) || 0);
+    } catch (e) {}
+  }
+
+  /* ── 9e) Clock skew: phone ka samay server se kitna alag hai (streak, reminders, dayKey galat ho sakte hain) ── */
+  // Server ke HTTP `Date` header se naapta hai (1 sec resolution — 10 min ke threshold ke liye kaafi). + = phone aage.
+  async function checkClockSkew(o) {
+    o = o || {};
+    try {
+      var t0 = Date.now();
+      var r = await fetch(o.url || ('/manifest.json?__probe=' + t0), { method: 'HEAD', cache: 'no-store' });
+      var t1 = Date.now();
+      var d = r && r.headers && r.headers.get && r.headers.get('Date');
+      var server = d ? Date.parse(d) : NaN;
+      if (isNaN(server)) return null;
+      var skew = Math.round((t0 + t1) / 2 - server);        // request/response ka beech ka samay
+      log('info', 'clock_skew', { ms: skew });
+      if (Math.abs(skew) > (o.thresholdMs || 10 * 60 * 1000)) { log('warn', 'clock_skew', { ms: skew }); bus.emit('clock:skew', { ms: skew }); }
+      return skew;
+    } catch (e) { return null; }                             // offline/blocked — chupchap
+  }
+
   /* ── 10) Health: liveness + readiness ─────────────────────────── */
   function health() {
     var b = aiBreaker.state;
-    return { live: true, ready: online() && b !== 'open', online: online(), aiBreaker: b, flags: Object.assign({}, flags) };
+    return { version: ES.version, live: true, ready: online() && b !== 'open', online: online(), aiBreaker: b, flags: Object.assign({}, flags), chaos: chaosMode() || null };
   }
-  function debug() { return { health: health(), metrics: report(), logs: logBuf.slice(-30) }; }
+  function debug() { return { health: health(), metrics: report(), firestoreReads: JSON.parse(JSON.stringify(readStats)), logs: logBuf.slice(-30) }; }
 
   /* ── export ───────────────────────────────────────────────────── */
+  ES.version = '1.5.0';                    // semver — package.json se match hona chahiye (CI check karta hai)
+  ES.bus = bus; ES.checkClockSkew = checkClockSkew;
+  ES.rollout = rollout; ES.bucket = bucket; ES.chaos = chaos; ES.countReads = countReads;
+  ES.sanitize = sanitize; ES.escAttr = escAttr; ES.safeUrl = safeUrl;
+  ES.chunk = chunk; ES.capObject = capObject; ES.saga = saga;
   ES.coded = coded; ES.hash = hash; ES.log = log; ES.timed = timed; ES.report = report; ES.pct = pct;
   ES.fetchJSON = fetchJSON; ES.retry = retry; ES.once = once; ES.flag = flag; ES.startFlags = startFlags;
   ES.aiRequest = aiRequest; ES.errMsg = errMsg; ES.health = health; ES.debug = debug;
@@ -1711,20 +1849,28 @@ async function deleteMyAccount(){
     if(user){ await user.reauthenticateWithPopup(new firebase.auth.GoogleAuthProvider()); }
     const uid = user ? user.uid : null;
     const prof = JSON.parse(localStorage.getItem('es_student')||'null') || {};
-    // 1) Doubts
-    if(uid){
-      const snap = await db.collection('doubts').where('uid','==',uid).get();
-      await Promise.all(snap.docs.map(function(d){ return d.ref.delete(); }));
-    }
-    // 2) Username
-    if(uid && prof.username){ try{ await db.collection('usernames').doc(encodeURIComponent(prof.username.toLowerCase())).delete(); }catch(e){} }
-    // 3) Notification token
-    try{ await firebase.messaging().deleteToken(); }catch(e){}
-    // 4) Student record(s)
-    await db.collection('students').doc(getStudentDocId()).delete();
-    if(uid){ try{ await db.collection('students').doc(DEVICE_ID).delete(); }catch(e){} }   // login se pehle ka device record
-    // 5) Login account
-    if(user){ await user.delete(); }
+    const sid = getStudentDocId();
+    // Saga: steps order me chalte hain. Fail ho to pata chalta hai kaun sa step; 10 min ke andar dobara dabane par ho chuke steps skip hote hain
+    let sg = window._delSaga;
+    if(!sg || sg.owner!==sid || Date.now()-sg.t > 10*60*1000) sg = window._delSaga = { owner:sid, t:Date.now(), done:[] };
+    const res = await ES.saga([
+      { name:'doubts', run: async function(){
+          if(!uid) return;
+          const snap = await db.collection('doubts').where('uid','==',uid).get();
+          // N alag delete ki jagah 400-400 ke batch (N+1 round trips se bachav)
+          for(const part of ES.chunk(snap.docs, 400)){ const b = db.batch(); part.forEach(function(d){ b.delete(d.ref); }); await b.commit(); }
+      } },
+      { name:'username', run: async function(){
+          if(uid && prof.username){ try{ await db.collection('usernames').doc(encodeURIComponent(prof.username.toLowerCase())).delete(); }catch(e){} }
+      } },
+      { name:'token', run: async function(){ try{ await firebase.messaging().deleteToken(); }catch(e){} } },
+      { name:'student', run: async function(){
+          await db.collection('students').doc(sid).delete();
+          if(uid){ try{ await db.collection('students').doc(DEVICE_ID).delete(); }catch(e){} }   // login se pehle ka device record
+      } },
+      { name:'account', run: async function(){ if(user) await user.delete(); } }
+    ], sg);
+    if(!res.ok){ const er = res.error || new Error('delete'); try{ er.sagaStep = res.step; }catch(_){} throw er; }
     try{ localStorage.clear(); }catch(e){}
     showToast('✅ Account और data delete हो गया');
     setTimeout(function(){ location.replace('/'); }, 900);
@@ -1733,7 +1879,7 @@ async function deleteMyAccount(){
     if(btn){ btn.disabled = false; btn.textContent = '🗑 Account और data delete करें'; }
     showToast(/popup-closed|cancelled|popup-blocked/i.test(code)
       ? '❌ Google sign-in पूरा नहीं हुआ — कुछ भी delete नहीं हुआ'
-      : '❌ Delete पूरा नहीं हो पाया ('+code+'). दोबारा कोशिश करें या Contact पर बताएँ');
+      : '❌ Delete पूरा नहीं हो पाया ('+code+(e&&e.sagaStep?' @'+e.sagaStep:'')+'). दोबारा कोशिश करें — बचे हुए steps ही चलेंगे');
   }
 }
 
@@ -2028,6 +2174,7 @@ function listenContent(){
   _listenBoard = curBoard;
   _unsubContent = _unsub(_unsubContent);
   _unsubContent = db.collection('content').where('board','==',curBoard).onSnapshot(snap=>{
+    ES.countReads('content',snap);
     allContent = snap.docs.map(d=>({id:d.id,...d.data()})).sort(_byDateDesc);
     renderHome();
     if(curSubject) loadSubjectContent(curType);
@@ -2038,6 +2185,7 @@ function listenQuizzes(){
   _listenBoard = curBoard;
   _unsubQuizzes = _unsub(_unsubQuizzes);
   _unsubQuizzes = db.collection('quizzes').where('board','==',curBoard).onSnapshot(snap=>{
+    ES.countReads('quizzes',snap);
     allQuizzes = snap.docs.map(d=>({id:d.id,...d.data()})).sort(_byDateDesc);
   }, ()=>{});
 }
@@ -2048,6 +2196,7 @@ function listenDoubts(){
   const u = auth.currentUser;
   if(!u){ renderDoubts([]); return; }
   doubtsUnsub = db.collection('doubts').where('uid','==',u.uid).limit(100).onSnapshot(snap=>{
+    ES.countReads('doubts',snap);
     const doubts = snap.docs.map(d=>({id:d.id,...d.data()}))
       .sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
     renderDoubts(doubts);
@@ -2061,6 +2210,7 @@ function listenPYQ(){
   // PYQ me board ka case alag ho sakta hai (app lowercase se compare karta hai), isliye 3 variants
   const q = db.collection('pyq').where('board','in',_boardVariants(curBoard));
   const apply = snap=>{
+    ES.countReads('pyq',snap);
     allPYQ = snap.docs.map(d=>({id:d.id,...d.data()})).sort(_byYearDesc);
     refreshPYQUI();
     notifyNewPYQ(allPYQ);
@@ -2340,6 +2490,11 @@ function loadSubjectContent(type){
 // ══════════════════════════════════════════
 // CONTENT HTML
 // ══════════════════════════════════════════
+// Link kholna — URL data-u attribute se aata hai (ES.safeUrl se check hua), inline JS string me nahi
+function openContentLink(el, kind){
+  const u = el && el.getAttribute('data-u'); if(!u) return;
+  if(kind==='video') playVideo(u); else window.open(u,'_blank');
+}
 function cHTML(c){
   const T={pdf:{i:'📄',bg:'ci-pdf',b:'bdg-pdf',l:'PDF'},video:{i:'🎥',bg:'ci-video',b:'bdg-video',l:'Video'},dpp:{i:'📗',bg:'ci-dpp',b:'bdg-dpp',l:'DPP'},quiz:{i:'🧩',bg:'ci-quiz',b:'bdg-quiz',l:'Quiz'},note:{i:'🗒️',bg:'ci-note',b:'bdg-note',l:'Note'}};
   const t=T[c.type]||T.note;
@@ -2348,17 +2503,16 @@ function cHTML(c){
   if(c.type==='quiz'){
     click=`onclick="startChapterQuiz('${c.id}')"`;
     rightIcon='▶️';
-  } else if(c.link){
-    if(c.type==='video'){ click=`onclick="playVideo('${c.link}')"`; }
-    else { click=`onclick="window.open('${c.link}','_blank')"`; }
+  } else if(ES.safeUrl(c.link)){
+    click=`data-u="${ES.escAttr(ES.safeUrl(c.link))}" onclick="openContentLink(this,'${c.type==='video'?'video':'link'}')"`;
     rightIcon='🔗';
   }
   const sub = c.type==='quiz' ? `${(c.questions||[]).length} प्रश्न${c.chapter?' • '+c.chapter:''}` : (c.desc||c.chapter||'');
   return `<div class="cnt-item" ${click}>
     <div class="cnt-ic ${t.bg}">${t.i}</div>
     <div class="cnt-info">
-      <h4>${c.title}</h4>
-      <p>${sub}</p>
+      <h4>${ES.sanitize(c.title)}</h4>
+      <p>${ES.sanitize(sub)}</p>
       <span class="bdg ${t.b}">${t.l}</span>${isNew?'<span class="bdg bdg-new">NEW</span>':''}
     </div>
     <span style="font-size:18px;color:var(--g400);">${rightIcon}</span>
@@ -2400,28 +2554,29 @@ function doSearch(){
   if(pRes.length) html += `<div class="sec-t" style="margin-top:${cRes.length?'16px':'0'};"><span>📜</span> PYQ</div>` + pRes.map(p=>pyqSearchCardHTML(p,subData)).join('');
   if(qRes.length) html += `<div class="sec-t" style="margin-top:16px;"><span>🧩</span> Quiz</div>` + qRes.map(q=>quizSearchCardHTML(q)).join('');
 
-  document.getElementById('searchRes').innerHTML = html || `<div class="empty"><div class="ei">🔍</div><p>"${raw}" के लिए कुछ नहीं मिला।</p></div>`;
+  document.getElementById('searchRes').innerHTML = html || `<div class="empty"><div class="ei">🔍</div><p>"${escHTML(raw)}" के लिए कुछ नहीं मिला।</p></div>`;
 }
 function pyqSearchCardHTML(p, subData){
   const sub=subData.find(s=>s.id===p.subject);
+  const u=ES.safeUrl(p.link);
   return `<div class="pyq-card">
     <div class="pyq-card-top">
-      <span class="pyq-yr-badge">${p.year||''}</span>
+      <span class="pyq-yr-badge">${ES.sanitize(p.year||'')}</span>
       ${sub?`<span class="pyq-subj-ic">${sub.icon}</span>`:''}
     </div>
-    <div class="pyq-card-title">${p.title||'Untitled PYQ'}</div>
+    <div class="pyq-card-title">${ES.sanitize(p.title||'Untitled PYQ')}</div>
     <div class="pyq-card-meta">
       ${sub?`<span class="pyq-meta-tag">${sub.name}</span>`:''}
-      ${p.examType?`<span class="pyq-meta-tag">${p.examType}</span>`:''}
+      ${p.examType?`<span class="pyq-meta-tag">${ES.sanitize(p.examType)}</span>`:''}
     </div>
     <div class="pyq-card-foot">
-      ${p.link?`<button class="pyq-dl2" onclick="window.open('${p.link}','_blank')">📥 Download</button>`:`<button class="pyq-dl2" onclick="navTo('pyq')">देखें →</button>`}
+      ${u?`<button class="pyq-dl2" data-u="${ES.escAttr(u)}" onclick="openContentLink(this,'link')">📥 Download</button>`:`<button class="pyq-dl2" onclick="navTo('pyq')">देखें →</button>`}
     </div>
   </div>`;
 }
 function quizSearchCardHTML(q){
   return `<div class="qz-card">
-    <div class="qzc-t">${q.title}</div>
+    <div class="qzc-t">${ES.sanitize(q.title)}</div>
     <div class="qzc-s">${subjDisplayName(q.board,q.subject)}</div>
     <div class="qzc-meta">
       <span class="qzc-tag">📝 ${totalQFor(q)} Questions</span>
@@ -2577,19 +2732,20 @@ let items = allPYQ.filter(
         const sub = subData.find(s=>s.id===p.subject);
         const isAllSubj = p.subject==='all';
         const accent = examColors[p.examType] || 'var(--saffron)';
+        const u = ES.safeUrl(p.link);
         return `<div class="pyq-card" style="border-left-color:${accent};">
           <div class="pyq-card-top">
-            <span class="pyq-yr-badge">${p.year}</span>
+            <span class="pyq-yr-badge">${ES.sanitize(p.year)}</span>
             ${sub?`<span class="pyq-subj-ic">${sub.icon}</span>`:(isAllSubj?`<span class="pyq-subj-ic">🗂</span>`:'')}
           </div>
-          <div class="pyq-card-title">${p.title || 'Untitled PYQ'}</div>
+          <div class="pyq-card-title">${ES.sanitize(p.title || 'Untitled PYQ')}</div>
           <div class="pyq-card-meta">
             ${sub?`<span class="pyq-meta-tag">${sub.name}</span>`:(isAllSubj?`<span class="pyq-meta-tag">All Subjects</span>`:'')}
-            <span class="pyq-meta-tag" style="color:${accent};">${p.examType||'Board Exam'}</span>
-            ${p.desc?`<span class="pyq-meta-tag">${p.desc}</span>`:''}
+            <span class="pyq-meta-tag" style="color:${accent};">${ES.sanitize(p.examType||'Board Exam')}</span>
+            ${p.desc?`<span class="pyq-meta-tag">${ES.sanitize(p.desc)}</span>`:''}
           </div>
           <div class="pyq-card-foot">
-            ${p.link?`<button class="pyq-dl2" onclick="window.open('${p.link}','_blank')">📥 Download</button>`:'<span class="pyq-nolink">Link जल्द आएगा</span>'}
+            ${u?`<button class="pyq-dl2" data-u="${ES.escAttr(u)}" onclick="openContentLink(this,'link')">📥 Download</button>`:'<span class="pyq-nolink">Link जल्द आएगा</span>'}
           </div>
         </div>`;
       }).join('')
@@ -2749,7 +2905,7 @@ function renderQuizList(){
   document.getElementById('quizListSec').innerHTML=list.length
     ? list.map((q,i)=>`
         <div class="qz-card">
-          <div class="qzc-t">${q.title}</div>
+          <div class="qzc-t">${ES.sanitize(q.title)}</div>
           <div class="qzc-s">${subjDisplayName(q.board,q.subject)}</div>
           <div class="qzc-meta">
             <span class="qzc-tag">📝 ${totalQFor(q)} Questions</span>
@@ -2909,7 +3065,7 @@ function showQ(){
   const imgEl=document.getElementById('qImg');
   if(q.img){ imgEl.src=q.img; imgEl.style.display='block'; } else { imgEl.style.display='none'; imgEl.src=''; }
   document.getElementById('qOpts').innerHTML=q.options.map((o,i)=>
-    `<div class="q-opt" onclick="selOpt(this,${i},${q.ans})">${String.fromCharCode(65+i)}. ${o}</div>`).join('');
+    `<div class="q-opt" onclick="selOpt(this,${i},${q.ans})">${String.fromCharCode(65+i)}. ${ES.sanitize(o)}</div>`).join('');
   // Agar ye question pehle se answer ho chuka hai (← पिछला button se wapas aaye hain),
   // to purani selection dikha do — dobara click karke score double-count nahi hoga
   const prevAns = userAnswers[globalIdx-1];
@@ -3017,7 +3173,7 @@ async function explainQ(gi, pre){
   try{
     const idToken = await auth.currentUser.getIdToken();
     const data = await ES.aiRequest(AI_WORKER_URL, { idToken, question:text.slice(0,1000), board:curBoard, subject:(curQuiz&&(curQuiz.subject||curQuiz.title))||'', topic:'' });
-    _aiExCache[key] = '🤖 ' + cleanAI(data.answer);
+    _aiExCache[key] = '🤖 ' + cleanAI(data.answer); ES.capObject(_aiExCache, 60);
     box.textContent = _aiExCache[key];
   }catch(e){
     box.textContent = '❌ ' + ES.errMsg(e);
@@ -3030,14 +3186,14 @@ function akCardHTML(it, pre){
   const lbl = st==='skip'?'⭕ छूटा हुआ':(st==='right'?'✅ सही':'❌ गलत');
   const opts=(q.options||[]).map((o,i)=>{
     let c='ak-opt'; if(i===q.ans) c+=' ak-correct'; else if(i===it.u) c+=' ak-userwrong';
-    return `<div class="${c}">${String.fromCharCode(65+i)}. ${o}</div>`;
+    return `<div class="${c}">${String.fromCharCode(65+i)}. ${ES.sanitize(o)}</div>`;
   }).join('');
   return `<div class="ak-card ak-${st}" id="${pre}${it.gi}">
-    <div class="ak-qhead"><span class="ak-qnum">प्रश्न ${it.gi}${curQuiz&&curQuiz.sectional?' • '+it.sec.name:''}</span><span class="ak-status ${st}">${lbl}</span></div>
-    <div class="ak-qtext">${q.q||''}</div>
-    ${q.img?`<img class="ak-img" src="${q.img}" alt="Question image"/>`:''}
+    <div class="ak-qhead"><span class="ak-qnum">प्रश्न ${it.gi}${curQuiz&&curQuiz.sectional?' • '+ES.sanitize(it.sec.name):''}</span><span class="ak-status ${st}">${lbl}</span></div>
+    <div class="ak-qtext">${ES.sanitize(q.q||'')}</div>
+    ${ES.safeUrl(q.img)?`<img class="ak-img" src="${ES.escAttr(ES.safeUrl(q.img))}" alt="Question image"/>`:''}
     ${opts}
-    ${q.exp?`<div class="ak-exp"><b>💡 व्याख्या:</b> ${q.exp}</div>`:''}
+    ${q.exp?`<div class="ak-exp"><b>💡 व्याख्या:</b> ${ES.sanitize(q.exp)}</div>`:''}
     ${(st!=='right'||!q.exp)?`<button class="ak-ai" id="aiExBtn${pre}${it.gi}" onclick="explainQ(${it.gi},'${pre}')">🤖 AI से समझें</button><div class="ak-aiex" id="aiEx${pre}${it.gi}" style="display:${_aiExCache[aiExKey(it)]?'block':'none'};">${escHTML(_aiExCache[aiExKey(it)]||'')}</div>`:''}
   </div>`;
 }
@@ -3966,6 +4122,11 @@ if (typeof listenPYQ === "function") listenPYQ();
 if (typeof listenLiveClass === "function") listenLiveClass();
 if (typeof listenCommunity === "function") listenCommunity();
 if (window.ES && ES.startFlags) ES.startFlags(db);
+if (window.ES && ES.bus) {
+  // Phone ka samay galat ho to streak/daily reminders gadbad hote hain — ek baar chhota warning
+  ES.bus.once('clock:skew', function(e){ showToast('⏰ फ़ोन का समय गलत है ('+Math.round(Math.abs(e.ms)/60000)+' min '+(e.ms>0?'आगे':'पीछे')+')'); });
+  setTimeout(function(){ if(navigator.onLine!==false) ES.checkClockSkew(); }, 8000);
+}
     if (typeof renderPYQHomeCards === "function") renderPYQHomeCards();
     // Refresh se pehle jis page par the, wahin wapas
     if (typeof restoreNavState === "function") restoreNavState();
@@ -4062,8 +4223,23 @@ if(navigator.permissions && navigator.permissions.query){
 })();
 ['gesturestart','gesturechange','gestureend'].forEach(function(e){ document.addEventListener(e,function(ev){ ev.preventDefault(); },{passive:false}); });
 document.addEventListener('touchmove',function(e){ if(e.touches && e.touches.length>1) e.preventDefault(); },{passive:false});
+function showUpdateToast(){
+  if(document.getElementById('esUpd')) return;
+  if(document.body.classList.contains('quiz-mode')){ setTimeout(showUpdateToast, 30000); return; }   // test ke beech me reload nahi
+  var d = document.createElement('div'); d.id = 'esUpd'; d.setAttribute('role','alert');
+  d.style.cssText = 'position:fixed;left:12px;right:12px;bottom:80px;z-index:9997;display:flex;align-items:center;gap:10px;background:#0F1B35;color:#fff;border-radius:14px;padding:12px 14px;font:600 13px Poppins,sans-serif;box-shadow:0 8px 32px rgba(15,27,53,.35);';
+  d.innerHTML = '<span style="flex:1;">🔄 EduSpark का नया version तैयार है</span><button type="button" style="background:#F59E0B;color:#0F1B35;border:none;border-radius:8px;padding:8px 12px;font:800 12px Poppins,sans-serif;cursor:pointer;">अभी Refresh</button>';
+  d.querySelector('button').onclick = function(){ location.reload(); };
+  document.body.appendChild(d);
+}
 if('serviceWorker' in navigator){
   // Pehle 'load' ka intezaar tha — load late hone par SW (aur push token) bhi late/fail ho jaata tha
+  // Cache invalidation: naya sw.js (CACHE_NAME badla) aate hi student ko "naya version" toast — pehli baar install par nahi
+  var hadCtl = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', function(){
+    if(!hadCtl){ hadCtl = true; return; }
+    showUpdateToast();
+  });
   navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).catch(function(){});
 }
 </script>

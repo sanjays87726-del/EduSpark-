@@ -1,0 +1,18 @@
+apiVersion: autoscaling/v2        # Horizontal auto scaling (metrics-server chahiye)
+kind: HorizontalPodAutoscaler
+metadata:
+  name: eduspark-web
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: eduspark-web
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

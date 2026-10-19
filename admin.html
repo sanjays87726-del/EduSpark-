@@ -33,6 +33,8 @@ const db   = firebase.firestore();
 
 // 🔒 Sirf ye email hi Admin Panel access kar sakta hai
 const ADMIN_EMAIL = "bhupeshkumar36882@gmail.com";
+// Data ka schema version — naye content/quiz/pyq docs par lagta hai (purane docs ke liye scripts/migrate.js)
+const SCHEMA_VERSION = 1;
 </script>
 
 <style>
@@ -729,7 +731,8 @@ function addContent(){
     type,
     title, desc:document.getElementById('aDesc').value.trim(),
     chapter:document.getElementById('aChap').value.trim(),
-    date:new Date().toISOString()
+    date:new Date().toISOString(),
+    schema:SCHEMA_VERSION
   };
 
   if(type==='quiz'){
@@ -776,7 +779,8 @@ function addQuiz(){
     subject: document.getElementById('qSubj').value,
     type: document.getElementById('qType').value,
     sectional,
-    date: new Date().toISOString()
+    date: new Date().toISOString(),
+    schema: SCHEMA_VERSION
   };
 
   if(sectional){
@@ -830,7 +834,8 @@ function addPYQ(){
     title,
     desc:     document.getElementById('pyqDesc').value.trim(),
     link,
-    date:     new Date().toISOString()
+    date:     new Date().toISOString(),
+    schema:   SCHEMA_VERSION
   }).then(()=>{
     document.getElementById('pyqTitle').value='';
     document.getElementById('pyqDesc').value='';
@@ -911,6 +916,15 @@ function saveNotification(){
   }).catch(e=>showToast('❌ Error: '+e.message));
 }
 
+// Queue status: pending → sending → sent | (fail par) pending again (retry, backoff) → dead (3 kosish ke baad)
+function notifStatusText(n){
+  if(n.status==='sent') return n.sentCount>0 ? '✅ '+n.sentCount+' को भेजा' : '⚠️ 0 को गया ('+esc(n.note||'किसी के पास token नहीं')+')';
+  if(n.status==='dead') return '☠️ '+(n.attempts||'')+' कोशिश के बाद fail: '+esc(n.lastError||'');
+  if(n.status==='failed') return '❌ Fail: '+esc(n.lastError||'');
+  if(n.status==='sending') return '📤 भेजा जा रहा है';
+  if(n.status==='pending' && n.attempts) return '🔁 दोबारा कोशिश होगी ('+n.attempts+'/3)'+(n.lastError?': '+esc(n.lastError):'');
+  return '⏳ Pending';
+}
 function renderNotifyHistory(){
   const el = document.getElementById('notifyHistoryList');
   db.collection('notificationQueue').orderBy('createdAt','desc').limit(10).get().then(snap=>{
@@ -918,8 +932,8 @@ function renderNotifyHistory(){
     el.innerHTML = items.length ? items.map(n=>`
       <div class="mgmt-item">
         <div>
-          <div class="mgmt-nm">${n.title}</div>
-          <div class="mgmt-sb">${n.body} • ${n.audience==='all'?'सभी':n.audience} • ${n.status==='sent'?(n.sentCount>0?'✅ '+n.sentCount+' को भेजा':'⚠️ 0 को गया ('+(n.note||'किसी के पास token नहीं')+')'):(n.status==='failed'?'❌ Fail: '+(n.lastError||''):'⏳ Pending')}</div>
+          <div class="mgmt-nm">${esc(n.title)}</div>
+          <div class="mgmt-sb">${esc(n.body)} • ${n.audience==='all'?'सभी':esc(n.audience)} • ${notifStatusText(n)}</div>
         </div>
       </div>`).join('') : '<div style="font-size:11px;color:var(--g600);padding:8px 0;">अभी तक कोई notification नहीं भेजा।</div>';
   }).catch(()=>{ el.innerHTML=''; });
@@ -1020,9 +1034,20 @@ function renderADoubts(){
 function replyDoubt(id){
   const ans=document.getElementById('ans_'+id)?.value.trim();
   if(!ans){ showToast('❌ जवाब खाली है!'); return; }
-  db.collection('doubts').doc(id).update({answer:ans,status:'answered'})
-    .then(()=>{ showToast('✅ Reply दे दिया!'); renderADoubts(); })
-    .catch(e=>showToast('❌ Error: '+e.message));
+  const ref = db.collection('doubts').doc(id);
+  // Optimistic concurrency: agar tab tak kisi aur tab/device se jawab ja chuka ho to uska jawab overwrite nahi hoga
+  db.runTransaction(function(tx){
+    return tx.get(ref).then(function(sn){
+      if(!sn.exists) throw new Error('gone');
+      if(sn.data().status==='answered') throw new Error('already');
+      tx.update(ref,{answer:ans,status:'answered'});
+    });
+  }).then(()=>{ showToast('✅ Reply दे दिया!'); renderADoubts(); })
+    .catch(e=>{
+      if(e && e.message==='already'){ showToast('ℹ️ इस doubt का जवाब पहले ही दिया जा चुका है'); renderADoubts(); }
+      else if(e && e.message==='gone'){ showToast('ℹ️ यह doubt delete हो चुका है'); renderADoubts(); }
+      else showToast('❌ Error: '+e.message);
+    });
 }
 
 function delDoubt(id){

@@ -1,0 +1,44 @@
+name: Watchdog (alerts)
+
+# Har 3 ghante: site, sw.js, AI Worker, DNS, TLS expiry, dead-letter broadcasts, backup freshness.
+# Error par run laal hota hai (GitHub email). Optional secrets: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, ALERT_WEBHOOK_URL
+# (+ ALERT_WEBHOOK_STYLE=discord|slack, ALERT_WEBHOOK_SECRET), FIREBASE_SERVICE_ACCOUNT (queue check ke liye).
+on:
+  schedule:
+    - cron: '17 */3 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  actions: read          # backup freshness (GitHub API)
+
+concurrency:
+  group: eduspark-watchdog
+  cancel-in-progress: false
+
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json') }}
+          restore-keys: npm-${{ runner.os }}-
+      - name: Dependencies (package.json ke pinned range se)
+        run: npm ci || npm install
+      - name: Watchdog
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+          ALERT_WEBHOOK_STYLE: ${{ secrets.ALERT_WEBHOOK_STYLE }}
+          ALERT_WEBHOOK_SECRET: ${{ secrets.ALERT_WEBHOOK_SECRET }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/watchdog.js

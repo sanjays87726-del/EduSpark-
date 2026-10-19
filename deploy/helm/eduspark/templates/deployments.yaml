@@ -1,0 +1,12 @@
+{{- $root := . -}}
+{{- $active := .Values.service.activeColor -}}
+{{- range $color, $c := .Values.colors }}
+{{- if $c.enabled }}
+---
+{{ include "eduspark.deployment" (dict "root" $root "name" (printf "%s-%s" (include "eduspark.name" $root) $color) "color" $color "track" "stable" "replicas" $root.Values.replicaCount "tag" $c.tag "hpa" (and $root.Values.autoscaling.enabled (eq $color $active))) }}
+{{- end }}
+{{- end }}
+{{- if .Values.canary.enabled }}
+---
+{{ include "eduspark.deployment" (dict "root" . "name" (printf "%s-canary" (include "eduspark.name" .)) "color" $active "track" "canary" "replicas" .Values.canary.replicaCount "tag" .Values.canary.tag "hpa" false) }}
+{{- end }}

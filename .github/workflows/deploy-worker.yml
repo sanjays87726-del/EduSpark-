@@ -1,0 +1,54 @@
+name: Deploy Worker
+
+# Haath se chalta hai. Secrets: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID.  wrangler.toml me KV id pehle bharo.
+# dry-run   : build check, kuch deploy nahi
+# upload    : naya version upload (live nahi) → canary: `npx wrangler versions deploy <naya>@10% <purana>@90%`
+# deploy    : 100% live
+# rollback  : pichhle version par wapas
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Kya karna hai'
+        type: choice
+        default: dry-run
+        options: [dry-run, upload, deploy, rollback]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-worker
+  cancel-in-progress: false
+
+jobs:
+  worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production          # GitHub → Settings → Environments me "Required reviewers" laga sakte ho
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Tests (rollback ko chhod kar)
+        if: inputs.action != 'rollback'
+        run: npm test
+      - name: wrangler.toml placeholder bacha to ruko
+        if: inputs.action == 'upload' || inputs.action == 'deploy'
+        run: "! grep -q REPLACE_ wrangler.toml"
+      - name: Dry run
+        if: inputs.action == 'dry-run'
+        run: npx --yes wrangler@4 deploy --dry-run --outdir dist
+      - name: Upload version (live nahi)
+        if: inputs.action == 'upload'
+        run: npx --yes wrangler@4 versions upload
+      - name: Deploy 100%
+        if: inputs.action == 'deploy'
+        run: npx --yes wrangler@4 deploy
+      - name: Rollback
+        if: inputs.action == 'rollback'
+        run: npx --yes wrangler@4 rollback --message "rollback from GitHub Actions" -y

@@ -1,0 +1,16 @@
+{
+  "name": "eduspark",
+  "version": "1.5.0",
+  "private": true,
+  "description": "EduSpark — free study PWA for CBSE/BSER and competitive exams",
+  "license": "UNLICENSED",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node tests/run-all.js",
+    "check": "node tools/check-repo.js",
+    "ci": "npm run check && npm test"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0 || ^13.0.0"
+  }
+}

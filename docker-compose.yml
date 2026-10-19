@@ -1,0 +1,17 @@
+# Local / single-host scale demo:  docker compose up --build --scale web=3
+# Browser: http://localhost:8080   (lb → web ke kisi bhi container par)
+services:
+  web:
+    build: .
+    image: eduspark:dev
+    restart: unless-stopped            # health check fail/crash par dobara
+    expose: ["8080"]                   # host port nahi — sirf lb ke through
+  lb:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports: ["8080:8080"]
+    volumes:
+      - ./deploy/nginx/lb.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      web:
+        condition: service_healthy

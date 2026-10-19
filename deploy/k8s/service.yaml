@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: eduspark-web              # Service discovery: cluster ke andar DNS naam  eduspark-web.<namespace>.svc.cluster.local
+  labels:
+    app.kubernetes.io/name: eduspark
+spec:
+  type: ClusterIP                 # L4 load balancing: saare ready pods ke beech
+  selector:
+    app.kubernetes.io/name: eduspark
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
