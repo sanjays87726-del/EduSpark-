@@ -7,6 +7,10 @@ tools
 scripts
 docs
 deploy
+!deploy/
+!deploy/nginx/
+!deploy/nginx/default.conf
+!deploy/nginx/security-headers.inc
 infra
 backups
 *.md
