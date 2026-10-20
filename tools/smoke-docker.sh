@@ -14,7 +14,8 @@ for i in $(seq 1 30); do
 done
 [ "$ok" = 1 ] || fail "/healthz 30 sec me nahi aaya"
 
-curl -fsS "$BASE/" | grep -q "EduSpark" || fail "home page me EduSpark nahi"
+home="$(curl -fsS "$BASE/")" || fail "home page fetch nahi hua"
+[[ "$home" == *EduSpark* ]] || fail "home page me EduSpark nahi"
 h="$(curl -fsSI "$BASE/sw.js")"
 echo "$h" | grep -qi '^cache-control: no-cache' || fail "sw.js par Cache-Control: no-cache nahi"
 echo "$h" | grep -qi '^x-content-type-options: nosniff' || fail "nosniff header nahi"
