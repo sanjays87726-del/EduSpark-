@@ -3584,6 +3584,8 @@ auth.onAuthStateChanged(function(user){
 // saath 3-din wala reminder aur admin ka broadcast notification bhej sakein.
 // lastActive har app-open par update hoti hai (3-din inactivity check isी se hoga).
 function syncStudentToCloud(fcmToken){
+  // Cloud student records sirf signed-in users ke liye.
+  if(!auth.currentUser) return;
   const profile = JSON.parse(localStorage.getItem('es_student')||'null');
   if(!profile) return;
   const data = {
