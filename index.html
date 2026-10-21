@@ -780,6 +780,7 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
       <div id="searchSec" style="display:none;">
         <div class="cnt-list" id="searchRes"></div>
       </div>
+      <div id="offerWall" style="display:none;"></div>
       <div id="homeBrowseSec">
       <div class="stats-row">
         <div class="stat-card" style="cursor:pointer;" onclick="openTypeFromHome('pdf')"><div class="stat-icon">📄</div><div class="stat-val" id="stPdf">0</div><div class="stat-label">PDF</div></div>
@@ -4244,6 +4245,54 @@ if('serviceWorker' in navigator){
   });
   navigator.serviceWorker.register('/sw.js',{updateViaCache:'none'}).catch(function(){});
 }
+</script>
+<script>
+// Offerwall: banner strip + din me ek baar popup. Sirf active + date ke andar wale offers (10 min cache = kam Firestore reads)
+(function(){
+  var mount = document.getElementById('offerWall');
+  if(!mount || typeof db === 'undefined') return;
+  var https = function(u){ return typeof u === 'string' && u.indexOf('https://') === 0; };
+  function card(o, w){
+    var a = document.createElement('a'); a.href = o.link; a.target = '_blank'; a.rel = 'noopener';
+    var i = document.createElement('img');
+    i.src = o.img + (o.img.indexOf('ik.imagekit.io') > -1 ? '?tr=w-' + w + ',q-80' : '');
+    i.alt = o.title || 'Offer'; i.loading = 'lazy'; i.style.cssText = 'width:100%;display:block;border-radius:12px;';
+    a.appendChild(i); return a;
+  }
+  function getOffers(){
+    var c = null; try{ c = JSON.parse(sessionStorage.getItem('es_offers')); }catch(e){}
+    if(c && Date.now() - c.t < 600000) return Promise.resolve(c.d);
+    return db.collection('offers').where('active', '==', true).get().then(function(s){
+      var n = Date.now();
+      var d = s.docs.map(function(x){ return x.data(); }).filter(function(o){
+        return https(o.img) && https(o.link) && (!o.startAt || o.startAt <= n) && (!o.endAt || o.endAt >= n);
+      }).sort(function(a, b){ return (a.order || 0) - (b.order || 0); });
+      try{ sessionStorage.setItem('es_offers', JSON.stringify({t: n, d: d})); }catch(e){}
+      return d;
+    });
+  }
+  getOffers().then(function(list){
+    if(!list.length) return;
+    list.forEach(function(o){
+      var c = card(o, 800);
+      c.style.cssText = 'flex:0 0 92%;scroll-snap-align:center;';
+      mount.appendChild(c);
+    });
+    mount.style.cssText = 'display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding:8px 16px;scrollbar-width:none;';
+    if(list.length > 1){ var n = 0; setInterval(function(){ n = (n + 1) % list.length; mount.scrollTo({left: mount.children[n].offsetLeft - 16, behavior: 'smooth'}); }, 4000); }
+    var p = list.filter(function(o){ return o.popup; })[0], today = new Date().toDateString();
+    if(p && localStorage.getItem('es_offerPopup') !== today){
+      localStorage.setItem('es_offerPopup', today);
+      var ov = document.createElement('div');
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:99999;';
+      var box = document.createElement('div'); box.style.cssText = 'width:85%;max-width:380px;position:relative;';
+      var x = document.createElement('button'); x.textContent = '✕';
+      x.style.cssText = 'position:absolute;top:-12px;right:-12px;width:32px;height:32px;border-radius:50%;border:none;background:#fff;font-size:16px;';
+      x.onclick = function(){ ov.remove(); };
+      box.appendChild(card(p, 600)); box.appendChild(x); ov.appendChild(box); document.body.appendChild(ov);
+    }
+  }).catch(function(){});
+})();
 </script>
 </body>
 </html>

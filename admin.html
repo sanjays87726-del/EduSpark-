@@ -104,7 +104,9 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
   <div class="g-title">EduSpark Admin</div>
   <div class="g-sub">Sirf authorised Google account hi access kar sakta hai</div>
   <div class="g-card">
-    <button class="g-btn" id="gateGoogleBtn">
+    <div id="gPassBox"><input type="password" id="gatePass" placeholder="Admin password" autocomplete="current-password" style="width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--g200);margin-bottom:10px;box-sizing:border-box;"/>
+      <button class="g-btn" id="gateUnlockBtn" onclick="unlockGate()">🔓 Unlock</button></div>
+    <button class="g-btn" id="gateGoogleBtn" style="display:none;">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20" alt="Google">
       Google से Sign In
     </button>
@@ -133,6 +135,7 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
     <div class="a-tab" onclick="aTab('manage',this)">📋 Manage</div>
     <div class="a-tab" onclick="aTab('doubts',this)">💬 Doubts</div>
     <div class="a-tab" onclick="aTab('img',this)">🖼️ Image</div>
+    <div class="a-tab" onclick="aTab('offers',this)">🎁 Offers</div>
   </div>
 
   <div id="aTab_add">
@@ -389,6 +392,19 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
     </div>
   </div>
 
+  <div id="aTab_offers" style="display:none;"><div class="af">
+    <label>Image URL (pehle 🖼️ Image tab se upload karein)</label><input type="text" id="ofImg" placeholder="https://ik.imagekit.io/..."/>
+    <label>Link (click par kahan jaye)</label><input type="text" id="ofLink" placeholder="https://..."/>
+    <label>Title</label><input type="text" id="ofTitle"/>
+    <label>Order (chhota number pehle)</label><input type="number" id="ofOrder" value="1"/>
+    <label>Start date (khali = abhi se)</label><input type="date" id="ofStart"/>
+    <label>End date (khali = kabhi expire nahi)</label><input type="date" id="ofEnd"/>
+    <label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="ofPopup" style="width:auto;"/> Popup bhi dikhao (din me 1 baar)</label>
+    <button class="add-btn" id="ofSaveBtn" onclick="saveOffer()">➕ Offer save करें</button>
+    <button class="add-btn" onclick="resetOfferForm()" style="margin-top:8px;">✖ Clear</button>
+    <div id="ofList" style="margin-top:16px;"></div>
+  </div></div>
+
   <div id="aTab_manage" style="display:none;">
     <div class="af">
       <div id="aManageList">
@@ -517,6 +533,7 @@ document.getElementById('gateGoogleBtn').addEventListener('click', function(){
 });
 
 function showAdminApp(user){
+  if(!gateValid()){ showGate(); return; }
   document.getElementById('gateLoading').style.display='none';
   document.getElementById('gate').style.display='none';
   document.getElementById('adminApp').style.display='block';
@@ -541,15 +558,14 @@ auth.onAuthStateChanged(function(user){
   if(user && user.email === ADMIN_EMAIL){
     showAdminApp(user);
   } else {
-    if(loadingEl) loadingEl.style.display = 'none';
-    document.getElementById('gate').style.display = 'flex';
+    showGate();
   }
 });
 
 function adminLogout(){
   auth.signOut().catch(()=>{});
-  document.getElementById('adminApp').style.display = 'none';
-  document.getElementById('gate').style.display = 'flex';
+  sessionStorage.removeItem('adm_gate'); GATE = '';
+  showGate();
   showToast('✅ Logout हो गए');
 }
 
@@ -589,7 +605,7 @@ async function uploadImage(){
   btn.disabled = true; btn.textContent = '⏳ Upload हो रही है...';
   try{
     const idToken = await auth.currentUser.getIdToken();
-    const ar = await fetch(IK_WORKER+'/imagekit-auth', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({idToken}) });
+    const ar = await fetch(IK_WORKER+'/imagekit-auth', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({idToken, gate: GATE}) });
     const a = await ar.json().catch(()=>({}));
     if(!ar.ok) throw new Error(a.error || 'Signature नहीं मिली');
     const file = await shrinkImage(f);
@@ -621,13 +637,89 @@ function copyImg(kind){
   else { prompt('Copy करें:', txt); }
 }
 
+// ══════════ OFFERS (offerwall) ══════════
+let _ofEdit = null, _ofCache = {};
+const $o = id => document.getElementById(id);
+const d2ms = (v, end) => v ? new Date(v + (end ? 'T23:59:59' : 'T00:00:00')).getTime() : null;
+const ms2d = ms => { if(!ms) return ''; const d = new Date(ms); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+function resetOfferForm(){
+  _ofEdit = null;
+  ['ofImg','ofLink','ofTitle','ofStart','ofEnd'].forEach(i => $o(i).value = '');
+  $o('ofOrder').value = 1; $o('ofPopup').checked = false;
+  $o('ofSaveBtn').textContent = '➕ Offer save करें';
+}
+async function saveOffer(){
+  const img = $o('ofImg').value.trim(), link = $o('ofLink').value.trim();
+  if(!/^https:\/\//.test(img) || !/^https:\/\//.test(link)) return showToast('⚠️ Image URL और Link https:// से शुरू होने चाहिए');
+  const s = d2ms($o('ofStart').value, false), e = d2ms($o('ofEnd').value, true);
+  if(s && e && e < s) return showToast('⚠️ End date, start date से पहले है');
+  const data = { img, link, title: $o('ofTitle').value.trim().slice(0,100), order: +$o('ofOrder').value || 0, popup: $o('ofPopup').checked, startAt: s, endAt: e };
+  try{
+    if(_ofEdit) await db.collection('offers').doc(_ofEdit).set(data, {merge:true});
+    else await db.collection('offers').add(Object.assign({ active:true, createdAt:Date.now() }, data));
+    showToast('✅ Offer save हो गया'); resetOfferForm(); renderOffers();
+  }catch(err){ showToast('❌ '+err.message); }
+}
+async function renderOffers(){
+  const box = $o('ofList'); box.innerHTML = '⏳ Loading...';
+  try{
+    const snap = await db.collection('offers').get(); const now = Date.now(); _ofCache = {};
+    const rows = snap.docs.map(d => { _ofCache[d.id] = d.data(); return Object.assign({id:d.id}, d.data()); }).sort((a,b)=>(a.order||0)-(b.order||0));
+    box.innerHTML = rows.length ? rows.map(o => {
+      const st = !o.active ? '⚪ Off' : (o.startAt && o.startAt > now) ? '🟡 Scheduled' : (o.endAt && o.endAt < now) ? '🔴 Expired' : '🟢 Live';
+      return '<div style="border:1px solid var(--g200);border-radius:10px;padding:8px;margin-bottom:8px;">'
+        + '<img src="'+esc(o.img)+'" style="width:100%;border-radius:8px;" alt="">'
+        + '<div style="font-size:12px;margin:6px 0;"><b>'+esc(o.title||'(no title)')+'</b> · '+st+(o.popup?' · 🔔 popup':'')+'<br>'
+        + (ms2d(o.startAt)||'abhi se')+' → '+(ms2d(o.endAt)||'no expiry')+' · order '+esc(o.order||0)+'</div>'
+        + '<button class="add-btn" style="margin:0 4px 4px 0;width:auto;padding:6px 12px;" onclick="editOffer(\''+o.id+'\')">✏️ Edit</button>'
+        + '<button class="add-btn" style="margin:0 4px 4px 0;width:auto;padding:6px 12px;" onclick="toggleOffer(\''+o.id+'\')">'+(o.active?'Off करें':'On करें')+'</button>'
+        + '<button class="add-btn" style="margin:0 0 4px;width:auto;padding:6px 12px;background:#c62828;" onclick="delOffer(\''+o.id+'\')">🗑 Delete</button></div>';
+    }).join('') : '<div style="color:var(--g400);">अभी कोई offer नहीं है</div>';
+  }catch(err){ box.textContent = '❌ '+err.message; }
+}
+function editOffer(id){
+  const o = _ofCache[id]; if(!o) return; _ofEdit = id;
+  $o('ofImg').value = o.img||''; $o('ofLink').value = o.link||''; $o('ofTitle').value = o.title||''; $o('ofOrder').value = o.order||0;
+  $o('ofStart').value = ms2d(o.startAt); $o('ofEnd').value = ms2d(o.endAt); $o('ofPopup').checked = !!o.popup;
+  $o('ofSaveBtn').textContent = '💾 Offer update करें'; window.scrollTo({top:0, behavior:'smooth'});
+}
+async function toggleOffer(id){ try{ await db.collection('offers').doc(id).update({active: !(_ofCache[id]&&_ofCache[id].active)}); renderOffers(); }catch(e){ showToast('❌ '+e.message); } }
+async function delOffer(id){ if(!confirm('Offer delete करें?')) return; try{ await db.collection('offers').doc(id).delete(); renderOffers(); }catch(e){ showToast('❌ '+e.message); } }
+
+// ══════════ PASSWORD GATE (Worker verify karta hai, password code me nahi) ══════════
+let GATE = sessionStorage.getItem('adm_gate') || '';
+function gateValid(){ return !!GATE && (+GATE.split('.')[0]) > Date.now(); }
+function showGate(){
+  document.getElementById('gateLoading').style.display = 'none';
+  document.getElementById('adminApp').style.display = 'none';
+  document.getElementById('gate').style.display = 'flex';
+  const ok = gateValid();
+  document.getElementById('gPassBox').style.display = ok ? 'none' : '';
+  document.getElementById('gateGoogleBtn').style.display = ok ? '' : 'none';
+}
+async function unlockGate(){
+  const inp = document.getElementById('gatePass'), btn = document.getElementById('gateUnlockBtn');
+  if(!inp.value) return;
+  btn.disabled = true;
+  try{
+    const r = await fetch(IK_WORKER + '/admin-gate', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({password: inp.value}) });
+    const j = await r.json();
+    if(!r.ok || !j.gate) throw new Error(j.error || 'Password गलत है');
+    GATE = j.gate; sessionStorage.setItem('adm_gate', GATE); inp.value = '';
+    if(auth.currentUser && auth.currentUser.email === ADMIN_EMAIL) showAdminApp(auth.currentUser); else showGate();
+  }catch(e){ showToast('❌ ' + e.message); }
+  btn.disabled = false;
+}
+document.getElementById('gatePass').addEventListener('keydown', e => { if(e.key === 'Enter') unlockGate(); });
+
 function aTab(tab, el){
   document.querySelectorAll('.a-tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  ['add','quiz','pyq','live','community','notify','manage','doubts','img'].forEach(t=>{ document.getElementById('aTab_'+t).style.display='none'; });
+  ['add','quiz','pyq','live','community','notify','manage','doubts','img','offers'].forEach(t=>{ document.getElementById('aTab_'+t).style.display='none'; });
   document.getElementById('aTab_'+tab).style.display='block';
   if(tab==='manage'){ renderAManage(); renderQuizManage(); }
   if(tab==='doubts') renderADoubts();
+  if(tab==='offers') renderOffers();
   if(tab==='pyq') renderPYQManage();
   if(tab==='community') loadCommunityConfig();
   if(tab==='notify'){ loadNotifyStats(); renderNotifyHistory(); }
