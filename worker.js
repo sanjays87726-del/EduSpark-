@@ -76,15 +76,15 @@ export default {
 
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
     // Browser me Worker ka URL kholo -> status dikhega (version + binding jude hain ya nahi)
-    if (request.method === 'GET') return reply(200, { worker: 'eduspark-ai', version: 9, apiVersions: ['v1'], RATE: !!env.RATE, GEMINI_KEY: !!env.GEMINI_KEY, IMAGEKIT_PRIVATE_KEY: !!env.IMAGEKIT_PRIVATE_KEY, DAILY_LIMIT: parseInt(env.DAILY_LIMIT) || 5 });
+    if (request.method === 'GET') return reply(200, { worker: 'eduspark-ai', version: 10, apiVersions: ['v1'], RATE: !!env.RATE, GEMINI_KEY: !!env.GEMINI_KEY, IMAGEKIT_PRIVATE_KEY: !!env.IMAGEKIT_PRIVATE_KEY, ADMIN_PASS: !!env.ADMIN_PASS, DAILY_LIMIT: parseInt(env.DAILY_LIMIT) || 5 });
     if (request.method !== 'POST') return reply(405, { error: 'POST only' });
     if (!okOrigin) return reply(403, { error: 'Not allowed' });
     // API versioning: /v1/ask canonical hai; "/" purana (legacy) alias — purane students ke cached app ke liye hamesha chalta rahega (docs/API.md)
     const path = new URL(request.url).pathname.replace(/\/+$/, '') || '/';
-    if (path !== '/' && path !== '/v1/ask' && path !== '/imagekit-auth') return reply(404, { error: 'Not found' });
+    if (path !== '/' && path !== '/v1/ask' && path !== '/imagekit-auth' && path !== '/admin-gate') return reply(404, { error: 'Not found' });
 
     const held = [];
-    try { return path === '/imagekit-auth' ? await imagekitAuth(request, env, reply) : await handle(request, env, reply, held); }
+    try { return path === '/admin-gate' ? await adminGate(request, env, reply) : path === '/imagekit-auth' ? await imagekitAuth(request, env, reply) : await handle(request, env, reply, held); }
     catch (e) {
       console.error('Worker error', rid, String(e));
       return reply(500, { error: 'Server में दिक्कत आई, थोड़ी देर बाद कोशिश करें' });
@@ -92,6 +92,36 @@ export default {
     finally { held.forEach(u => busyUids.delete(u)); }   // exception ho ya return — lock hamesha chhootta hai
   }
 };
+
+// Admin password gate: password sirf Worker secret ADMIN_PASS me hai (npx wrangler secret put ADMIN_PASS).
+// Sahi password par 12 ghante ka signed "gate" token milta hai; /imagekit-auth bina is token ke nahi chalta.
+async function hmacHex(secret, msg) {
+  const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return Array.from(new Uint8Array(await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(msg))), b => b.toString(16).padStart(2, '0')).join('');
+}
+async function gateOk(env, gate) {
+  const [exp, sig] = String(gate || '').split('.');
+  if (!env.ADMIN_PASS || !sig || !(+exp > Date.now())) return false;
+  return (await hmacHex(env.ADMIN_PASS, 'gate' + exp)) === sig;
+}
+async function adminGate(request, env, reply) {
+  if (!env.ADMIN_PASS) return reply(500, { error: 'Setup अधूरा: Secret "ADMIN_PASS" नहीं जुड़ा' });
+  let body;
+  try { const raw = await request.text(); if (raw.length > 1024) return reply(413, { error: 'Request बहुत बड़ी है' }); body = JSON.parse(raw); }
+  catch { return reply(400, { error: 'Bad request' }); }
+  // Galat password par IP ke hisaab se roz 5 koshish (KV sirf galat attempt par likhta hai)
+  const fk = 'gf:' + (request.headers.get('CF-Connecting-IP') || 'x') + ':' + new Date().toISOString().slice(0, 10);
+  const fails = env.RATE ? (parseInt(await env.RATE.get(fk)) || 0) : 0;
+  if (fails >= 5) return reply(429, { error: 'बहुत ज़्यादा गलत कोशिशें — कल दोबारा try करें' });
+  const ok = body && typeof body.password === 'string' &&
+    (await hmacHex('cmp', body.password)) === (await hmacHex('cmp', env.ADMIN_PASS));
+  if (!ok) {
+    if (env.RATE) { try { await env.RATE.put(fk, String(fails + 1), { expirationTtl: 86400 }); } catch {} }
+    return reply(401, { error: 'गलत password' });
+  }
+  const exp = Date.now() + 12 * 3600e3;
+  return reply(200, { gate: exp + '.' + await hmacHex(env.ADMIN_PASS, 'gate' + exp) });
+}
 
 // Admin panel ke Image tab ke liye ImageKit upload signature (private key sirf Worker me, browser tak nahi jaati).
 // admin.html: POST /imagekit-auth {idToken} -> {token, expire, signature}. Sirf verified ADMIN_EMAIL ko; KV/quota kharch nahi hota.
@@ -110,6 +140,7 @@ async function imagekitAuth(request, env, reply) {
   try { p = await verifyToken(body.idToken, true); }
   catch { return reply(401, { error: 'पहले Google से Sign In करें' }); }
   if (p.email !== ADMIN_EMAIL || p.email_verified !== true) return reply(403, { error: 'सिर्फ़ admin' });
+  if (!(await gateOk(env, body.gate))) return reply(401, { error: 'Admin password दोबारा डालें' });
   const token = crypto.randomUUID();
   const expire = Math.floor(Date.now() / 1000) + 600;            // ImageKit: expire 1 ghante se kam hona chahiye
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(env.IMAGEKIT_PRIVATE_KEY), { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']);
