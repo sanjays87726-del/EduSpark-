@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # EduSpark static site — nginx (non-root). Build: docker build -t eduspark:dev .   Run: docker run -p 8080:8080 eduspark:dev
-FROM nginxinc/nginx-unprivileged:1.27-alpine
+FROM nginxinc/nginx-unprivileged:1.29-alpine
 
 COPY deploy/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY deploy/nginx/security-headers.inc /etc/nginx/snippets/security-headers.inc
