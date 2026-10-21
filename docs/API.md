@@ -5,7 +5,7 @@ Browser → Cloudflare Worker. Sirf EduSpark ke allowed origins se (CORS + serve
 ```
 POST https://<worker>/v1/ask          ← canonical
 POST https://<worker>/                ← legacy alias (hamesha chalega — neeche "Versioning" dekho)
-GET  https://<worker>/                ← status: {worker, version, apiVersions, RATE, GEMINI_KEY, DAILY_LIMIT}
+GET  https://<worker>/                ← status: {worker, version, apiVersions, RATE, GEMINI_KEY, IMAGEKIT_PRIVATE_KEY, DAILY_LIMIT}
 Content-Type: application/json         (koi custom header nahi — warna CORS preflight fail hota hai)
 
 { "idToken": "<Firebase ID token>", "question": "…", "board": "CBSE-10", "subject": "Science", "topic": "Light" }
