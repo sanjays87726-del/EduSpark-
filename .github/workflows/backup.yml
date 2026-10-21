@@ -9,6 +9,9 @@ on:
     - cron: '0 2 * * 0'
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+
 concurrency:
   group: eduspark-backup
   cancel-in-progress: false
