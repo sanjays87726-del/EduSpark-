@@ -55,7 +55,7 @@ git(d, 'commit', '-qam', 'bump');
 
 r = check(d, { base: 'main', strictCache: true });
 assert.ok(!has(r, /CACHE_NAME/) && !r.warnings.some(x => /CACHE_NAME/.test(x)), 'bumped => ok');
-const next = current.replace(/(\d+)$/, n => String(Number(n) + 1));
+const nextVersion = current.replace(/(\d+)$/, n => String(Number(n) + 1));
 w(d, 'sw.js', s => s.replace(current, next));
 git(d, 'commit', '-qam', 'bump');
 r = check(d, { base: 'main', strictCache: true }); assert.ok(!has(r, /CACHE_NAME/) && !r.warnings.some(x => /CACHE_NAME/.test(x)), 'bumped => ok');
