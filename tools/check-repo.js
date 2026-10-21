@@ -25,7 +25,7 @@ function check(root, opts = {}) {
   // 1) HTML inline scripts compile (run nahi hote)
   const htmlFiles = fs.readdirSync(root).filter(f => f.endsWith('.html'));
   for (const f of htmlFiles) {
-    const re = /<script([^>]*)>([\s\S]*?)<\/script>/gi; let m, i = 0;
+    const re = /<script([^>]*)>([\s\S]*?)<\/script\b[^>]*>/gi; let m, i = 0;
     const html = read(f);
     while ((m = re.exec(html))) {
       if (/\bsrc\s*=/.test(m[1])) continue;
@@ -99,7 +99,7 @@ function check(root, opts = {}) {
   }
   if (pkgV) {
     if (!/^\d+\.\d+\.\d+$/.test(pkgV)) err(`package.json version "${pkgV}" semver (MAJOR.MINOR.PATCH) nahi`);
-    if (has('CHANGELOG.md') ? !new RegExp('^## \\[' + pkgV.replace(/\./g, '\\.') + '\\]', 'm').test(read('CHANGELOG.md')) : true) err(`CHANGELOG.md me "## [${pkgV}]" section nahi`);
+    if (has('CHANGELOG.md') ? !read('CHANGELOG.md').split('\n').some(l => l.startsWith('## [' + pkgV + ']')) : true) err(`CHANGELOG.md me "## [${pkgV}]" section nahi`);
   }
 
   // 7) Admin email: firestore.rules == admin.html (drift se admin lock ho sakta hai)
