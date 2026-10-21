@@ -57,4 +57,3 @@ r = check(d, { base: 'main', strictCache: true });
 assert.ok(!has(r, /CACHE_NAME/) && !r.warnings.some(x => /CACHE_NAME/.test(x)), 'bumped => ok');
 r = check(d, { base: 'no-such-ref' }); assert.ok(r.warnings.some(x => /skip/.test(x)), 'bad base => warning only');
 console.log('repo-check tests ✓');
-
