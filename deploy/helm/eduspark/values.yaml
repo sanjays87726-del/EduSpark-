@@ -1,0 +1,50 @@
+image:
+  repository: ghcr.io/REPLACE_OWNER/eduspark
+  tag: ""                       # khali = Chart.appVersion
+  pullPolicy: IfNotPresent
+
+replicaCount: 2
+
+# Rolling deployment
+strategy:
+  maxSurge: 1
+  maxUnavailable: 0
+
+# Blue-green: dono colors ke Deployments ek saath rakh sakte ho; Service sirf activeColor ko traffic deta hai.
+#   1) naye color ko enable + naya tag do   2) check karo   3) service.activeColor badlo (instant switch)   4) purana color band
+service:
+  port: 80
+  targetPort: 8080
+  activeColor: blue
+colors:
+  blue:  { enabled: true,  tag: "" }     # tag khali = image.tag
+  green: { enabled: false, tag: "" }
+
+# Canary: activeColor ke saath ek chhota alag Deployment — Service dono pods ko balance karta hai
+# (traffic ka hissa = canary replicas / kul replicas). Theek lage to stable ka tag badlo aur canary band karo.
+canary:
+  enabled: false
+  replicaCount: 1
+  tag: ""
+
+autoscaling:                    # sirf activeColor ke Deployment par
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+pdb:
+  enabled: true
+  minAvailable: 1
+
+resources:
+  requests: { cpu: 20m, memory: 32Mi }
+  limits: { cpu: 200m, memory: 128Mi }
+
+ingress:
+  enabled: false
+  className: nginx
+  host: eduspark.de5.net
+  tls:
+    enabled: false
+    secretName: eduspark-tls

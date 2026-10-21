@@ -1,0 +1,9 @@
+apiVersion: policy/v1             # node drain / upgrade ke time kam se kam 1 pod chalta rahe
+kind: PodDisruptionBudget
+metadata:
+  name: eduspark-web
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: eduspark

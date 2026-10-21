@@ -1,0 +1,36 @@
+name: EduSpark Data Migration
+
+# Sirf haath se chalta hai (Actions → Run workflow). Default = dry run (kuch likhta nahi).
+# Asli migration se pehle "EduSpark Backup" workflow chala lo.
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Asli me apply karna hai? (true = likho, false = sirf dry run)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json') }}
+          restore-keys: npm-${{ runner.os }}-
+      - name: Dependencies (package.json ke pinned range se)
+        run: npm ci || npm install
+      - name: Migrations
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          APPLY: ${{ inputs.apply && '1' || '0' }}
+        run: node scripts/migrate.js

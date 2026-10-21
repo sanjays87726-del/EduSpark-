@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eduspark-web
+  labels:
+    app.kubernetes.io/name: eduspark
+spec:
+  # replicas yahan nahi: HPA (hpa.yaml, min 2) sambhalta hai — dono likhne par har `kubectl apply` scaling reset karta
+  revisionHistoryLimit: 5            # `kubectl rollout undo` ke liye purane revisions
+  strategy:                          # Rolling deployment: naya pod ready hone ke baad hi purana hatta hai (zero downtime)
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: eduspark
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: eduspark
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101               # nginx-unprivileged ka user
+      topologySpreadConstraints:     # multi-zone: pods alag-alag zones me phaile
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: eduspark
+      containers:
+        - name: web
+          image: ghcr.io/sanjays87726-del/eduspark:1.5.0
+          ports:
+            - containerPort: 8080
+          readinessProbe:            # Service traffic tabhi bhejta hai jab ye pass ho
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:             # fail hone par container restart
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:                 # Vertical sizing: requests = guarantee, limits = upar ki seema
+            requests: { cpu: 20m, memory: 32Mi }
+            limits: { cpu: 200m, memory: 128Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]

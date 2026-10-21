@@ -1,16 +1,26 @@
 name: EduSpark Notifications
 
-# Har 20 minute mein automatically chalta hai — admin ke broadcast turant
-# uthaata hai, aur 3-din inactive students ko reminder bhejta hai.
-# "Run workflow" button se GitHub par kabhi bhi turant bhi chala sakte hain.
+# Har 20 minute mein automatically chalta hai:
+#   • admin ke broadcast turant bhejta hai
+#   • roz subah (7:30), dopahar (2:00), shaam (7:00) IST study reminder
+#   • roz ek baar (11 AM IST) 1+ din se inactive students ko wapas bulata hai
+# Ab ye tabhi "success" (hara) dikhata hai jab notifications sach mein gaye hon —
+# agar sab fail hue to run laal (fail) dikhega aur GitHub email bhi bhejta hai.
+# "Run workflow" button se kabhi bhi turant bhi chala sakte hain.
 on:
   schedule:
     - cron: '*/20 * * * *'
   workflow_dispatch: {}
 
+# Do runs ek saath chalein to duplicate notification na jaye
+concurrency:
+  group: eduspark-notifications
+  cancel-in-progress: false
+
 jobs:
   send-notifications:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Repo checkout karo
         uses: actions/checkout@v4
@@ -20,10 +30,18 @@ jobs:
         with:
           node-version: '20'
 
-      - name: firebase-admin install karo
-        run: npm install firebase-admin
+      - uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json') }}
+          restore-keys: npm-${{ runner.os }}-
+      - name: Dependencies (package.json ke pinned range se)
+        run: npm ci || npm install
 
       - name: Notifications bhejo
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          DAILY_SLOTS: 'on'          # subah/dopahar/shaam reminders band karne ke liye 'off' likhein
+          ENABLED_SLOTS: ''          # khali = teeno; 'morning,evening' = dopahar band (Firestore reads bachte hain)
+          INACTIVITY_DAYS: '1'       # kitne din inactive rehne par 'wapas aao' reminder (pehle 3 tha)
         run: node scripts/send-notifications.js

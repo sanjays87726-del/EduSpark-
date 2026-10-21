@@ -1,0 +1,13 @@
+{{- if .Values.pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "eduspark.name" . }}
+spec:
+  minAvailable: {{ .Values.pdb.minAvailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "eduspark.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      eduspark/color: {{ .Values.service.activeColor }}
+{{- end }}

@@ -1,0 +1,16 @@
+node_modules/
+backups/
+dist/
+.wrangler/
+.dev.vars
+# Terraform: state me secrets hote hain — kabhi commit mat karo
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!example.tfvars
+crash.log
+
+# Local extracted ZIP copies
+/repo-files/
+/repo-files-1/

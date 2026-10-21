@@ -1,0 +1,29 @@
+# EduSpark — Mistakes Notes (yaad rakhne ke liye)
+
+| # | Galti | Kahan | Status |
+|---|-------|-------|--------|
+| 1 | Doubt `text ≤ 2000` rules me hai par input par limit nahi thi → lamba doubt "Error" deta tha | index.html | Fixed (maxlength 200/2000/100) |
+| 2 | **Meri galti (Batch 1):** 502/503 retry hota tha aur Worker ka asli message dab jata tha. Worker me har attempt = KV ke 2 writes (free 1000/din), 503 = "aaj ka quota khatam" | es-ops (index.html) | Fixed: sirf network error retry, Worker ka message dikhta hai, 503 se breaker nahi khulta |
+| 3 | Content ka title/option/explanation/link bina escape ke innerHTML / onclick me jaata tha (XSS) | index.html | Fixed (allow-list sanitize + safeUrl) |
+| 4 | Search box ka text "kuch nahi mila" message me bina escape | index.html | Fixed |
+| 5 | Worker: JWKS 1 ghante cache — Google naya key de to students 401 | worker.js | Fixed (fresh fetch, 60s throttle) |
+| 6 | Worker: body size limit nahi, `null` body par 500 | worker.js | Fixed (16KB, 400/413) |
+| 7 | Daily limit KV get→put se: parallel requests limit cross kar sakte (atomic nahi) | worker.js | Partly fixed (Batch 3: per-student lock, isolate ke andar). Poori guarantee = Durable Object (optional) |
+| 8 | `admin.html` Image tab `/imagekit-auth` maangta hai, par upload hui worker.js (v5) me ye route nahi | worker | Open — deployed worker ka code chahiye |
+| 9 | In-app `privacyModal` purana text (13 Oct, "ads nahi") vs privacy.html (15 Oct, ads) | index.html | Open |
+| 10 | Rules: `students` delete `dev_*` ke liye har kisi ko open (non-login users ke liye jaan-boojh kar) | firestore.rules | Open — anonymous auth se hi band hoga |
+| 11 | Fail hua broadcast hamesha ke liye "failed" rehta tha, retry nahi; do runs ek broadcast do baar bhej sakti thin | send-notifications.js | Fixed (lease lock, retry 20/40 min, 3 kosish ke baad `dead`) |
+| 12 | Account delete me doubts N alag delete (N+1), beech me fail par pata nahi kaun sa step | index.html | Fixed (400-400 batch + saga step naam) |
+| 13 | Admin doubt-reply bina check ke overwrite karta tha | admin.html | Fixed (transaction) |
+| 14 | Admin notification history me `dead`/`sending` galat "Pending" dikhte, text escape nahi | admin.html | Fixed |
+| 15 | `sw.js` ka `CACHE_NAME` har deploy par badalna zaroori — warna student ko purana version dikhta rahega | sw.js | Toast laga diya; v19 kiya. **Har deploy par number badlo** |
+| 16 | Batch 3 test me fake DB khaali collection bana deta tha, migrate "badal raha" lag raha tha — asli code galat nahi tha (test helper theek kiya) | tests | Closed |
+| 17 | K8s `deployment.yaml` me `replicas: 2` + HPA dono — har `kubectl apply` scaling reset karta. Meri apni galti, `tools/check-manifests.py` ne pakdi | deploy/k8s | Fixed (replicas hata, HPA min 2) |
+| 18 | `index.html` `/about.html` aur `/contact.html` kholta hai, par ye files uploaded project me nahi thi — repo me na hon to Profile me 404 dikhega | repo | **Open — repo me check karo** (`npm run check` bata dega) |
+| 19 | Daily reminder slots har baar token wale SAARE students padhte hain: 20,000 × 3 slots = 60,000 reads/din (free 50,000) | send-notifications.js | Lever diya (`ENABLED_SLOTS`); students badhne par slot kam karo / topics par jao |
+| 20 | `notifications.yml` har 20 min = ~2,160 runs/mahina; repo **private** ho to GitHub free 2,000 min/mahina paar ho sakti hai | workflows | Open — repo public hai to chinta nahi |
+| 21 | Docker/Helm/Terraform/Kubernetes tools yahan sandbox me nahi the — inke tests sirf CI me chalenge (YAML syntax + manifest logic yahan check hui) | CI | Pehli CI run dhyan se dekho |
+| 22 | **Meri galti:** Batch 2 ke list me "API versioning, Cold starts, Serverless limits" gina diye par us waqt na code tha na doc | docs / worker | Fixed in Batch 5 (`/v1/ask`, `docs/API.md`, ARCHITECTURE rows) |
+| 23 | Worker ab `/` aur `/v1/ask` ke alawa har path par 404 deta hai — `admin.html` ka `/imagekit-auth` route is worker me tha hi nahi (pehle bhi AI handler me girta tha) | worker.js | **Open** — deployed worker me image-auth route ho to ye file mat chadhao, mujhe code bhejo |
+| 24 | App Check enable nahi — Firestore ka public `apiKey` script se hit ho sakta hai (rules limits hain par rate-limit nahi) | Firebase | Open — RUNBOOK §5 |
+| 25 | `ES.checkClockSkew` HTTP `Date` header (1 sec resolution) par tikka hai — chhote skew (<10 min) pakadne ke liye nahi bana | index.html | Known limit |

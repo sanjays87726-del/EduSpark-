@@ -1,0 +1,33 @@
+name: 🚨 Incident
+description: Production incident track karo (docs/RUNBOOK.md)
+title: "[INCIDENT] "
+labels: [incident]
+body:
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - SEV1 — sab ke liye band / data loss / security
+        - SEV2 — bada feature band (AI, notifications, quiz)
+        - SEV3 — chhota / workaround hai
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Asar (kitne students, kya kaam nahi kar raha, kab se)
+    validations:
+      required: true
+  - type: textarea
+    id: detect
+    attributes:
+      label: Kaise pata chala (alert / student / khud)
+  - type: textarea
+    id: mitigation
+    attributes:
+      label: Mitigation (rollback / flag / restore) aur uska samay
+  - type: textarea
+    id: next
+    attributes:
+      label: Agle kadam / post-mortem link

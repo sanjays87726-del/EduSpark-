@@ -1,0 +1,14 @@
+# Cloudflare Worker config (deploy-worker.yml isi se deploy karta hai)
+name = "bold-dust-6f37"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+workers_dev = true
+
+# Dashboard me set ki hui vars (jaise DAILY_LIMIT) deploy par mitni nahi chahiye
+keep_vars = true
+
+[[kv_namespaces]]
+binding = "RATE"
+id = "3e634473ac554dcaafe6f61b8be64b5f"   # Cloudflare dashboard → Workers KV → namespace ID
+
+# Secret (GEMINI_KEY) file me nahi: npx wrangler secret put GEMINI_KEY

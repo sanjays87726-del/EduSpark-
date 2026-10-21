@@ -1,0 +1,89 @@
+name: CI
+
+# Har push/PR par: repo checks + saare tests + Docker image smoke test + Helm/Terraform validate
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0              # CACHE_NAME check ko base branch ka history chahiye
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Repo checks (syntax, links, version, rules email, CACHE_NAME)
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [ -n "$BASE_REF" ]; then
+            node tools/check-repo.js --base "origin/$BASE_REF"
+          else
+            node tools/check-repo.js
+          fi
+      - name: Tests
+        run: npm test
+
+  docker:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Image build (layer cache = GitHub Actions cache)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: eduspark:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Smoke test (health, headers, no secrets in image, non-root)
+        run: bash tools/smoke-docker.sh eduspark:ci
+      - name: Load balancer + failover (compose, 2 replicas)
+        run: |
+          docker compose up -d --build --scale web=2 --wait --wait-timeout 120
+          curl -fsS http://127.0.0.1:8080/healthz
+          docker stop "$(docker compose ps -q web | head -n1)"
+          for i in 1 2 3 4 5 6; do curl -fsS http://127.0.0.1:8080/healthz >/dev/null; done
+          echo "failover ok"
+      - name: Compose down
+        if: always()
+        run: docker compose down -v
+
+  infra:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - run: pip install pyyaml
+      - name: Helm lint + render (rolling, canary, blue-green)
+        run: |
+          helm lint deploy/helm/eduspark
+          helm template t deploy/helm/eduspark > /tmp/default.yaml
+          helm template t deploy/helm/eduspark --set canary.enabled=true --set canary.tag=1.5.0 > /tmp/canary.yaml
+          helm template t deploy/helm/eduspark --set colors.green.enabled=true --set colors.green.tag=1.5.0 --set service.activeColor=green > /tmp/bluegreen.yaml
+          python3 tools/check-manifests.py /tmp/default.yaml --service-matches 1 --hpa-target eduspark-blue
+          python3 tools/check-manifests.py /tmp/canary.yaml --service-matches 2
+          python3 tools/check-manifests.py /tmp/bluegreen.yaml --service-matches 1 --hpa-target eduspark-green
+          python3 tools/check-manifests.py deploy/k8s/*.yaml --service-matches 1
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform validate
+        working-directory: infra/terraform
+        run: |
+          terraform init -backend=false -input=false
+          terraform validate

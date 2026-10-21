@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == "bhupeshkumar36882@gmail.com"
+        && request.auth.token.email_verified == true;
+    }
+
+    // Helper: field maujood na ho / null ho / ya string ho jiski length n se zyada na ho
+    function okStr(d, k, n) {
+      return !(k in d) || d[k] == null || (d[k] is string && d[k].size() <= n);
+    }
+
+    // Public read, sirf admin write
+    match /_config/{doc}           { allow read: if true; allow write: if isAdmin(); }
+    match /content/{doc}           { allow read: if true; allow write: if isAdmin(); }
+    match /quizzes/{doc}           { allow read: if true; allow write: if isAdmin(); }
+    match /pyq/{doc}               { allow read: if true; allow write: if isAdmin(); }
+    match /notificationQueue/{doc} { allow read: if true; allow write: if isAdmin(); }
+
+    // Doubts: student sirf apne doubts dekh/bhej sakta hai; reply/delete sirf admin.
+    // Naya doubt sirf in fields ke saath, status 'pending' aur khali answer ke saath ban sakta hai
+    // (taaki koi khud se nakli "answer" na likh sake).
+    match /doubts/{doc} {
+      allow read: if isAdmin() || (request.auth != null && resource.data.uid == request.auth.uid);
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['board','subject','topic','text','name','date','status','answer','uid','deviceId'])
+        && request.resource.data.keys().hasAll(['text','uid'])
+        && request.resource.data.text is string
+        && request.resource.data.text.size() >= 1
+        && request.resource.data.text.size() <= 2000
+        && request.resource.data.status == 'pending'
+        && request.resource.data.answer == ''
+        && okStr(request.resource.data, 'board', 40)
+        && okStr(request.resource.data, 'subject', 100)
+        && okStr(request.resource.data, 'topic', 200)
+        && okStr(request.resource.data, 'name', 100)
+        && okStr(request.resource.data, 'date', 40)
+        && okStr(request.resource.data, 'deviceId', 100);
+      allow update: if isAdmin();
+      // Student apne doubts delete kar sake (account delete ke liye); doosron ke nahi
+      allow delete: if isAdmin() || (request.auth != null && resource.data.uid == request.auth.uid);
+    }
+
+    // Students: list sirf admin; student sirf apna doc likh sakta hai
+    // (login wale: doc id == uid, bina-login: "dev_..." device id)
+    function studentKeys() {
+      return ['name','username','usernameLower','photo','board','deviceId','lastActive','updatedAt','googleUid','email','fcmToken'];
+    }
+    function photoOk() {
+      return request.resource.data.get('photo', null) == null || request.resource.data.photo.size() < 120000;
+    }
+    // Har text field ki lambai par limit (limits kaafi khuli rakhi hain taaki normal students kabhi na atkein)
+    function studentSane(d) {
+      return okStr(d, 'name', 100)
+        && okStr(d, 'username', 80)
+        && okStr(d, 'usernameLower', 80)
+        && okStr(d, 'board', 40)
+        && okStr(d, 'deviceId', 100)
+        && okStr(d, 'googleUid', 128)
+        && okStr(d, 'email', 254)
+        && okStr(d, 'fcmToken', 1024);
+    }
+    function ownsStudentDoc(id) {
+      return request.auth != null && request.auth.uid == id;
+    }
+    match /students/{id} {
+      allow get: if isAdmin() || (request.auth != null && request.auth.uid == id);
+      allow list: if isAdmin();
+      allow create: if photoOk() && request.resource.data.keys().hasOnly(studentKeys()) && studentSane(request.resource.data) && ownsStudentDoc(id);
+      // update me sirf wahi fields check hoti hain jo app badalta hai (server-side fields par asar nahi)
+      allow update: if photoOk() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(studentKeys()) && studentSane(request.resource.data) && ownsStudentDoc(id);
+      // Student apna record delete kar sakta hai (login wale: id == uid, bina-login: "dev_..." device id); baaki sirf admin
+      allow delete: if isAdmin() || (request.auth != null && request.auth.uid == id);
+    }
+
+    // Unique usernames (index.html ka claimUsername isi collection se check karta hai)
+    match /usernames/{name} {
+      allow get: if true;
+      allow create: if request.auth != null
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid','username','updatedAt'])
+        && name.size() <= 600
+        && okStr(request.resource.data, 'username', 80);
+      allow delete: if request.auth != null && (resource.data.uid == request.auth.uid || isAdmin());
+    }
+
+    // Baaki sab (purane notes/quiz_history/_adminAuth wagairah) — sirf admin
+    match /{document=**} { allow read, write: if isAdmin(); }
+  }
+}
