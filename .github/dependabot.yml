@@ -13,3 +13,8 @@ updates:
   - package-ecosystem: terraform
     directory: "/infra/terraform"
     schedule: { interval: weekly }
+    # Cloudflare provider v5 me resource naam badal gaye (cloudflare_worker_script -> cloudflare_workers_script...),
+    # to major update se `terraform validate` toot'ta hai. Major update tab karo jab main.tf ko migrate kar lo.
+    ignore:
+      - dependency-name: "cloudflare/cloudflare"
+        update-types: ["version-update:semver-major"]
