@@ -12,10 +12,10 @@ const kp1 = await subtle.generateKey({ name: 'RSASSA-PKCS1-v1_5', modulusLength:
 const kp2 = await subtle.generateKey({ name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1,0,1]), hash: 'SHA-256' }, true, ['sign','verify']);
 const jwk = async (kp, kid) => ({ ...(await subtle.exportKey('jwk', kp.publicKey)), kid, alg: 'RS256', use: 'sig' });
 const OLD = { keys: [await jwk(kp1, 'k1')] }, NEW = { keys: [await jwk(kp1, 'k1'), await jwk(kp2, 'k2')] };
-async function token({ kp = kp1, kid = 'k1', uid = 'u1', aud = PROJECT, exp, tamper } = {}) {
+async function token({ kp = kp1, kid = 'k1', uid = 'u1', aud = PROJECT, exp, tamper, claims = {} } = {}) {
   const now = Math.floor(Date.now() / 1000);
   const h = b64u(JSON.stringify({ alg: 'RS256', kid, typ: 'JWT' }));
-  const p = b64u(JSON.stringify({ aud, iss: 'https://securetoken.google.com/' + PROJECT, sub: uid, iat: now - 5, exp: exp ?? now + 3600 }));
+  const p = b64u(JSON.stringify({ aud, iss: 'https://securetoken.google.com/' + PROJECT, sub: uid, iat: now - 5, exp: exp ?? now + 3600, ...claims }));
   const sig = Buffer.from(await subtle.sign('RSASSA-PKCS1-v1_5', kp.privateKey, new TextEncoder().encode(h + '.' + p)));
   if (tamper) sig[0] ^= 0xff;
   return h + '.' + p + '.' + sig.toString('base64url');
@@ -33,14 +33,14 @@ globalThis.fetch = async (url, opts = {}) => {
   }
   throw new Error('unexpected fetch ' + url);
 };
-const kv = new Map(); const env = { GEMINI_KEY: 'secret', DAILY_LIMIT: '5', RATE: { get: async k => kv.get(k) ?? null, put: async (k, v) => { kv.set(k, v); } } };
+const kv = new Map(); const IK_KEY = 'private_test_key_123'; const env = { GEMINI_KEY: 'secret', DAILY_LIMIT: '5', IMAGEKIT_PRIVATE_KEY: IK_KEY, RATE: { get: async k => kv.get(k) ?? null, put: async (k, v) => { kv.set(k, v); } } };
 const post = (body, { origin = ORIGIN, headers = {}, path = '/' } = {}) => worker.fetch(new Request('https://w.example' + path, { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json', ...headers }, body: typeof body === 'string' ? body : JSON.stringify(body) }), env);
 const Q = 'Newton ka pehla niyam kya hai?';
 let n = 0; const t = async (name, fn) => { try { await fn(); n++; console.log('✓', name); } catch (e) { console.log('✗', name, '\n  ', e.stack); process.exitCode = 1; } };
 
-await t('GET status v8, no-store + nosniff', async () => {
+await t('GET status v9, no-store + nosniff', async () => {
   const r = await worker.fetch(new Request('https://w.example/'), env); const j = await r.json();
-  assert.strictEqual(j.version, 8); assert.deepStrictEqual(j.apiVersions, ['v1']); assert.strictEqual(r.headers.get('X-API-Version'), '1'); assert.strictEqual(r.headers.get('Cache-Control'), 'no-store'); assert.strictEqual(r.headers.get('X-Content-Type-Options'), 'nosniff');
+  assert.strictEqual(j.version, 9); assert.deepStrictEqual(j.apiVersions, ['v1']); assert.strictEqual(r.headers.get('X-API-Version'), '1'); assert.strictEqual(r.headers.get('Cache-Control'), 'no-store'); assert.strictEqual(r.headers.get('X-Content-Type-Options'), 'nosniff');
 });
 await t('OPTIONS preflight: allowed headers unchanged (Content-Type only) + Max-Age', async () => {
   const r = await worker.fetch(new Request('https://w.example/', { method: 'OPTIONS', headers: { Origin: ORIGIN } }), env);
@@ -112,8 +112,35 @@ await t('API versioning: / (legacy) and /v1/ask behave identically; apiVersion i
   }
   const used = () => parseInt([...kv.entries()].find(([k]) => k.startsWith('rl:ver1:'))[1]);
   const before = used();
-  for (const path of ['/v2/ask', '/imagekit-auth', '/v1/ask/extra']) { const r = await post({ idToken: tok, question: Q }, { path }); assert.strictEqual(r.status, 404, path); }
+  for (const path of ['/v2/ask', '/imagekit-auth/x', '/v1/ask/extra']) { const r = await post({ idToken: tok, question: Q }, { path }); assert.strictEqual(r.status, 404, path); }
   assert.strictEqual(used(), before);                                                                 // 404 par quota kharch nahi
+});
+await t('imagekit-auth: admin gets {token, expire, signature}; signature = HMAC-SHA1(privateKey, token+expire) hex', async () => {
+  const { createHmac } = await import('crypto');
+  const before = kv.size;
+  const r = await post({ idToken: await token({ uid: 'adm1', claims: { email: 'bhupeshkumar36882@gmail.com', email_verified: true } }) }, { path: '/imagekit-auth' });
+  const j = await r.json(); assert.strictEqual(r.status, 200);
+  assert.deepStrictEqual(Object.keys(j).sort(), ['expire', 'signature', 'token']);
+  assert.strictEqual(j.signature, createHmac('sha1', IK_KEY).update(j.token + j.expire).digest('hex'));
+  const now = Math.floor(Date.now() / 1000); assert.ok(j.expire > now && j.expire <= now + 3600, 'expire < 1 ghanta');
+  assert.strictEqual(kv.size, before);                                                                // KV quota kharch nahi
+  assert.ok(!JSON.stringify(j).includes(IK_KEY));                                                     // private key kabhi response me nahi
+  const j2 = await (await post({ idToken: await token({ uid: 'adm1', claims: { email: 'bhupeshkumar36882@gmail.com', email_verified: true } }) }, { path: '/imagekit-auth' })).json();
+  assert.notStrictEqual(j2.token, j.token);                                                           // har baar naya token
+});
+await t('imagekit-auth: non-admin / unverified / no-email -> 403; bad token -> 401; no secret -> 500; bad origin -> 403', async () => {
+  const ik = (body, o) => post(body, { path: '/imagekit-auth', ...o });
+  const ADM = 'bhupeshkumar36882@gmail.com';
+  assert.strictEqual((await ik({ idToken: await token({ uid: 's1', claims: { email: 'student@gmail.com', email_verified: true } }) })).status, 403);
+  assert.strictEqual((await ik({ idToken: await token({ uid: 's2', claims: { email: ADM, email_verified: false } }) })).status, 403);
+  assert.strictEqual((await ik({ idToken: await token({ uid: 's3' }) })).status, 403);
+  assert.strictEqual((await ik({ idToken: await token({ uid: 's4', claims: { email: ADM, email_verified: true }, tamper: true }) })).status, 401);
+  assert.strictEqual((await ik({})).status, 401);
+  assert.strictEqual((await ik('not json')).status, 400);
+  assert.strictEqual((await ik({ idToken: await token({ uid: 's5', claims: { email: ADM, email_verified: true } }) }, { origin: 'https://evil.example' })).status, 403);
+  const saved = env.IMAGEKIT_PRIVATE_KEY; delete env.IMAGEKIT_PRIVATE_KEY;
+  const r = await ik({ idToken: await token({ uid: 's6', claims: { email: ADM, email_verified: true } }) }); env.IMAGEKIT_PRIVATE_KEY = saved;
+  assert.strictEqual(r.status, 500); assert.ok((await r.json()).error.includes('IMAGEKIT_PRIVATE_KEY'));
 });
 await t('contract: success response keys are exactly {answer, left, apiVersion}; errors always {error}', async () => {
   const ok = await (await post({ idToken: await token({ uid: 'ct1' }), question: Q })).json();
