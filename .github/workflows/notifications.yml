@@ -23,7 +23,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Repo checkout karo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Node.js setup karo
         uses: actions/setup-node@v4
