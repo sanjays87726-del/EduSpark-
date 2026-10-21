@@ -6,7 +6,7 @@
 //
 //   1) Admin panel ke "instant broadcast" (notificationQueue) — lease-lock, retry + backoff, dead-letter ke saath
 //   2) Roz 3 baar study reminder — subah, dopahar, shaam (IST)
-//   3) Roz ek baar: 3+ din se inactive students ko wapas bulana
+//   3) Roz ek baar: 1+ din (INACTIVITY_DAYS) se inactive students ko wapas bulana
 //
 // Pehle ki script har 20 minute mein POORA `students` collection padhti thi
 // (din mein 72 baar!) — isse Firestore ke free 50,000 reads/day jaldi khatam ho
@@ -24,9 +24,13 @@
 const admin = require('firebase-admin');
 
 const APP_URL = 'https://eduspark.de5.net/';
-const INACTIVITY_DAYS = 3;
+// Kitne din inactive rehne par "wapas aao" reminder jaye (workflow me env INACTIVITY_DAYS se badal sakte ho). Default 1 din.
+const INACTIVITY_DAYS = parseFloat(process.env.INACTIVITY_DAYS) > 0 ? parseFloat(process.env.INACTIVITY_DAYS) : 1;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const IST_MS = 5.5 * 60 * 60 * 1000;
+// Roz ke slot ka time thoda aage-peeche hota hai (kal 11:18 par gaya, aaj 11:02 par chalega). Isliye "pichhli baar kab gaya"
+// check me thodi chhoot: warna 1-din wale reminder par student ek din chhoot jaata. Dobara-bhejna slot-claim se hi rukta hai.
+const NOTIFY_SLACK_MS = 3 * 60 * 60 * 1000;
 const ACTIVE_NOW_MS = 15 * 60 * 1000;           // jo abhi app use kar raha ho use daily reminder nahi
 const DAILY_SLOTS_ON = process.env.DAILY_SLOTS !== 'off';
 // Cost lever: har slot (subah/dopahar/shaam) token wale SAARE students padhta hai. 20,000 students × 3 slots = 60,000 reads/din
@@ -263,7 +267,7 @@ async function sendDailySlot(db, slot, t) {
   return { ok: result.successCount > 0, result };
 }
 
-// ── PART 3: 3+ din se inactive students (roz ek baar) ───────────
+// ── PART 3: inactive students (INACTIVITY_DAYS se zyada, roz ek baar) ──
 function pickInactivityMessage(name, days) {
   const f = firstName(name);
   const pool = [
@@ -277,9 +281,14 @@ function pickInactivityMessage(name, days) {
   const m = pool[Math.floor(Math.random() * pool.length)];
   return { title: m[0], body: m[1] };
 }
+// la / ln = lastActive / lastNotifiedAt (ms; 0 = kabhi nahi)
+function needsInactivityReminder(la, ln, now = Date.now()) {
+  const cooldownMs = Math.max(0, INACTIVITY_DAYS * MS_PER_DAY - NOTIFY_SLACK_MS);
+  return (now - la) >= INACTIVITY_DAYS * MS_PER_DAY && (!ln || (now - ln) >= cooldownMs);
+}
 async function sendInactivityReminders(db) {
   const cutoff = admin.firestore.Timestamp.fromMillis(Date.now() - INACTIVITY_DAYS * MS_PER_DAY);
-  // Sirf wo jo 3+ din se inactive hain (poora collection nahi padhte)
+  // Sirf wo jo INACTIVITY_DAYS se inactive hain (poora collection nahi padhte)
   const snap = await db.collection('students').where('lastActive', '<', cutoff).get();
   const now = Date.now();
   const messages = [];
@@ -288,17 +297,15 @@ async function sendInactivityReminders(db) {
     if (!s.fcmToken) return;
     const la = s.lastActive && s.lastActive.toMillis ? s.lastActive.toMillis() : 0;
     const ln = s.lastNotifiedAt && s.lastNotifiedAt.toMillis ? s.lastNotifiedAt.toMillis() : 0;
-    const daysActive = (now - la) / MS_PER_DAY;
-    const daysNotified = ln ? (now - ln) / MS_PER_DAY : Infinity;
-    if (daysActive >= INACTIVITY_DAYS && daysNotified >= INACTIVITY_DAYS) {
-      messages.push({ token: s.fcmToken, studentId: doc.id, ref: doc.ref, notification: pickInactivityMessage(s.name, Math.floor(daysActive)) });
+    if (needsInactivityReminder(la, ln, now)) {
+      messages.push({ token: s.fcmToken, studentId: doc.id, ref: doc.ref, notification: pickInactivityMessage(s.name, Math.max(1, Math.floor((now - la) / MS_PER_DAY))) });
     }
   });
   if (!messages.length) { console.log('ℹ️  Inactive reminder: koi nahi.'); return { ok: true }; }
   const result = await sendMessages(db, messages);
-  console.log(`📅 3-din inactivity reminder → ${result.successCount} bheje, ${result.failureCount} fail`);
+  console.log(`📅 ${INACTIVITY_DAYS}-din inactivity reminder → ${result.successCount} bheje, ${result.failureCount} fail`);
   logErrors(result);
-  // Jinko sach mein gaya sirf unka lastNotifiedAt likho (dobara 3 din baad hi)
+  // Jinko sach mein gaya sirf unka lastNotifiedAt likho (dobara INACTIVITY_DAYS baad hi)
   const okSet = new Set(result.okIds);
   const sent = messages.filter(m => okSet.has(m.studentId));
   for (let i = 0; i < sent.length; i += 400) {
@@ -327,7 +334,7 @@ async function runDueSlots(db) {
   return anyFailed;
 }
 
-module.exports = { istNow, dueSlots, pickSlotMessage, firstName, SLOTS, SLOT_MESSAGES, claimSlot, runDueSlots, processQueue, claimQueueDoc, MAX_ATTEMPTS, RETRY_BASE_MS, LEASE_MS };
+module.exports = { needsInactivityReminder, INACTIVITY_DAYS, istNow, dueSlots, pickSlotMessage, firstName, SLOTS, SLOT_MESSAGES, claimSlot, runDueSlots, processQueue, claimQueueDoc, MAX_ATTEMPTS, RETRY_BASE_MS, LEASE_MS };
 
 if (require.main === module) {
   (async () => {
