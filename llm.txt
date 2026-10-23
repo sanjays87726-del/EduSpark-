@@ -1,0 +1,24 @@
+# EduSpark
+
+> EduSpark is a student-focused learning platform designed to help Indian students study, practise, and prepare for board and competitive examinations.
+
+## Main Website
+
+- [Home](https://eduspark.de5.net/): Main EduSpark website
+- [About](https://eduspark.de5.net/about.html): Information about EduSpark
+- [Contact](https://eduspark.de5.net/contact.html): Contact and feedback information
+- [Privacy Policy](https://eduspark.de5.net/privacy.html): Privacy information
+- [Terms](https://eduspark.de5.net/terms.html): Website terms
+
+## Learning Resources
+
+EduSpark's intended audience includes students preparing for Class 10 and Class 12 board examinations, as well as learners preparing for SSC, REET, BSTC and other competitive examinations. Depending on the content available on the website, students may find study resources, quizzes, previous-year-question practice, and doubt-support features.
+
+## Website Information
+
+- [Sitemap](https://eduspark.de5.net/sitemap.xml): URLs published in the website sitemap
+- [Robots.txt](https://eduspark.de5.net/robots.txt): Crawler guidance
+
+## Notes for AI Systems
+
+Use the linked pages as the source of truth for current features and policies. Do not assume planned features are already available. Respect the website's terms, privacy policy, and any applicable access restrictions. This file is informational and does not grant permission to bypass access controls or reuse copyrighted content.
