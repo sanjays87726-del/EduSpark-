@@ -175,6 +175,16 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
         </div>
         <label>Time Limit (मिनट, optional — खाली छोड़ें तो auto-calculate होगा)</label>
         <input type="number" id="aQuizTime" placeholder="जैसे 15" min="1" max="180"/>
+        <label>Passing / Cutoff % (optional — खाली = Board 33%, Competitive 40%)</label>
+        <input type="number" id="aPass" placeholder="जैसे 40" min="1" max="100"/>
+        <label>हर सही प्रश्न के अंक (optional, default 1)</label>
+        <input type="number" id="aMpq" placeholder="जैसे 1 या 2" min="0.25" max="10" step="0.25"/>
+        <label>गलत उत्तर पर negative अंक (optional, default 0)</label>
+        <input type="number" id="aNeg" placeholder="जैसे 0.25 या 0.5" min="0" max="5" step="0.05"/>
+        <div style="background:var(--blue-l);border-radius:8px;padding:10px;margin-bottom:10px;font-size:11px;color:var(--blue);">
+          📌 Quiz Analytics (result page) में marks, percentage, required marks और difficulty graph इन्हीं से बनते हैं।<br>
+          📌 Difficulty के लिए हर question में optional <b>"diff":"easy"</b> / <b>"medium"</b> / <b>"hard"</b> डालें (न डालें तो student के लगे समय से अनुमान लगता है)।
+        </div>
       </div>
       <label>Chapter</label><input type="text" id="aChap" placeholder="Chapter name"/>
       <button class="add-btn" id="addBtn" onclick="addContent()">✅ Add Content</button>
@@ -244,6 +254,17 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
         </div>
       </div>
 
+
+        <label>Passing / Cutoff % (optional — खाली = Board 33%, Competitive 40%)</label>
+        <input type="number" id="qPass" placeholder="जैसे 40" min="1" max="100"/>
+        <label>हर सही प्रश्न के अंक (optional, default 1)</label>
+        <input type="number" id="qMpq" placeholder="जैसे 1 या 2" min="0.25" max="10" step="0.25"/>
+        <label>गलत उत्तर पर negative अंक (optional, default 0)</label>
+        <input type="number" id="qNeg" placeholder="जैसे 0.25 या 0.5" min="0" max="5" step="0.05"/>
+        <div style="background:var(--blue-l);border-radius:8px;padding:10px;margin-bottom:10px;font-size:11px;color:var(--blue);">
+          📌 Quiz Analytics (result page) में marks, percentage, required marks और difficulty graph इन्हीं से बनते हैं।<br>
+          📌 Difficulty के लिए हर question में optional <b>"diff":"easy"</b> / <b>"medium"</b> / <b>"hard"</b> डालें (न डालें तो student के लगे समय से अनुमान लगता है)।
+        </div>
       <button class="add-btn" onclick="addQuiz()">✅ Add Quiz</button>
     </div>
   </div>
@@ -372,6 +393,10 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
       <input type="text" id="notifyTitle" placeholder="जैसे: नया PYQ आ गया है! 📜"/>
       <label>Notification Message</label>
       <input type="text" id="notifyBody" placeholder="जैसे: Class 10 Maths ka 2025 paper add ho gaya, अभी check करें"/>
+      <label>Image URL (optional — notification me badi image dikhegi)</label>
+      <input type="text" id="notifyImg" placeholder="https://ik.imagekit.io/..."/>
+      <label>Link (optional — notification dabane par khule)</label>
+      <input type="text" id="notifyLink" placeholder="https://..."/>
       <label>किसे भेजें</label>
       <select id="notifyAudience">
         <option value="all">सभी Students</option>
@@ -400,6 +425,20 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
     <label>Start date (khali = abhi se)</label><input type="date" id="ofStart"/>
     <label>End date (khali = kabhi expire nahi)</label><input type="date" id="ofEnd"/>
     <label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="ofPopup" style="width:auto;"/> Popup bhi dikhao (din me 1 baar)</label>
+    <label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="ofNotify" checked style="width:auto;"/> 📲 Students के phone पर notification भी भेजो (offer की image + link के साथ)</label>
+    <label>Notification text (khali = "अभी देखें" वाला default)</label><input type="text" id="ofNotifyBody" placeholder="जैसे: Limited time offer — अभी देखें!"/>
+    <label>Notification किसे भेजें</label>
+    <select id="ofAudience">
+      <option value="all">सभी Students</option>
+      <option value="BSER-10">BSER Class 10</option>
+      <option value="BSER-12">BSER Class 12</option>
+      <option value="CBSE-10">CBSE Class 10</option>
+      <option value="CBSE-12">CBSE Class 12</option>
+      <option value="REET">REET</option>
+      <option value="SSC-CGL">SSC CGL</option>
+      <option value="SSC-CHSL">SSC CHSL</option>
+    </select>
+    <div style="font-size:10.5px;color:var(--g600);margin:4px 0 8px;line-height:1.6;">Start date aage ki ho to notification usi din (agli 20-30 min ki window me) jayega. Edit karte waqt ye checkbox band rehta hai — dobara bhejna ho to tick karein.</div>
     <button class="add-btn" id="ofSaveBtn" onclick="saveOffer()">➕ Offer save करें</button>
     <button class="add-btn" onclick="resetOfferForm()" style="margin-top:8px;">✖ Clear</button>
     <div id="ofList" style="margin-top:16px;"></div>
@@ -646,6 +685,7 @@ function resetOfferForm(){
   _ofEdit = null;
   ['ofImg','ofLink','ofTitle','ofStart','ofEnd'].forEach(i => $o(i).value = '');
   $o('ofOrder').value = 1; $o('ofPopup').checked = false;
+  $o('ofNotify').checked = true; $o('ofNotifyBody').value = ''; $o('ofAudience').value = 'all';
   $o('ofSaveBtn').textContent = '➕ Offer save करें';
 }
 async function saveOffer(){
@@ -655,9 +695,23 @@ async function saveOffer(){
   if(s && e && e < s) return showToast('⚠️ End date, start date से पहले है');
   const data = { img, link, title: $o('ofTitle').value.trim().slice(0,100), order: +$o('ofOrder').value || 0, popup: $o('ofPopup').checked, startAt: s, endAt: e };
   try{
+    let offerId = _ofEdit;
     if(_ofEdit) await db.collection('offers').doc(_ofEdit).set(data, {merge:true});
-    else await db.collection('offers').add(Object.assign({ active:true, createdAt:Date.now() }, data));
-    showToast('✅ Offer save हो गया'); resetOfferForm(); renderOffers();
+    else { const ref = await db.collection('offers').add(Object.assign({ active:true, createdAt:Date.now() }, data)); offerId = ref.id; }
+    // Phone par notification: offer ki image (URL text nahi) + click par link. GitHub Action isse FCM se bhejta hai.
+    let note = '';
+    if($o('ofNotify').checked){
+      const now = Date.now();
+      if(e && e < now){ note = ' (offer expire ho chuka — notification nahi bheji)'; }
+      else {
+        const q = { title: ('🎁 ' + (data.title || 'नया Offer!')).slice(0,100), body: ($o('ofNotifyBody').value.trim() || 'अभी देखें — सीमित समय का offer!').slice(0,200),
+          audience: $o('ofAudience').value, status:'pending', createdAt: new Date().toISOString(), image: img, link: link, kind:'offer', offerId: offerId };
+        if(s && s > now) q.nextAttemptAt = s;      // scheduled offer: start date se pehle nahi jayega
+        await db.collection('notificationQueue').add(q);
+        note = (s && s > now) ? ' • notification start date par jayegi' : ' • notification queue me gayi (20-30 min me phone par)';
+      }
+    }
+    showToast('✅ Offer save हो गया' + note); resetOfferForm(); renderOffers();
   }catch(err){ showToast('❌ '+err.message); }
 }
 async function renderOffers(){
@@ -681,6 +735,7 @@ function editOffer(id){
   const o = _ofCache[id]; if(!o) return; _ofEdit = id;
   $o('ofImg').value = o.img||''; $o('ofLink').value = o.link||''; $o('ofTitle').value = o.title||''; $o('ofOrder').value = o.order||0;
   $o('ofStart').value = ms2d(o.startAt); $o('ofEnd').value = ms2d(o.endAt); $o('ofPopup').checked = !!o.popup;
+  $o('ofNotify').checked = false;
   $o('ofSaveBtn').textContent = '💾 Offer update करें'; window.scrollTo({top:0, behavior:'smooth'});
 }
 async function toggleOffer(id){ try{ await db.collection('offers').doc(id).update({active: !(_ofCache[id]&&_ofCache[id].active)}); renderOffers(); }catch(e){ showToast('❌ '+e.message); } }
@@ -783,6 +838,16 @@ function updatePYQExamType(){
 // (student app me ans === index se compare hota hai aur options.map chalta hai,
 //  isliye ans string ho ya options missing ho to quiz crash/galat answer deta hai)
 // ══════════════════════════════════════════
+// Optional scoring fields (result analytics ke liye): passPercent, marksPerQ, negative
+function readScoring(p){
+  const out = {};
+  const g = id => { const el = document.getElementById(p+id); return el ? parseFloat(el.value) : NaN; };
+  const pass = g('Pass'), mpq = g('Mpq'), neg = g('Neg');
+  if(pass > 0 && pass <= 100) out.passPercent = pass;
+  if(mpq > 0 && mpq <= 10) out.marksPerQ = mpq;
+  if(neg > 0 && neg <= 5) out.negative = neg;
+  return out;
+}
 function validateQs(list, prefix){
   prefix = prefix || '';
   const errs = [], seen = new Set();
@@ -799,6 +864,7 @@ function validateQs(list, prefix){
       errs.push(n+': ans 0 से '+(x.options.length-1)+' के बीच number होना चाहिए (अभी: '+JSON.stringify(x.ans)+')');
     if(x.img!=null && typeof x.img!=='string') errs.push(n+': img string होना चाहिए');
     if(x.exp!=null && typeof x.exp!=='string') errs.push(n+': exp string होना चाहिए');
+    if(x.diff!=null && ['easy','medium','hard'].indexOf(String(x.diff).toLowerCase())===-1) errs.push(n+': diff "easy", "medium" या "hard" होना चाहिए');
   });
   return errs;
 }
@@ -839,13 +905,14 @@ function addContent(){
     const t=parseInt(document.getElementById('aQuizTime').value);
     payload.timeMinutes = t && t>0 ? t : Math.ceil(questions.length*0.5);
     payload.link='';
+    Object.assign(payload, readScoring('a'));
   } else {
     payload.link = document.getElementById('aLink').value.trim();
   }
 
   btn.disabled=true; btn.textContent='Adding...';
   db.collection('content').add(payload).then(()=>{
-    ['aTitle','aDesc','aLink','aChap','aQuizQs','aQuizTime'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
+    ['aTitle','aDesc','aLink','aChap','aQuizQs','aQuizTime','aPass','aMpq','aNeg'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
     btn.disabled=false; btn.textContent='✅ Add Content';
     showToast('✅ Content add हो गया!');
     renderAManage();
@@ -902,11 +969,13 @@ function addQuiz(){
     quizData.timeMinutes = timeLimit && timeLimit>0 ? timeLimit : Math.ceil(questions.length*0.5);
   }
 
+  Object.assign(quizData, readScoring('q'));
   db.collection('quizzes').add(quizData).then(()=>{
     document.getElementById('qTitle').value='';
     document.getElementById('qQs').value='';
     document.getElementById('qSectionsJson').value='';
     document.getElementById('qTimeLimit').value='';
+    ['qPass','qMpq','qNeg'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
     showToast('✅ Quiz add हो गया!');
     renderQuizManage();
   }).catch(e=>showToast('❌ Error: '+e.message));
@@ -998,11 +1067,16 @@ function saveNotification(){
   const body = document.getElementById('notifyBody').value.trim();
   const audience = document.getElementById('notifyAudience').value;
   if(!title || !body){ showToast('❌ Title aur Message dono likhein'); return; }
-  db.collection('notificationQueue').add({
-    title, body, audience, status: 'pending', createdAt: new Date().toISOString()
-  }).then(()=>{
+  const image = document.getElementById('notifyImg').value.trim(), link = document.getElementById('notifyLink').value.trim();
+  if((image && !/^https:\/\//.test(image)) || (link && !/^https:\/\//.test(link))){ showToast('⚠️ Image URL aur Link https:// से शुरू होने चाहिए'); return; }
+  const doc = { title, body, audience, status: 'pending', createdAt: new Date().toISOString() };
+  if(image) doc.image = image;
+  if(link){ doc.link = link; doc.kind = 'offer'; }     // 'offer' kind = bahar ki website ka link bhi notification se khul sakta hai
+  db.collection('notificationQueue').add(doc).then(()=>{
     document.getElementById('notifyTitle').value = '';
     document.getElementById('notifyBody').value = '';
+    document.getElementById('notifyImg').value = '';
+    document.getElementById('notifyLink').value = '';
     showToast('✅ Notification queue mein chala gaya!');
     renderNotifyHistory();
   }).catch(e=>showToast('❌ Error: '+e.message));

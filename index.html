@@ -9,6 +9,10 @@ function getConsent(){ try{ return JSON.parse(localStorage.getItem('es_consent')
 function needConsent(){ var c=getConsent(); return !(c && c.v>=ES_CONSENT_VERSION && c.agreed); }
 function hasAnalyticsConsent(){ var c=getConsent(); return !!(c && c.v>=ES_CONSENT_VERSION && c.analytics && (!ES_ANALYTICS_ADULTS_ONLY || c.age==='adult')); }
 function hasCrashConsent(){ var c=getConsent(); return !!(c && c.v>=ES_CONSENT_VERSION && c.crash); }
+// Ab sirf EK checkbox hai (login page par, Google button ke neeche): Terms + Privacy + crash reports (bina naam/email).
+// Umar ab nahi poochhi jaati, isliye usage analytics / Clarity recordings naye students ke liye band rehti hain (age!=='adult').
+function saveSingleConsent(){ try{ var o=getConsent()||{}; localStorage.setItem('es_consent', JSON.stringify({v:ES_CONSENT_VERSION, agreed:true, age:o.age||'', crash:true, analytics:!!(o.analytics && o.age==='adult'), single:true, t:new Date().toISOString()})); }catch(e){} }
+function clearConsent(){ try{ localStorage.removeItem('es_consent'); }catch(e){} }
 function loadClarity(){
   if(window._clLoaded) return; window._clLoaded = true;
   (function(c,l,a,r,i,t,y){
@@ -328,26 +332,71 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
 .ak-ai:disabled{opacity:.6;}
 .ak-aiex{margin-top:8px;background:#F1F5F9;border:1.5px solid #BFDBFE;border-radius:8px;padding:10px 12px;font-size:12.5px;line-height:1.6;color:var(--g800);white-space:pre-wrap;}
 html[data-theme="dark"] .ak-aiex{background:#16233F;border-color:#2B4A8A;color:#DCE7FA;}
-/* ── Sahmati (consent) sheet + account buttons ── */
-.cs-card{background:var(--white);width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom,0px));max-height:94vh;overflow-y:auto;box-shadow:0 -10px 40px rgba(0,0,0,.35);}
-.cs-title{font-size:17px;font-weight:800;color:var(--g800);margin-bottom:8px;}
-.cs-text{font-size:12.5px;line-height:1.65;color:var(--g600);margin-bottom:12px;}
-.cs-text a{color:var(--blue);font-weight:700;}
-.cs-q{font-size:12px;font-weight:700;color:var(--g800);margin-bottom:6px;}
-.cs-row{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
-.cs-opt{flex:1;min-width:130px;display:flex;align-items:center;gap:8px;border:1.5px solid var(--g200);border-radius:10px;padding:9px 10px;font-size:12.5px;color:var(--g800);cursor:pointer;}
-.cs-chk{display:flex;gap:10px;align-items:flex-start;font-size:12px;line-height:1.55;color:var(--g600);margin-bottom:10px;cursor:pointer;}
-.cs-chk input{margin-top:2px;flex:none;width:18px;height:18px;}
-.cs-chk.cs-off{opacity:.5;}
-.cs-opt-title{font-size:11px;font-weight:700;color:var(--g400);letter-spacing:.4px;margin:12px 0 8px;}
-.cs-btn{width:100%;background:var(--btn);color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:6px;}
-.cs-btn:disabled{opacity:.45;cursor:not-allowed;}
-.cs-foot{font-size:10.5px;color:var(--g400);text-align:center;margin-top:8px;}
+/* ── Google login + EK consent checkbox + account buttons ── */
+.gl-box{width:100%;}
+.gl-btnwrap{position:relative;display:flex;justify-content:center;min-height:42px;}
+.gl-gis{display:flex;justify-content:center;width:100%;min-height:40px;}
+.gl-fb{width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#fff;color:#333;border:1px solid #dadce0;border-radius:99px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+.gl-gate{position:absolute;inset:0;z-index:3;cursor:pointer;border-radius:99px;}
+.gl-consent{display:flex;gap:9px;align-items:flex-start;margin-top:10px;font-size:11px;line-height:1.55;color:var(--g600);cursor:pointer;text-align:left;}
+.gl-consent input{flex:none;width:17px;height:17px;margin-top:1px;accent-color:var(--saffron);}
+.gl-consent a{color:var(--blue);font-weight:700;text-decoration:underline;}
+.gl-dark .gl-consent{color:rgba(255,255,255,.74);}
+.gl-dark .gl-consent a{color:#FCD34D;}
+.gl-shake{animation:glShake .4s;}
+@keyframes glShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.gs-card{position:relative;background:var(--white);width:100%;max-width:520px;border-radius:22px 22px 0 0;padding:22px 18px calc(20px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 40px rgba(0,0,0,.35);}
+.gs-x{position:absolute;top:12px;right:14px;border:none;background:var(--g100);color:var(--g600);width:30px;height:30px;border-radius:50%;font-size:14px;cursor:pointer;}
+.gs-title{font-size:16px;font-weight:800;color:var(--g800);margin-bottom:4px;}
+.gs-sub{font-size:12px;color:var(--g600);margin-bottom:14px;line-height:1.5;}
 .pf-acc-btn{width:100%;margin-top:10px;border:1.5px solid var(--g200);background:var(--white);color:var(--g800);border-radius:12px;padding:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
 .pf-acc-btn.danger{border-color:#FCA5A5;color:#DC2626;}
 .pf-acc-btn:disabled{opacity:.55;}
 
 .ak-exp b{color:var(--blue);}
+/* ── Quiz: turant sahi/galat + vyakhya ── */
+.q-fb{margin-top:12px;border-radius:12px;padding:11px 13px;font-size:12.5px;line-height:1.55;border:1.5px solid transparent;animation:qfbIn .25s ease;}
+.q-fb-ok{background:rgba(16,185,129,.12);border-color:rgba(16,185,129,.45);color:var(--ink);}
+.q-fb-bad{background:rgba(239,68,68,.10);border-color:rgba(239,68,68,.40);color:var(--ink);}
+.q-fb-h{font-weight:800;font-size:13px;margin-bottom:4px;}
+.q-fb-ok .q-fb-h{color:#059669;} .q-fb-bad .q-fb-h{color:#DC2626;}
+.q-fb-a{margin-bottom:6px;}
+.q-fb-e{background:rgba(59,130,246,.10);border-radius:8px;padding:8px 10px;margin-top:6px;color:var(--ink);}
+.q-fb-e b{color:var(--blue);}
+@keyframes qfbIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* ── Quiz Analytics ── */
+.an-wrap{padding:0 18px;margin-top:14px;}
+.an-card{background:var(--white);border-radius:var(--r);padding:14px 16px;margin-bottom:12px;box-shadow:var(--shsm);}
+.an-h{font-size:13px;font-weight:800;color:var(--ink);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+.an-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.an-stat{background:var(--g100);border-radius:12px;padding:10px 12px;min-width:0;}
+.an-stat b{display:block;font-size:17px;color:var(--ink);font-weight:800;line-height:1.25;}
+.an-stat span{font-size:10.5px;color:var(--g600);}
+.an-badge{display:inline-block;border-radius:99px;padding:3px 11px;font-size:11px;font-weight:800;}
+.an-pass{background:rgba(16,185,129,.15);color:#059669;}
+.an-fail{background:rgba(239,68,68,.13);color:#DC2626;}
+.an-donut{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.an-legend div{font-size:12px;color:var(--g600);display:flex;align-items:center;gap:7px;margin:4px 0;}
+.an-dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none;}
+.an-track{position:relative;height:14px;border-radius:99px;background:var(--g200);margin:26px 4px 26px;}
+.an-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--blue),#22C55E);}
+.an-mark{position:absolute;top:-6px;width:2px;height:26px;background:var(--ink);opacity:.75;}
+.an-mark span{position:absolute;top:-15px;left:50%;transform:translateX(-50%);font-size:9.5px;font-weight:700;white-space:nowrap;color:var(--ink);}
+.an-mark.b span{top:auto;bottom:-15px;}
+.an-bar{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--g200);}
+.an-row{margin:11px 0;}
+.an-rl{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--ink);font-weight:700;margin-bottom:4px;}
+.an-rl small{font-weight:600;color:var(--g600);}
+.an-times{display:flex;align-items:flex-end;gap:1px;height:90px;border-bottom:1.5px solid var(--g200);}
+.an-times i{flex:1;min-width:1px;border-radius:2px 2px 0 0;display:block;}
+.an-axis{display:flex;justify-content:space-between;font-size:9.5px;color:var(--g400);margin-top:3px;}
+.an-ins{font-size:12px;line-height:1.6;color:var(--ink);margin:6px 0;}
+.an-note{font-size:10.5px;color:var(--g400);margin-top:8px;line-height:1.5;}
+.an-hist{display:flex;align-items:flex-end;gap:8px;height:100px;}
+.an-hist div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;min-width:0;}
+.an-hist i{width:100%;max-width:36px;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--blue),#1d4ed8);display:block;}
+.an-hist small{font-size:9.5px;color:var(--g600);margin-top:3px;white-space:nowrap;}
+.an-hist em{font-style:normal;font-size:10px;font-weight:800;color:var(--ink);margin-bottom:2px;}
 
 html,body{touch-action:manipulation;}
 .ak-filter{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px;}
@@ -553,6 +602,11 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
   .tb-bell,.tb-avatar,.tb-theme{width:32px;height:32px;}
 }
 .notif-empty{font-size:12px;color:var(--g600);text-align:center;padding:30px 10px;}
+.notif-item{touch-action:pan-y;-webkit-user-select:none;user-select:none;}
+.notif-item.has-link{cursor:pointer;}
+.notif-item .ni-img{display:block;width:100%;max-height:170px;object-fit:cover;border-radius:10px;margin-top:8px;background:var(--g100);}
+.notif-item .ni-open{font-size:10.5px;font-weight:700;color:var(--blue);margin-top:6px;}
+.notif-hint{font-size:10.5px;color:var(--g400);text-align:center;margin:0 0 10px;}
 .notif-perm-card{background:var(--white);border-radius:var(--rsm);box-shadow:var(--shsm);padding:13px 14px;display:flex;align-items:center;gap:12px;margin-bottom:14px;border-left:3px solid var(--saffron);}
 .npc-text{flex:1;}
 .npc-title{font-size:13px;font-weight:700;color:var(--ink);}
@@ -662,25 +716,16 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
     <button onclick="closeLegal()" style="border:none;background:var(--g100);color:var(--g800);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">← वापस</button>
     <div id="legalTitle" style="font-size:14px;font-weight:700;color:var(--g800);"></div>
   </div>
-  <iframe id="legalFrame" title="EduSpark" style="flex:1;border:0;width:100%;background:var(--white);" onload="legalFrameLoaded()"></iframe>
+  <iframe id="legalFrame" title="EduSpark" style="flex:1;border:0;width:100%;background:var(--white);" onload="if(window.legalFrameLoaded)legalFrameLoaded()"></iframe>
 </div>
 
-<!-- SAHMATI (CONSENT) — pehli baar app kholne par (aur policy badalne par) -->
-<div id="consentSheet" style="display:none;position:fixed;inset:0;z-index:99995;background:rgba(15,27,53,.82);align-items:flex-end;justify-content:center;">
-  <div class="cs-card" role="dialog" aria-modal="true" aria-labelledby="csTitle">
-    <div class="cs-title" id="csTitle">🔒 आपकी privacy, आपका control</div>
-    <div class="cs-text">EduSpark चलाने के लिए हम आपका नाम, board और (Google से sign in करने पर) email, साथ ही आपके doubts Firebase (Google) पर रखते हैं। AI से जवाब माँगने पर आपका doubt Google के AI model को भेजा जाता है। पूरी जानकारी: <a href="/privacy.html" onclick="return openLegal('/privacy.html','Privacy Policy')">Privacy Policy</a> • <a href="/terms.html" onclick="return openLegal('/terms.html','Terms of Use')">Terms of Use</a></div>
-    <div class="cs-q">आपकी उम्र?</div>
-    <div class="cs-row">
-      <label class="cs-opt"><input type="radio" name="csAge" value="adult" onchange="csUpdate()"> 18 साल या ज़्यादा</label>
-      <label class="cs-opt"><input type="radio" name="csAge" value="minor" onchange="csUpdate()"> 18 साल से कम</label>
-    </div>
-    <label class="cs-chk"><input type="checkbox" id="csAgree" onchange="csUpdate()"><span>मैंने Terms of Use और Privacy Policy पढ़ ली हैं और मैं सहमत हूँ। अगर मेरी उम्र 18 साल से कम है, तो मैं अपने parent/guardian की जानकारी में app use कर रहा/रही हूँ।</span></label>
-    <div class="cs-opt-title">वैकल्पिक — इनके बिना भी app पूरा चलेगा</div>
-    <label class="cs-chk"><input type="checkbox" id="csCrash"><span>Crash/error reports भेजें (Sentry) — app की गलतियाँ ठीक करने के लिए। इसमें आपका नाम या email नहीं जाता।</span></label>
-    <label class="cs-chk cs-off" id="csAnLabel"><input type="checkbox" id="csAnalytics" disabled><span>Usage analytics और screen-interaction recordings की अनुमति (Firebase Analytics, Microsoft Clarity)। आपका लिखा text छुपा रहता है। <i id="csAnNote">सिर्फ़ 18+ के लिए।</i></span></label>
-    <button class="cs-btn" id="csBtn" onclick="acceptConsent()" disabled>✅ आगे बढ़ें</button>
-    <div class="cs-foot">आप ये सेटिंग कभी भी Profile → Privacy settings में बदल सकते हैं।</div>
+<!-- GOOGLE SIGN-IN SHEET (app ke andar hi; Google ka official button + ek consent checkbox) -->
+<div id="gsSheet" style="display:none;position:fixed;inset:0;z-index:99990;background:rgba(15,27,53,.6);align-items:flex-end;justify-content:center;" onclick="if(event.target===this)closeGoogleSheet()">
+  <div class="gs-card" role="dialog" aria-modal="true" aria-label="Google Sign In">
+    <button class="gs-x" type="button" onclick="closeGoogleSheet()" aria-label="बंद करें">✕</button>
+    <div class="gs-title">🔐 Google से Sign In</div>
+    <div class="gs-sub">App छोड़े बिना sign in करें — आपका नाम, username और progress हर device पर वापस मिलेगा।</div>
+    <div id="gsHost"></div>
   </div>
 </div>
 
@@ -689,11 +734,7 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
   <div class="ss-title">EduSpark में स्वागत है!</div>
   <div class="ss-sub">एक बार details भरें — फिर याद रहेगा!</div>
   <div class="ss-card">
-    <button id="ssGoogleBtn" onclick="googleSignInWelcome()" type="button"
-      style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#333;border:none;border-radius:10px;padding:12px 16px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:14px;">
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20" alt="Google">
-      Google से Sign In
-    </button>
+    <div id="ssLoginHost" style="margin-bottom:14px;"></div>
     <div style="text-align:center;color:rgba(255,255,255,.35);font-size:11px;margin-bottom:14px;">— या मैन्युअल रूप से भरें —</div>
     <div class="ss-photo-wrap">
       <div class="ss-photo-circle" id="ssPhotoCircle" onclick="document.getElementById('ssPhotoInput').click()">
@@ -939,6 +980,7 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
         <div class="q-text" id="qText"></div>
         <img class="q-img" id="qImg" alt="Question image"/>
         <div class="q-opts" id="qOpts"></div>
+        <div class="q-fb" id="qFeedback" style="display:none;"></div>
         <div class="q-nav">
           <button class="q-btn q-exit2" onclick="requestExitQuiz()">✕ छोड़ें</button>
           <button class="q-btn q-theme" id="qThemeBtn" onclick="quizToggleTheme()" aria-label="Dark mode">🌙</button>
@@ -953,6 +995,7 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
           <div style="font-size:13px;color:var(--g600);margin-top:6px;" id="rMsg"></div>
           <button class="start-btn" style="margin-top:20px;" onclick="exitQuiz()">🏠 Quiz List</button>
         </div>
+        <div id="qAnalytics" class="an-wrap"></div>
         <div class="ak-wrap">
           <div class="ak-title">🔢 Question-wise Analysis (टैप करके देखें)</div>
           <div class="q-palette" id="qPalette"></div>
@@ -1000,27 +1043,8 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
       </div>
       <div class="pf-card" style="margin-top:0;">
         <div class="npc-title" style="margin-bottom:8px;">🔒 Privacy और Account</div>
-        <div class="theme-row" style="margin-bottom:8px;">
-          <div class="npc-text">
-            <div class="npc-title">Crash reports</div>
-            <div class="npc-sub">App की गलतियाँ ठीक करने में मदद (Sentry)</div>
-          </div>
-          <label class="npc-switch">
-            <input type="checkbox" id="pfCrashToggle" onchange="setPrivacyPref('crash',this.checked)"/>
-            <span class="npc-slider"></span>
-          </label>
-        </div>
-        <div class="theme-row">
-          <div class="npc-text">
-            <div class="npc-title">Usage analytics</div>
-            <div class="npc-sub" id="pfAnSub">Analytics और screen recordings (सिर्फ़ 18+)</div>
-          </div>
-          <label class="npc-switch">
-            <input type="checkbox" id="pfAnalyticsToggle" onchange="setPrivacyPref('analytics',this.checked)"/>
-            <span class="npc-slider"></span>
-          </label>
-        </div>
         <button class="pf-acc-btn" id="pfLogoutBtn" onclick="logoutUser()">🚪 Logout</button>
+        <div style="font-size:10.5px;color:var(--g400);margin-top:6px;line-height:1.5;">Logout करने पर आपकी sahmati (consent) भी हट जाती है — अगली बार login पर checkbox दोबारा टिक करना होगा।</div>
         <button class="pf-acc-btn danger" id="pfDeleteBtn" onclick="deleteMyAccount()">🗑 Account और data delete करें</button>
       </div>
       <div class="legal-links">
@@ -1157,7 +1181,7 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
     <div style="font-size:18px;font-weight:800;color:var(--ink);margin-bottom:14px;">🔒 Privacy Policy</div>
     <div style="font-size:12.5px;color:var(--g600);line-height:1.7;">
       <p style="margin-bottom:6px;"><b>EduSpark</b> ek free study app hai (CBSE, BSER aur competition exams ke students ke liye), jise Bhupesh (Jaipur, Rajasthan) ne banaya hai aur chalata hai। Ye policy batati hai ki hum kaunsa data collect karte hain, kyun, aur aap us par kaise control rakh sakte hain।</p>
-      <p style="margin-bottom:10px;font-size:11px;color:var(--g400);">Aakhri update: 13 October 2026</p>
+      <p style="margin-bottom:10px;font-size:11px;color:var(--g400);">Aakhri update: 23 October 2026</p>
 
       <p style="margin-bottom:6px;"><b>1. Hum kya collect karte hain</b></p>
       <p style="margin-bottom:10px;">
@@ -1166,9 +1190,9 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
 • Device ID aur "last active" ka time<br>
 • Push notification token (sirf agar aap notifications allow karte hain)<br>
 • Doubt submit karne par: aapka naam (ya "Anonymous"), sawaal, subject, topic aur board<br>
-• Aapki sahmati (consent) ka record: version, tareekh, umar ka group (18+ ya 18 se kam), aur aapne optional cheezein allow ki ya nahi। Ye sirf aapke device par rehta hai<br>
+• Aapki sahmati (consent) ka record: version aur tareekh (login page ke checkbox se)। Ye sirf aapke device par rehta hai<br>
 • Study progress aur settings mukhya taur par aapke device par save hote hain<br>
-• Optional, sirf aapki permission se: crash reports aur usage analytics (neeche dekhein)
+• Crash reports (login page ke checkbox se) — neeche dekhein
       </p>
 
       <p style="margin-bottom:6px;"><b>2. Data ka use kaise hota hai</b></p>
@@ -1176,12 +1200,12 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
         Study features ke liye (content dikhana, doubts ka jawab dena, profile aur progress yaad rakhna, notifications bhejna), aur app ko behtar banane tatha errors theek karne ke liye। Hum aapka data bechte nahi hain, aur neeche likhi service providers ke alawa kisi ke saath share nahi karte। Aapka data hum aapki sahmati ke aadhar par use karte hain।
       </p>
 
-      <p style="margin-bottom:6px;"><b>3. Optional: crash reports aur analytics</b></p>
+      <p style="margin-bottom:6px;"><b>3. Crash reports aur analytics</b></p>
       <p style="margin-bottom:10px;">
-        Ye sirf tab shuru hote hain jab aap app kholte waqt unhe allow karte hain। Allow na karein to app poori tarah chalta hai।<br>
+        Crash reports tab shuru hote hain jab aap login page par Terms/Privacy wala checkbox tick karte hain (checkbox me crash reports ka zikr hai)। Usage analytics aur recordings ke liye ab alag se permission nahi li jaati, isliye wo band rehte hain।<br>
 • <b>Crash reports (Sentry):</b> app mein aayi galtiyon ka technical record (jaise browser/phone ka type aur error ka message)। Isme aapka naam ya email nahi bheja jata<br>
-• <b>Usage analytics (Firebase Analytics) aur screen-interaction recordings/heatmaps (Microsoft Clarity):</b> ye dikhate hain ki app ke kaun se hisse zyada use hote hain। Aapka type kiya hua text recordings mein chhupa rehta hai। Ye abhi sirf <b>18 saal ya usse zyada umar</b> ke users ke liye hai; 18 se kam umar ke liye band rehta hai<br>
-Aap inhe kabhi bhi Profile → Privacy settings mein band kar sakte hain।
+• <b>Usage analytics (Firebase Analytics) aur screen-interaction recordings/heatmaps (Microsoft Clarity):</b> ye dikhate hain ki app ke kaun se hisse zyada use hote hain। Aapka type kiya hua text recordings mein chhupa rehta hai। Ye abhi band hain; future me chalu karne se pehle hum alag se permission lenge, aur ye sirf <b>18 saal ya usse zyada umar</b> ke users ke liye honge<br>
+Sahmati wapas lene ke liye Profile → Logout karein; agli baar login par checkbox dobara tick karna hoga।
       </p>
 
       <p style="margin-bottom:6px;"><b>4. Third-party services</b></p>
@@ -1191,7 +1215,7 @@ Aap inhe kabhi bhi Profile → Privacy settings mein band kar sakte hain।
 • <b>Cloudflare</b> — app ke background server (jaise AI jawab ke liye) chalane ke liye<br>
 • <b>ImageKit</b> — quiz ki images load karne ke liye<br>
 • <b>AI doubt solver</b> — jab aap "🤖 AI से तुरंत जवाब" ya "AI से समझें" dabate hain, aapka doubt/sawaal (aur subject, topic, board) Cloudflare ke through Google ke AI model ko jawab banane ke liye bheja jata hai। AI ka jawab galat ho sakta hai, isliye zaruri cheezein teacher ya book se check karein। Doubt mein apni personal jaankari (phone number, address) na likhein<br>
-• Optional (aapki permission se): <b>Sentry</b>, <b>Firebase Analytics</b>, <b>Microsoft Clarity</b> — upar section 3 dekhein
+• <b>Sentry</b> (crash reports, checkbox ke baad); <b>Firebase Analytics</b> aur <b>Microsoft Clarity</b> abhi band hain — upar section 3 dekhein
       </p>
 
       <p style="margin-bottom:6px;"><b>5. Ads</b></p>
@@ -1204,12 +1228,12 @@ Aap inhe kabhi bhi Profile → Privacy settings mein band kar sakte hain।
         • Aap apna profile Profile page par khud dekh aur badal sakte hain<br>
 • Aap apna <b>account aur data kabhi bhi delete</b> kar sakte hain: Profile → "Account और data delete करें"। Isse aapka profile, username, photo, notification token, saare doubts aur login account hata diye jate hain<br>
 • App tak access na ho to <a href="/delete-account.html" onclick="return openLegal('/delete-account.html','Account Delete')">Account Delete page</a> par bataya tareeka use karein<br>
-• Sahmati wapas lene ke liye Profile → Privacy settings
+• Sahmati wapas lene ke liye Profile → Logout
       </p>
 
       <p style="margin-bottom:6px;"><b>7. Data kitne samay tak rehta hai</b></p>
       <p style="margin-bottom:10px;">
-        Jab tak aapka account hai ya aap use delete na karein। Delete karne par upar likha data hata diya jata hai। Analytics/crash data (agar aapne allow kiya ho) Google, Microsoft aur Sentry ke apne niyamon ke hisaab se rehta hai, aur hum use aapke naam se nahi jodte।
+        Jab tak aapka account hai ya aap use delete na karein। Delete karne par upar likha data hata diya jata hai। Crash data (agar aapne checkbox tick kiya ho) Google, Microsoft aur Sentry ke apne niyamon ke hisaab se rehta hai, aur hum use aapke naam se nahi jodte।
       </p>
 
       <p style="margin-bottom:6px;"><b>8. Bachchon ki privacy</b></p>
@@ -1601,7 +1625,7 @@ Aap inhe kabhi bhi Profile → Privacy settings mein band kar sakte hain।
   function debug() { return { health: health(), metrics: report(), firestoreReads: JSON.parse(JSON.stringify(readStats)), logs: logBuf.slice(-30) }; }
 
   /* ── export ───────────────────────────────────────────────────── */
-  ES.version = '1.5.0';                    // semver — package.json se match hona chahiye (CI check karta hai)
+  ES.version = '1.6.0';                    // semver — package.json se match hona chahiye (CI check karta hai)
   ES.bus = bus; ES.checkClockSkew = checkClockSkew;
   ES.rollout = rollout; ES.bucket = bucket; ES.chaos = chaos; ES.countReads = countReads;
   ES.sanitize = sanitize; ES.escAttr = escAttr; ES.safeUrl = safeUrl;
@@ -1658,6 +1682,7 @@ function saveStudentProfile(){
   const name = document.getElementById('ssName').value.trim();
   const board = document.getElementById('ssBoard').value;
   if(!name){ alert('कृपया अपना नाम लिखें!'); return; }
+  if(needConsent()){ shakeConsent('ss'); return; }     // ek hi checkbox: Terms + Privacy
   const profile = {name, board, photo: ssPhotoDataUrl || null, date: new Date().toISOString()};
   localStorage.setItem('es_student', JSON.stringify(profile));
   curBoard = board;
@@ -1684,9 +1709,7 @@ function checkStudentProfile(){
   if(!el) return;
   const profile = JSON.parse(localStorage.getItem('es_student')||'null');
   if(!profile){
-    setTimeout(()=>{
-      el.style.display = 'flex';
-    },500);
+    setTimeout(()=>{ showLoginPage(); },500);
   } else {
     curBoard = profile.board;
     if(typeof syncBoardListeners==='function') syncBoardListeners();
@@ -1745,19 +1768,21 @@ function openLegal(url, title){
   const o = document.getElementById('legalOverlay'), f = document.getElementById('legalFrame');
   if(!o || !f) return true;                       // overlay nahi mila to normal link chale
   document.getElementById('legalTitle').textContent = title || '';
-  f.src = url; o.style.display = 'flex';
+  try{ f.contentWindow.location.replace(url); }catch(e){ f.src = url; }   // replace: browser history me naya entry nahi banta
+  o.style.display = 'flex';
   return false;
 }
 function closeLegal(){
   const o = document.getElementById('legalOverlay'), f = document.getElementById('legalFrame');
   if(o) o.style.display = 'none';
-  if(f) f.src = 'about:blank';
+  if(f){ try{ f.contentWindow.location.replace('about:blank'); }catch(e){ f.src = 'about:blank'; } }
 }
 // Agar iframe ke andar koi link app (home page) par le jaaye to overlay band karo — app ke andar app nahi
 function legalFrameLoaded(){
   try{
     const f = document.getElementById('legalFrame');
-    if(!f || f.src === 'about:blank' || f.src === '' ) return;
+    const href = f && f.contentWindow ? f.contentWindow.location.href : '';
+    if(!f || !href || href === 'about:blank') return;
     const p = f.contentWindow.location.pathname;
     if(p === '/' || p === '/index.html') closeLegal();
   }catch(e){}
@@ -1765,54 +1790,124 @@ function legalFrameLoaded(){
 // ══════════════════════════════════════════
 // SAHMATI (CONSENT), LOGOUT, ACCOUNT DELETE
 // ══════════════════════════════════════════
-function csUpdate(){
-  const age = (document.querySelector('input[name="csAge"]:checked')||{}).value || '';
-  const agree = document.getElementById('csAgree').checked;
-  document.getElementById('csBtn').disabled = !(agree && age);
-  const an = document.getElementById('csAnalytics'), lab = document.getElementById('csAnLabel'), note = document.getElementById('csAnNote');
-  const allowed = !ES_ANALYTICS_ADULTS_ONLY || age==='adult';
-  an.disabled = !allowed; lab.classList.toggle('cs-off', !allowed);
-  if(!allowed) an.checked = false;
-  note.style.display = (ES_ANALYTICS_ADULTS_ONLY && age!=='adult') ? 'inline' : 'none';
+// ══════════════════════════════════════════
+// LOGIN + EK CONSENT CHECKBOX (login page aur Google sign-in sheet dono me)
+// ══════════════════════════════════════════
+// 👇 Firebase Console → Authentication → Sign-in method → Google → "Web SDK configuration" → Web client ID yahan paste karein.
+//    Is client ID ke "Authorized JavaScript origins" me https://eduspark.de5.net hona zaruri hai (Google Cloud Console → APIs & Services → Credentials).
+//    Khali rahe to app Firebase popup se sign-in karta hai (kaam karta hai, par Google ka in-app account chooser nahi dikhta).
+var ES_GOOGLE_CLIENT_ID = '';
+var GOOGLE_ICON_URL = 'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg';
+var _gis = { state:'idle', cbs:[] };
+function gisConfigured(){ return !!ES_GOOGLE_CLIENT_ID; }
+function _gisFlush(ok){ var cbs=_gis.cbs; _gis.cbs=[]; cbs.forEach(function(f){ try{ f(ok); }catch(e){} }); }
+function gisLoad(cb){
+  if(!gisConfigured()){ cb(false); return; }
+  if(_gis.state==='ready'){ cb(true); return; }
+  if(_gis.state==='failed'){ cb(false); return; }
+  _gis.cbs.push(cb);
+  if(_gis.state==='loading') return;
+  _gis.state='loading';
+  var s=document.createElement('script');
+  s.src='https://accounts.google.com/gsi/client'; s.async=true; s.defer=true;
+  s.onload=function(){
+    try{
+      google.accounts.id.initialize({ client_id:ES_GOOGLE_CLIENT_ID, callback:onGoogleCredential, auto_select:false,
+        cancel_on_tap_outside:true, itp_support:true, use_fedcm_for_prompt:true, use_fedcm_for_button:true, context:'signin' });
+      _gis.state='ready'; _gisFlush(true);
+    }catch(e){ _gis.state='failed'; _gisFlush(false); }
+  };
+  s.onerror=function(){ _gis.state='failed'; _gisFlush(false); };
+  document.head.appendChild(s);
+  setTimeout(function(){ if(_gis.state==='loading'){ _gis.state='failed'; _gisFlush(false); } }, 8000);   // slow/blocked net: purana button chalega
 }
-function showConsentIfNeeded(){
-  if(!needConsent()) return;
-  const el = document.getElementById('consentSheet');
-  if(el){ el.style.display = 'flex'; csUpdate(); }
+// Google ne ID token diya — redirect/popup ke bina seedha Firebase me sign-in
+function onGoogleCredential(resp){
+  if(!resp || !resp.credential){ showToast('❌ Google sign-in पूरा नहीं हुआ'); return; }
+  showToast('⏳ Sign in हो रहा है...');
+  try{
+    auth.signInWithCredential(firebase.auth.GoogleAuthProvider.credential(resp.credential))
+      .catch(function(e){ showToast(authErrMsg(e)); });
+  }catch(e){ showToast(authErrMsg(e)); }
 }
-function acceptConsent(){
-  const age = (document.querySelector('input[name="csAge"]:checked')||{}).value || '';
-  if(!age || !document.getElementById('csAgree').checked) return;
-  const adultOk = !ES_ANALYTICS_ADULTS_ONLY || age==='adult';
-  const c = { v:ES_CONSENT_VERSION, agreed:true, age:age, crash:!!document.getElementById('csCrash').checked,
-              analytics: adultOk && !!document.getElementById('csAnalytics').checked, t:new Date().toISOString() };
-  try{ localStorage.setItem('es_consent', JSON.stringify(c)); }catch(e){}
-  document.getElementById('consentSheet').style.display = 'none';
-  loadThirdParty();
+function authErrMsg(e){
+  var c = (e && e.code) || '';
+  var m = {
+    'auth/unauthorized-domain':'❌ यह website Firebase में authorized नहीं है (Firebase → Authentication → Settings → Authorized domains में add करें)',
+    'auth/network-request-failed':'📴 Internet की समस्या — जाँचकर दोबारा कोशिश करें',
+    'auth/popup-blocked':'⚠️ Popup block हो गया — browser में popup allow करके दोबारा दबाएँ',
+    'auth/account-exists-with-different-credential':'⚠️ इस email से दूसरे तरीके से account बना है',
+    'auth/user-disabled':'🚫 यह account बंद कर दिया गया है',
+    'auth/too-many-requests':'⏳ बहुत ज़्यादा कोशिशें — थोड़ी देर बाद दोबारा करें',
+    'auth/operation-not-allowed':'⚠️ Google sign-in Firebase में चालू नहीं है',
+    'auth/invalid-credential':'⚠️ Google token मान्य नहीं मिला — दोबारा कोशिश करें',
+    'auth/web-storage-unsupported':'⚠️ Browser में storage/cookies बंद हैं — चालू करके दोबारा कोशिश करें'
+  };
+  return m[c] || ('❌ Sign-in fail: ' + ((e && e.message) || c || 'error'));
 }
-document.addEventListener('DOMContentLoaded', showConsentIfNeeded);
+function shakeConsent(key){
+  showToast('☑️ पहले नीचे वाला checkbox टिक करें');
+  var row = document.getElementById('glRow_'+key);
+  if(row){ row.classList.remove('gl-shake'); void row.offsetWidth; row.classList.add('gl-shake'); }
+  return false;
+}
+function gisPrompt(){
+  if(_gis.state!=='ready' || auth.currentUser || needConsent()) return;
+  try{ google.accounts.id.prompt(); }catch(e){}     // One Tap / FedCM: account chooser app ke upar hi aata hai
+}
+function mountGoogleLogin(host, key, dark){
+  if(!host) return;
+  var need = needConsent();
+  host.innerHTML =
+    '<div class="gl-box'+(dark?' gl-dark':'')+'">'+
+      '<div class="gl-btnwrap">'+
+        '<div class="gl-gis" id="glGis_'+key+'" style="display:none;"></div>'+
+        '<button type="button" class="gl-fb" id="glFb_'+key+'"><img src="'+GOOGLE_ICON_URL+'" width="18" height="18" alt=""> Google से Sign In</button>'+
+        '<div class="gl-gate" id="glGate_'+key+'" style="display:'+(need?'block':'none')+';"></div>'+
+      '</div>'+
+      (need ? '<label class="gl-consent" id="glRow_'+key+'"><input type="checkbox" id="glChk_'+key+'"><span>मैं <a href="/terms.html" onclick="return openLegal(\'/terms.html\',\'Terms of Use\')">Terms of Use</a> और <a href="/privacy.html" onclick="return openLegal(\'/privacy.html\',\'Privacy Policy\')">Privacy Policy</a> से सहमत हूँ, और app की गलतियाँ ठीक करने के लिए crash reports (बिना नाम/email) भेजने की अनुमति देता/देती हूँ।</span></label>' : '')+
+    '</div>';
+  var gate = document.getElementById('glGate_'+key), chk = document.getElementById('glChk_'+key);
+  document.getElementById('glFb_'+key).addEventListener('click', function(){
+    if(needConsent()){ shakeConsent(key); return; }
+    firebasePopupSignIn();
+  });
+  if(gate) gate.addEventListener('click', function(){ shakeConsent(key); });
+  if(chk) chk.addEventListener('change', function(){
+    if(chk.checked){ saveSingleConsent(); if(gate) gate.style.display='none'; try{ loadThirdParty(); }catch(e){} gisPrompt(); }
+    else { clearConsent(); if(gate) gate.style.display='block'; }
+  });
+  gisLoad(function(ok){
+    var g = document.getElementById('glGis_'+key), f = document.getElementById('glFb_'+key);
+    if(!ok || !g || !f) return;
+    try{
+      var w = Math.min(Math.max(host.clientWidth || 300, 200), 400);
+      google.accounts.id.renderButton(g, { type:'standard', theme:'outline', size:'large', text:'continue_with', shape:'pill', logo_alignment:'left', width:w, locale:'hi' });
+      g.style.display = 'flex'; f.style.display = 'none';
+      gisPrompt();
+    }catch(e){}
+  });
+}
+function openGoogleSheet(){
+  var s = document.getElementById('gsSheet'); if(!s) return false;
+  mountGoogleLogin(document.getElementById('gsHost'), 'gs', false);
+  s.style.display = 'flex'; return true;
+}
+function closeGoogleSheet(){
+  var s = document.getElementById('gsSheet');
+  if(s && s.style.display !== 'none') s.style.display = 'none';
+  try{ if(_gis.state==='ready') google.accounts.id.cancel(); }catch(e){}
+}
+// Login page (pehli baar / logout ke baad): Google button + uske neeche ek hi checkbox
+function showLoginPage(){
+  var el = document.getElementById('studentSetup'); if(!el) return;
+  el.style.display = 'flex';
+  if(!el._glMounted){ el._glMounted = true; mountGoogleLogin(document.getElementById('ssLoginHost'), 'ss', true); }
+}
 
-// Profile → Privacy settings: baad me bhi sahmati badal/wapas le sakte hain
-function setPrivacyPref(kind, on){
-  const c = getConsent(); if(!c) return;
-  if(kind==='analytics' && on && ES_ANALYTICS_ADULTS_ONLY && c.age!=='adult'){
-    document.getElementById('pfAnalyticsToggle').checked = false;
-    showToast('ℹ️ Usage analytics सिर्फ़ 18+ के लिए है');
-    return;
-  }
-  c[kind] = !!on;
-  try{ localStorage.setItem('es_consent', JSON.stringify(c)); }catch(e){}
-  if(on){ loadThirdParty(); showToast('✅ चालू हो गया'); }
-  else { showToast('✅ बंद हो गया — app दोबारा खुलने पर लागू होगा'); setTimeout(function(){ location.reload(); }, 900); }
-}
 function updateAccountUI(){
   const lo = document.getElementById('pfLogoutBtn');
   if(lo) lo.textContent = auth.currentUser ? '🚪 Logout (Google account)' : '🔄 इस device से profile हटाएँ';
-  const c = getConsent() || {};
-  const cr = document.getElementById('pfCrashToggle'); if(cr) cr.checked = !!c.crash;
-  const an = document.getElementById('pfAnalyticsToggle'), sub = document.getElementById('pfAnSub');
-  if(an){ an.checked = hasAnalyticsConsent(); an.disabled = (ES_ANALYTICS_ADULTS_ONLY && c.age!=='adult'); }
-  if(sub) sub.textContent = (ES_ANALYTICS_ADULTS_ONLY && c.age!=='adult') ? '18 साल से कम के लिए बंद रहता है' : 'Analytics और screen recordings (Firebase Analytics, Clarity)';
 }
 // Is device se student ka data hatao (consent, theme aur device ID chhod kar)
 function clearLocalUserData(full){
@@ -1835,6 +1930,7 @@ async function logoutUser(){
     }
   }catch(e){}
   clearLocalUserData(false);
+  clearConsent();                       // logout = sahmati bhi wapas; agle login par checkbox dobara
   showToast('✅ Logout हो गया');
   setTimeout(function(){ location.reload(); }, 600);
 }
@@ -2098,12 +2194,29 @@ let ovSecondsLeft=0, secSecondsLeft=0, qSecondsElapsed=0;
 // app) — pehle modal band hoga, phir subject-detail se list par, phir
 // kisi bhi tab se Home par. Home se ek aur back par hi app exit hoga.
 // ══════════════════════════════════════════
+// Chrome ka niyam: jo history entry bina user-touch ke jodi jaaye, back dabane par wo SKIP ho jaati hai — isi wajah se
+// kabhi-kabhi app bina poochhe seedha band ho jaata tha (boot par guard laga kar). Ab guard pehle asli touch/click par lagta hai,
+// har touch par dobara check hota hai (idempotent), aur popstate me guard PEHLE wapas lagta hai (handler fail ho tab bhi).
+var _bgTouched = false;
 function armBackGuard(){
-  history.pushState({guard:true}, '', location.href);
+  if(window._esExiting) return;
+  try{
+    if(history.state && history.state.esGuard) return;          // pehle se guard par hain
+    history.pushState({esGuard:true}, '', location.href);
+  }catch(e){}
 }
+['touchend','pointerup','click','keydown'].forEach(function(ev){
+  document.addEventListener(ev, function(){ _bgTouched = true; armBackGuard(); }, {capture:true, passive:true});
+});
+window.addEventListener('pageshow', function(){ if(_bgTouched) armBackGuard(); });
+document.addEventListener('visibilitychange', function(){ if(!document.hidden && _bgTouched) armBackGuard(); });
 function performBack(){
   const legalO = document.getElementById('legalOverlay');
   if(legalO && legalO.style.display==='flex'){ closeLegal(); return true; }
+  const offerP = document.getElementById('offerPopup');
+  if(offerP){ offerP.remove(); return true; }
+  const gsS = document.getElementById('gsSheet');
+  if(gsS && gsS.style.display==='flex'){ closeGoogleSheet(); return true; }
   const videoModal = document.getElementById('videoModal');
   const privacyModal = document.getElementById('privacyModal');
   const boardSel = document.getElementById('boardSel');
@@ -2148,10 +2261,14 @@ function performBack(){
   if(aeM){ aeM.style.display='flex'; return true; }
   return false;
 }
-window.addEventListener('popstate', function(){
+window.addEventListener('popstate', function(e){
   if(window._esExiting){ history.back(); return; }
-  const handled = performBack();
-  if(handled) armBackGuard();
+  if(!_bgTouched) return;                              // page load ke waqt ki bekaar event
+  if(e && e.state && e.state.esGuard) return;          // guard entry par pahunche (forward) — ye back nahi hai
+  armBackGuard();                                      // PEHLE guard wapas — aage kuch bhi fail ho, app seedha band nahi hoga
+  let handled = false;
+  try{ handled = performBack(); }catch(err){ try{ console.warn('back handler error', err); }catch(_){} }
+  if(!handled){ const ae = document.getElementById('appExitModal'); if(ae) ae.style.display = 'flex'; }
 });
 
 // ══════════════════════════════════════════
@@ -2927,7 +3044,7 @@ function startQuiz(idx){
 function startChapterQuiz(contentId){
   const c=allContent.find(x=>x.id===contentId);
   if(!c || !Array.isArray(c.questions) || !c.questions.length){ showToast('❌ Quiz load नहीं हो पाया'); return; }
-  curQuiz={title:c.title, board:c.board, subject:c.subject, type:'practice', sectional:false, timeMinutes:c.timeMinutes, questions:c.questions};
+  curQuiz={title:c.title, board:c.board, subject:c.subject, type:'practice', sectional:false, timeMinutes:c.timeMinutes, questions:c.questions, passPercent:c.passPercent, marksPerQ:c.marksPerQ, negative:c.negative};
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   document.querySelector('.ni[data-page="quiz"]').classList.add('active');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -2973,9 +3090,12 @@ function confirmAppExit(){
   document.getElementById('appExitModal').style.display='none';
   history.back();
   setTimeout(function(){ try{ window.close(); }catch(e){} }, 300);
+  // Agar app ab bhi khula hai (bahar jaana nahi ho paya) to guard wapas — warna agla back bina poochhe nikal deta
+  setTimeout(function(){ window._esExiting=false; armBackGuard(); }, 900);
 }
 function beginQuiz(){
   quizSections=normalizeQuiz(curQuiz); curSection=0; curQ=0; score=0; answered=false;
+  qTimeSpent=[]; _qCurGi=0; _qShownAt=0; _histSaved=false;
   userAnswers=new Array(quizSections.reduce((a,s)=>a+s.questions.length,0)).fill(null);
   document.getElementById('quizListSec').style.display='none';
   const adQR=document.getElementById('adSlotQuizReturn'); if(adQR) adQR.style.display='none';
@@ -3046,6 +3166,7 @@ function startQuestionStopwatch(){
   },1000);
 }
 function goToNextSection(){
+  commitQTime();
   curSection++; curQ=0;
   if(curSection>=quizSections.length){ showResult(); return; }
   startQuizTimers();
@@ -3065,6 +3186,7 @@ function showQ(){
   document.getElementById('qText').textContent=q.q;
   const imgEl=document.getElementById('qImg');
   if(q.img){ imgEl.src=q.img; imgEl.style.display='block'; } else { imgEl.style.display='none'; imgEl.src=''; }
+  const _fb=document.getElementById('qFeedback'); if(_fb){ _fb.style.display='none'; _fb.innerHTML=''; }
   document.getElementById('qOpts').innerHTML=q.options.map((o,i)=>
     `<div class="q-opt" onclick="selOpt(this,${i},${q.ans})">${String.fromCharCode(65+i)}. ${ES.sanitize(o)}</div>`).join('');
   // Agar ye question pehle se answer ho chuka hai (← पिछला button se wapas aaye hain),
@@ -3078,6 +3200,7 @@ function showQ(){
     } else {
       if(optEls[prevAns]) optEls[prevAns].classList.add(prevAns===q.ans?'corr':'wrong');
       if(optEls[q.ans]) optEls[q.ans].classList.add('corr');
+      showLiveFeedback(q, prevAns);
     }
   } else {
     answered=false;
@@ -3088,13 +3211,30 @@ function showQ(){
   const isSectionLast = curQ===sec.questions.length-1;
   document.getElementById('qNext').textContent = isVeryLast ? 'Result ✓' : (isSectionLast ? 'अगला Section →' : 'अगला →');
   startQuestionStopwatch();
+  _qCurGi=globalIdx; _qShownAt=Date.now();            // analytics: is question par kitna time laga
 }
 // Pichhle question par wapas jao (sirf current section ke andar — section
 // paar karke peeche nahi jaate, taaki sectional timing na bigde)
 function prevQ(){
   if(curQ<=0) return;
+  commitQTime();
   curQ--;
   showQ();
+}
+// Turant feedback (Practice mode): sahi/galat + sahi jawab + व्याख्या (exp) — answer karte hi
+let _liveItem = null;
+function showLiveFeedback(q, idx){
+  const box = document.getElementById('qFeedback'); if(!box || !q) return;
+  const gi = globalQIndex(), ok = (idx===q.ans), L = function(i){ return String.fromCharCode(65+i); };
+  _liveItem = {gi:gi, sec:quizSections[curSection], q:q, u:idx, st:(ok?'right':'wrong')};
+  const cached = _aiExCache[aiExKey(_liveItem)] || '';
+  box.className = 'q-fb ' + (ok ? 'q-fb-ok' : 'q-fb-bad');
+  box.innerHTML = '<div class="q-fb-h">' + (ok ? '✅ सही उत्तर!' : '❌ गलत उत्तर') + '</div>'
+    + (ok ? '' : '<div class="q-fb-a">सही उत्तर: <b>' + L(q.ans) + '. ' + ES.sanitize((q.options||[])[q.ans]) + '</b></div>')
+    + (q.exp ? '<div class="q-fb-e"><b>💡 व्याख्या:</b> ' + ES.sanitize(q.exp) + '</div>' : '')
+    + ((!ok || !q.exp) ? '<button class="ak-ai" id="aiExBtnlive' + gi + '" onclick="explainQ(' + gi + ',\'live\')">🤖 AI से समझें</button><div class="ak-aiex" id="aiExlive' + gi + '" style="display:' + (cached?'block':'none') + ';">' + escHTML(cached) + '</div>' : '');
+  box.style.display = 'block';
+  try{ box.scrollIntoView({behavior:'smooth', block:'nearest'}); }catch(e){}
 }
 function selOpt(el,idx,ans){
   if(answered)return; answered=true;
@@ -3105,10 +3245,12 @@ function selOpt(el,idx,ans){
   } else {
     el.classList.add(idx===ans?'corr':'wrong');
     document.querySelectorAll('.q-opt')[ans].classList.add('corr');
+    showLiveFeedback(quizSections[curSection].questions[curQ], idx);
   }
   if(idx===ans)score++;
 }
 function nextQ(){
+  commitQTime();
   const sec=quizSections[curSection];
   curQ++;
   if(curQ>=sec.questions.length){
@@ -3118,18 +3260,186 @@ function nextQ(){
     showQ();
   }
 }
+// ══════════════════════════════════════════
+// QUIZ ANALYTICS — marks, %, required (qualifying) marks, difficulty, graphs
+// Quiz JSON me optional fields: passPercent (ya cutoff), marksPerQ, negative; har question me diff: easy|medium|hard
+// ══════════════════════════════════════════
+let qTimeSpent = [], _qCurGi = 0, _qShownAt = 0, _histSaved = false;
+function commitQTime(){
+  if(_qCurGi > 0 && _qShownAt){
+    const s = Math.min(300, Math.max(0, Math.round((Date.now() - _qShownAt)/1000)));   // background me chhodne par time na bade
+    qTimeSpent[_qCurGi-1] = (qTimeSpent[_qCurGi-1] || 0) + s;
+  }
+  _qShownAt = 0;
+}
+function fmNum(n){ n = Math.round(n*100)/100; return Number.isInteger(n) ? String(n) : String(n); }
+function fmPct(p){ return String(Math.round(p*10)/10); }
+function fmDur(s){ s = Math.max(0, Math.round(s)); return s >= 60 ? Math.floor(s/60) + 'm ' + String(s%60).padStart(2,'0') + 's' : s + 's'; }
+function normDiff(v){
+  if(v == null) return '';
+  const s = String(v).trim().toLowerCase();
+  if(['easy','e','1','low','आसान','सरल'].indexOf(s) > -1) return 'easy';
+  if(['medium','med','m','2','mid','moderate','मध्यम'].indexOf(s) > -1) return 'medium';
+  if(['hard','h','3','high','difficult','कठिन','मुश्किल'].indexOf(s) > -1) return 'hard';
+  return '';
+}
+function quizCfg(){
+  const q = curQuiz || {};
+  const mpq = +q.marksPerQ > 0 ? +q.marksPerQ : 1;
+  const neg = +q.negative > 0 ? +q.negative : 0;
+  let pass = +(q.passPercent != null ? q.passPercent : q.cutoff);
+  if(!(pass > 0 && pass <= 100)) pass = isCompetitionBoard(q.board || curBoard) ? 40 : 33;   // board: 33%, competitive: 40% (default)
+  return {mpq:mpq, neg:neg, pass:pass};
+}
+function computeQuizStats(){
+  const cfg = quizCfg(), items = _akItems, total = items.length;
+  let right = 0, wrong = 0, skip = 0;
+  items.forEach(function(i){ if(i.st==='right') right++; else if(i.st==='wrong') wrong++; else skip++; });
+  const totalMarks = total * cfg.mpq;
+  const obtained = Math.round((right*cfg.mpq - wrong*cfg.neg) * 100) / 100;
+  const pct = totalMarks ? Math.max(0, obtained / totalMarks * 100) : 0;
+  const reqMarks = Math.round(totalMarks * cfg.pass / 100 * 100) / 100;
+  const times = items.map(function(i){ return qTimeSpent[i.gi-1] || 0; });
+  const timed = times.filter(function(t){ return t > 0; }).sort(function(a,b){ return a-b; });
+  const median = timed.length >= 3 ? timed[Math.floor(timed.length/2)] : 0;
+  let tagged = 0;
+  const levels = {easy:{n:0,r:0,w:0,s:0}, medium:{n:0,r:0,w:0,s:0}, hard:{n:0,r:0,w:0,s:0}};
+  items.forEach(function(it, k){
+    let lv = normDiff(it.q.diff != null ? it.q.diff : (it.q.difficulty != null ? it.q.difficulty : it.q.level));
+    if(lv) tagged++;
+    else if(median){ const t = times[k]; lv = (t && t <= median*0.7) ? 'easy' : (t >= median*1.5 ? 'hard' : 'medium'); }
+    else lv = 'medium';
+    const L = levels[lv]; L.n++; if(it.st==='right') L.r++; else if(it.st==='wrong') L.w++; else L.s++;
+  });
+  return {cfg:cfg, total:total, right:right, wrong:wrong, skip:skip, attempted:right+wrong, totalMarks:totalMarks, obtained:obtained,
+          pct:pct, reqMarks:reqMarks, pass:(obtained >= reqMarks), times:times, timeTotal:times.reduce(function(a,b){return a+b;},0),
+          levels:levels, tagged:tagged, median:median};
+}
+function saveQuizHistory(st){
+  if(_histSaved) return; _histSaved = true;
+  try{
+    const key = String((curQuiz && (curQuiz.id || curQuiz.title)) || 'quiz');
+    const h = JSON.parse(localStorage.getItem('es_quiz_hist') || '[]');
+    h.push({k:key, t:Date.now(), p:Math.round(st.pct*10)/10});
+    localStorage.setItem('es_quiz_hist', JSON.stringify(h.slice(-40)));
+  }catch(e){}
+}
+function quizHistoryFor(){
+  try{
+    const key = String((curQuiz && (curQuiz.id || curQuiz.title)) || 'quiz');
+    return JSON.parse(localStorage.getItem('es_quiz_hist') || '[]').filter(function(x){ return x.k === key; }).slice(-6);
+  }catch(e){ return []; }
+}
+function renderQuizAnalytics(st){
+  const box = document.getElementById('qAnalytics'); if(!box) return;
+  if(!st.total){ box.innerHTML = ''; return; }
+  const cfg = st.cfg, C = 276.46;
+  const acc = st.attempted ? st.right / st.attempted * 100 : 0;
+  const need = Math.max(0, Math.round((st.reqMarks - st.obtained) * 100) / 100);
+  const goal = 80, goalMarks = Math.round(st.totalMarks * goal / 100 * 100) / 100;
+  // 1) Overview
+  let h = '<div class="an-card"><div class="an-h"><span>📊 Performance Analytics</span>'
+    + '<span class="an-badge ' + (st.pass ? 'an-pass' : 'an-fail') + '">' + (st.pass ? '✅ Qualified' : '❌ ' + fmNum(need) + ' अंक और चाहिए') + '</span></div>'
+    + '<div class="an-grid">'
+    + '<div class="an-stat"><b>' + fmNum(st.obtained) + ' / ' + fmNum(st.totalMarks) + '</b><span>प्राप्त अंक / कुल अंक</span></div>'
+    + '<div class="an-stat"><b>' + fmPct(st.pct) + '%</b><span>Percentage</span></div>'
+    + '<div class="an-stat"><b>' + fmNum(st.reqMarks) + ' (' + fmPct(cfg.pass) + '%)</b><span>Required (qualifying) अंक</span></div>'
+    + '<div class="an-stat"><b>' + fmPct(acc) + '%</b><span>Accuracy (' + st.right + '/' + st.attempted + ' सही)</span></div>'
+    + '<div class="an-stat"><b>' + st.attempted + ' / ' + st.total + '</b><span>Attempted</span></div>'
+    + '<div class="an-stat"><b>' + (st.timeTotal ? fmDur(st.timeTotal) : '—') + '</b><span>कुल समय' + (st.timeTotal ? ' • औसत ' + fmDur(st.timeTotal/st.total) + '/प्रश्न' : '') + '</span></div>'
+    + '</div>'
+    + '<div class="an-track"><div class="an-fill" style="width:' + Math.min(100, st.pct) + '%"></div>'
+    + '<div class="an-mark" style="left:' + cfg.pass + '%"><span>Required ' + fmPct(cfg.pass) + '%</span></div>'
+    + (Math.abs(cfg.pass - goal) >= 12 ? '<div class="an-mark b" style="left:' + goal + '%"><span>Target ' + goal + '%</span></div>' : '')
+    + '</div>'
+    + (cfg.neg ? '<div class="an-note">Negative marking: हर गलत उत्तर पर −' + fmNum(cfg.neg) + ' अंक' + (st.wrong ? ' (कुल −' + fmNum(st.wrong*cfg.neg) + ')' : '') + '</div>' : '')
+    + (st.pct < goal ? '<div class="an-note">अगला लक्ष्य: ' + goal + '% = ' + fmNum(goalMarks) + ' अंक (' + fmNum(Math.max(0, goalMarks - st.obtained)) + ' और)</div>' : '<div class="an-note">🏆 आप ' + goal + '% के target से ऊपर हैं!</div>')
+    + '</div>';
+  // 2) Donut
+  const seg = [[st.right,'#10B981','✅ सही'],[st.wrong,'#EF4444','❌ गलत'],[st.skip,'#94A3B8','⭕ छूटे']];
+  let off = 0, circles = '';
+  seg.forEach(function(s){
+    const len = st.total ? s[0] / st.total * C : 0;
+    if(len > 0) circles += '<circle cx="60" cy="60" r="44" fill="none" stroke="' + s[1] + '" stroke-width="16" stroke-dasharray="' + len + ' ' + (C-len) + '" stroke-dashoffset="' + (-off) + '" transform="rotate(-90 60 60)"/>';
+    off += len;
+  });
+  h += '<div class="an-card"><div class="an-h"><span>🎯 Attempt Breakdown</span></div><div class="an-donut">'
+    + '<svg width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="सही गलत छूटे"><circle cx="60" cy="60" r="44" fill="none" stroke="rgba(148,163,184,.25)" stroke-width="16"/>' + circles
+    + '<text x="60" y="58" text-anchor="middle" font-size="19" font-weight="800" fill="currentColor">' + Math.round(st.pct) + '%</text>'
+    + '<text x="60" y="74" text-anchor="middle" font-size="9" fill="#94A3B8">score</text></svg>'
+    + '<div class="an-legend">' + seg.map(function(s){ return '<div><span class="an-dot" style="background:' + s[1] + '"></span>' + s[2] + ': <b>' + s[0] + '</b></div>'; }).join('') + '</div></div></div>';
+  // 3) Difficulty
+  const names = {easy:'🟢 Easy', medium:'🟡 Medium', hard:'🔴 Hard'};
+  h += '<div class="an-card"><div class="an-h"><span>🧠 Difficulty-wise Performance</span></div>';
+  ['easy','medium','hard'].forEach(function(k){
+    const L = st.levels[k];
+    if(!L.n){ h += '<div class="an-row"><div class="an-rl"><span>' + names[k] + '</span><small>कोई प्रश्न नहीं</small></div></div>'; return; }
+    const a = L.r / L.n * 100;
+    h += '<div class="an-row"><div class="an-rl"><span>' + names[k] + ' <small>(' + L.n + ' प्रश्न)</small></span><small>' + L.r + ' सही • ' + fmPct(a) + '%</small></div>'
+      + '<div class="an-bar"><div style="width:' + (L.r/L.n*100) + '%;background:#10B981"></div><div style="width:' + (L.w/L.n*100) + '%;background:#EF4444"></div><div style="width:' + (L.s/L.n*100) + '%;background:#94A3B8"></div></div></div>';
+  });
+  h += '<div class="an-note">' + (st.tagged >= st.total/2 ? 'Difficulty quiz के tag से है (बिना tag वाले प्रश्न आपके समय से अनुमानित)।' : 'इस quiz में difficulty tag नहीं है — level आपके हर प्रश्न पर लगे समय से अनुमानित है (जल्दी = Easy, ज़्यादा समय = Hard)।') + '</div></div>';
+  // 4) Sectional
+  if(quizSections.length > 1){
+    const by = {}; const order = [];
+    _akItems.forEach(function(i){ const n = i.sec.name || 'Section'; if(!by[n]){ by[n] = {n:0,r:0,w:0,s:0}; order.push(n); } const L = by[n]; L.n++; if(i.st==='right') L.r++; else if(i.st==='wrong') L.w++; else L.s++; });
+    h += '<div class="an-card"><div class="an-h"><span>🧩 Section-wise Accuracy</span></div>';
+    order.forEach(function(n){ const L = by[n];
+      h += '<div class="an-row"><div class="an-rl"><span>' + escHTML(n) + '</span><small>' + L.r + '/' + L.n + ' • ' + fmPct(L.r/L.n*100) + '%</small></div>'
+        + '<div class="an-bar"><div style="width:' + (L.r/L.n*100) + '%;background:#10B981"></div><div style="width:' + (L.w/L.n*100) + '%;background:#EF4444"></div><div style="width:' + (L.s/L.n*100) + '%;background:#94A3B8"></div></div></div>';
+    });
+    h += '</div>';
+  }
+  // 5) Time per question
+  if(st.timeTotal){
+    const mx = Math.max.apply(null, st.times.concat([1]));
+    const col = {right:'#10B981', wrong:'#EF4444', skip:'#94A3B8'};
+    let slow = 0; st.times.forEach(function(t,k){ if(t > st.times[slow]) slow = k; });
+    h += '<div class="an-card"><div class="an-h"><span>⏱ Question-wise Time</span><span style="font-weight:600;color:var(--g600);font-size:11px;">max ' + fmDur(mx) + '</span></div>'
+      + '<div class="an-times">' + _akItems.map(function(i,k){ return '<i title="Q' + i.gi + ': ' + st.times[k] + 's" style="height:' + Math.max(3, st.times[k]/mx*100) + '%;background:' + col[i.st] + '"></i>'; }).join('') + '</div>'
+      + '<div class="an-axis"><span>Q1</span><span>Q' + st.total + '</span></div>'
+      + '<div class="an-note">🟩 सही &nbsp; 🟥 गलत &nbsp; ⬜ छूटा • सबसे ज़्यादा समय: Q' + (slow+1) + ' (' + fmDur(st.times[slow]) + ')</div></div>';
+  }
+  // 6) Insights
+  const ins = [];
+  const avg = st.total ? st.timeTotal / st.total : 0;
+  if(st.skip) ins.push('⭕ ' + st.skip + ' प्रश्न छूटे — आखिर में एक बार इन्हें attempt करने की कोशिश करें।');
+  if(st.wrong && cfg.neg) ins.push('➖ गलत उत्तरों से ' + fmNum(st.wrong*cfg.neg) + ' अंक कटे — पक्का न हो तो छोड़ना बेहतर है।');
+  let worst = null;
+  ['easy','medium','hard'].forEach(function(k){ const L = st.levels[k]; if(L.n >= 2){ const a = L.r/L.n; if(!worst || a < worst.a) worst = {k:k, a:a}; } });
+  if(worst && worst.a < 0.6) ins.push('📉 ' + names[worst.k].replace(/^\S+\s/, '') + ' प्रश्नों में accuracy ' + fmPct(worst.a*100) + '% — इस level पर ज़्यादा practice करें।');
+  const slowWrong = [];
+  _akItems.forEach(function(i,k){ if(i.st==='wrong' && avg && st.times[k] > avg*1.5) slowWrong.push('Q' + i.gi); });
+  if(slowWrong.length) ins.push('🐢 ' + slowWrong.slice(0,4).join(', ') + ' में समय ज़्यादा लगा फिर भी गलत — इन concepts को revise करें।');
+  if(st.pass && st.pct < goal) ins.push('👍 Qualify हो गए! अब ' + goal + '% का लक्ष्य रखें।');
+  if(!ins.length) ins.push('🌟 बढ़िया संतुलन — इसी रफ़्तार से practice जारी रखें।');
+  h += '<div class="an-card"><div class="an-h"><span>💡 Insights</span></div>' + ins.map(function(t){ return '<div class="an-ins">' + t + '</div>'; }).join('') + '</div>';
+  // 7) Progress history (same quiz ke pichhle attempts)
+  const hist = quizHistoryFor();
+  if(hist.length >= 2){
+    h += '<div class="an-card"><div class="an-h"><span>📈 आपकी Progress (इसी quiz के attempts)</span></div><div class="an-hist">'
+      + hist.map(function(x,k){ return '<div><em>' + fmPct(x.p) + '%</em><i style="height:' + Math.max(4, Math.min(100, x.p)) + '%"></i><small>' + (k === hist.length-1 ? 'अभी' : '#' + (k+1)) + '</small></div>'; }).join('') + '</div></div>';
+  }
+  box.innerHTML = h;
+}
+
 function showResult(){
+  commitQTime();
   clearAllTimers();
   document.getElementById('quizActive').style.display='none';
   document.getElementById('quizResult').style.display='block';
   // Result screen par wapas normal chrome (topbar/bottom-nav) dikha do
   document.body.classList.remove('quiz-mode');
-  const total=totalQuestionsCount(), pct=total?Math.round((score/total)*100):0;
+  const fb = document.getElementById('qFeedback'); if(fb){ fb.style.display='none'; fb.innerHTML=''; }
+  renderAnswerKey();                       // _akItems yahin banta hai
+  const st = computeQuizStats();
+  const pct = Math.round(st.pct);
   document.getElementById('rEmoji').textContent=pct>=80?'🏆':pct>=50?'👍':'💪';
-  document.getElementById('rScore').textContent=`${score}/${total} (${pct}%)`;
-  if(typeof notifyQuizDone==='function') notifyQuizDone(score,total,pct);
+  document.getElementById('rScore').textContent=`${fmNum(st.obtained)}/${fmNum(st.totalMarks)} (${fmPct(st.pct)}%)`;
   document.getElementById('rMsg').textContent=pct>=80?'शानदार! बेहतरीन Performance!':pct>=50?'अच्छा! और practice करें!':'हिम्मत रखें, आप कर सकते हैं!';
-  renderAnswerKey();
+  if(typeof notifyQuizDone==='function') notifyQuizDone(fmNum(st.obtained), fmNum(st.totalMarks), pct);
+  saveQuizHistory(st);
+  try{ renderQuizAnalytics(st); }catch(e){ const b=document.getElementById('qAnalytics'); if(b) b.innerHTML=''; try{ console.warn('analytics error', e); }catch(_){} }
   renderQPalette();
 }
 
@@ -3151,7 +3461,7 @@ var _aiExCache = {};
 function aiExKey(it){ return ((curQuiz&&curQuiz.id)||'')+'|'+it.gi+'|'+it.u; }
 function cleanAI(t){ return String(t==null?'':t).replace(/\*\*/g,'').replace(/^#+\s*/gm,'').replace(/^\s*\*\s+/gm,'• ').trim(); }
 async function explainQ(gi, pre){
-  const it = _akItems[gi-1]; if(!it) return;
+  const it = (pre==='live') ? _liveItem : _akItems[gi-1]; if(!it) return;
   const key = aiExKey(it);
   const box = document.getElementById('aiEx'+pre+gi), btn = document.getElementById('aiExBtn'+pre+gi);
   if(!box || !btn) return;
@@ -3248,7 +3558,7 @@ function exitQuiz(){
   clearAllTimers();
   restoreQuizTheme();
   quizSections=[]; curSection=0;
-  curQuiz=null; userAnswers=[];
+  curQuiz=null; userAnswers=[]; qTimeSpent=[]; _qCurGi=0; _qShownAt=0;
   document.body.classList.remove('quiz-mode');
   if(document.getElementById('quizListSec')) document.getElementById('quizListSec').style.display='block';
   const adQR=document.getElementById('adSlotQuizReturn'); if(adQR) adQR.style.display='flex';
@@ -3469,27 +3779,27 @@ function showInstallToast(){
 const provider = new firebase.auth.GoogleAuthProvider();
 provider.setCustomParameters({ prompt: 'select_account' });
 
-// Popup try karo (zyaadatar browsers mein reliable hai), agar popup block/unsupported
-// ho (jaise installed/standalone app mein) to redirect par fallback kar do.
-function googleSignIn(){
-  auth.signInWithPopup(provider).catch((error) => {
-    if (error.code === 'auth/popup-blocked' ||
-        error.code === 'auth/popup-closed-by-user' ||
-        error.code === 'auth/cancelled-popup-request' ||
-        error.code === 'auth/operation-not-supported-in-this-environment') {
-      auth.signInWithRedirect(provider).catch((redirectErr) => {
-        showToast("❌ Sign-in fail: " + redirectErr.message);
-      });
-    } else {
-      showToast("❌ Sign-in fail: " + error.message);
+// Sign-in ka tareeka:
+//  1) ES_GOOGLE_CLIENT_ID set ho -> Google ka official button / One Tap (FedCM) app ke andar, redirect ke bina
+//  2) warna Firebase popup. Student popup band kar de to use bahar redirect NAHI karte (pehle yahi "bahar nikal deta" tha).
+//  Redirect sirf tab, jab browser popup support hi nahi karta.
+function firebasePopupSignIn(){
+  return auth.signInWithPopup(provider).catch(function(error){
+    var c = error && error.code;
+    if(c==='auth/popup-closed-by-user' || c==='auth/cancelled-popup-request') return;   // student ne khud band kiya
+    if(c==='auth/operation-not-supported-in-this-environment'){
+      showToast('ℹ️ Google login page khul raha hai…');
+      return auth.signInWithRedirect(provider).catch(function(er){ showToast(authErrMsg(er)); });
     }
+    showToast(authErrMsg(error));
   });
 }
-
-// Welcome screen ka Google Sign-in button
-function googleSignInWelcome(){
-  googleSignIn();
+function googleSignIn(){
+  if(auth.currentUser) return;
+  if(gisConfigured() || needConsent()){ openGoogleSheet(); return; }   // official button + (zarurat ho to) consent checkbox
+  firebasePopupSignIn();
 }
+function googleSignInWelcome(){ googleSignIn(); }
 
 document.addEventListener("DOMContentLoaded", function () {
   const btn = document.getElementById("googleLoginBtn");
@@ -3518,14 +3828,13 @@ document.addEventListener("DOMContentLoaded", function () {
 // (yahi wo bug tha: pehle sign-in ke baad bhi button dikhta reh jaata tha)
 auth.onAuthStateChanged(function(user){
   const loginBtn = document.getElementById('googleLoginBtn');
-  const ssBtn = document.getElementById('ssGoogleBtn');
   if (typeof updateUsernameLockUI === "function") updateUsernameLockUI();
   if (typeof updateDoubtLoginGate === "function") updateDoubtLoginGate();
   if (typeof listenDoubts === "function") listenDoubts();
 
   if(user){
+    closeGoogleSheet();
     if(loginBtn) loginBtn.style.display = 'none';
-    if(ssBtn) ssBtn.style.display = 'none';
 
     const existingProfile = JSON.parse(localStorage.getItem('es_student')||'null');
     const isNewOnThisDevice = !existingProfile;
@@ -3572,7 +3881,6 @@ auth.onAuthStateChanged(function(user){
     const existingProfile = JSON.parse(localStorage.getItem('es_student')||'null');
     if(!existingProfile){
       if(loginBtn) loginBtn.style.display = '';
-      if(ssBtn) ssBtn.style.display = '';
     }
   }
 });
@@ -3860,9 +4168,14 @@ function showSystemNotif(title, body, tag, url){
     }).catch(function(){});
   }catch(e){}
 }
+// Swipe se hatayi gayi notifications ki id yaad rakhte hain — warna roz wali notification app khulte hi wapas aa jaati
+const DN_KEY = 'es_notif_dismissed';
+function dnLoad(){ try{ return JSON.parse(localStorage.getItem(DN_KEY)||'[]'); }catch(e){ return []; } }
+function isNotifDismissed(id){ return !!id && dnLoad().indexOf(id) !== -1; }
+function dnAdd(id){ if(!id) return; const a = dnLoad(); if(a.indexOf(id)===-1){ a.push(id); try{ localStorage.setItem(DN_KEY, JSON.stringify(a.slice(-300))); }catch(e){} } }
 function addLocalNotif(id, icon, title, body){
   const a = lnLoad();
-  if(a.some(x=>x.id===id)) return false;
+  if(a.some(x=>x.id===id) || isNotifDismissed(id)) return false;
   a.unshift({id:id, icon:icon, title:title, body:body, createdAt:new Date().toISOString()});
   lnSave(a);
   if(!/^(tip-|welcome)/.test(id)) showSystemNotif(icon+' '+title, body, 'es-'+id);
@@ -3913,9 +4226,6 @@ function runSmartNotifs(){
     addLocalNotif('streak-'+st.streak,'🔥', st.streak+' दिन की लगातार पढ़ाई!', 'शानदार '+name+'! Streak बनाए रखें — रोज़ थोड़ी पढ़ाई बड़ा फ़र्क़ लाती है।');
   }
 
-  // 4) Dark mode ka tip (sirf ek baar)
-  addLocalNotif('tip-dark','🌙','Dark Mode आ गया!','ऊपर 🌙 बटन या Profile से ON करें — रात की पढ़ाई में आँखों को आराम।');
-
   updateNotifBadge();
 }
 // Naye PYQ papers jo is device ने pehle nahi dekhe
@@ -3962,15 +4272,88 @@ function notifyQuizDone(score, total, pct){
 }
 
 function notifTs(n){ const t = new Date(n.createdAt).getTime(); return isNaN(t) ? 0 : t; }
-let _qC = null, _qAt = 0, _qBoard = null;
+let _qC = null, _qAt = 0, _qBoard = null, _qJoin = -1;
+// Student kab juda: profile ki date. Naye student ko is se PEHLE ki admin notifications nahi dikhti.
+// Profile hi nahi hai to abhi ka samay (kuch nahi dikhega); purane profile me date na ho to 0 (sab dikhengi).
+function studentJoinMs(){
+  try{
+    const p = JSON.parse(localStorage.getItem('es_student')||'null');
+    if(!p) return Date.now();
+    const t = p.date ? new Date(p.date).getTime() : 0;
+    return isNaN(t) ? 0 : t;
+  }catch(e){ return 0; }
+}
+function imgTr(u, w){ return (u.indexOf('ik.imagekit.io') > -1 && u.indexOf('?') === -1) ? u + '?tr=w-' + w + ',q-75' : u; }
 function getQueueNotifs(){
-  if(_qC && _qBoard===curBoard && Date.now()-_qAt < 5*60*1000) return Promise.resolve(_qC);
+  const joined = studentJoinMs();
+  if(_qC && _qBoard===curBoard && _qJoin===joined && Date.now()-_qAt < 5*60*1000) return Promise.resolve(_qC);
   return db.collection('notificationQueue').orderBy('createdAt','desc').limit(30).get()
-    .then(snap=>snap.docs.map(d=>d.data()).filter(n=>{
-      return !n.audience || n.audience === 'all' || n.audience === curBoard;
-    }).map(n=>({icon:'📢', title:n.title||'', body:n.body||'', createdAt:n.createdAt})))
-    .then(r=>{ _qC = r; _qAt = Date.now(); _qBoard = curBoard; return r; })
+    .then(snap=>snap.docs.map(d=>Object.assign({_id:d.id}, d.data())).filter(n=>{
+      if(n.audience && n.audience !== 'all' && n.audience !== curBoard) return false;
+      if(joined){ const t = new Date(n.createdAt).getTime(); if(isNaN(t) || t < joined) return false; }
+      return true;
+    }).map(n=>({id:'q-'+n._id, icon:(n.kind==='offer'?'🎁':'📢'), title:n.title||'', body:n.body||'', createdAt:n.createdAt, image:n.image||'', link:n.link||''})))
+    .then(r=>{ _qC = r; _qAt = Date.now(); _qBoard = curBoard; _qJoin = joined; return r; })
     .catch(()=>_qC);
+}
+// ── Swipe se notification hatao (koi delete button nahi) ──
+function notifDismiss(id){
+  if(!id) return;
+  dnAdd(id);
+  lnSave(lnLoad().filter(x=>x.id!==id));
+  updateNotifBadge();
+}
+function dismissNotifEl(el, dir){
+  const id = el.getAttribute('data-nid');
+  el.style.transition = 'transform .2s ease, opacity .2s ease';
+  el.style.transform = 'translateX(' + (dir*110) + '%)'; el.style.opacity = '0';
+  setTimeout(function(){
+    el.style.overflow = 'hidden'; el.style.maxHeight = el.offsetHeight + 'px';
+    el.style.transition = 'max-height .25s ease, margin .25s ease, padding .25s ease';
+    requestAnimationFrame(function(){ el.style.maxHeight = '0'; el.style.marginBottom = '0'; el.style.paddingTop = '0'; el.style.paddingBottom = '0'; });
+    setTimeout(function(){
+      const list = el.parentNode; el.remove(); notifDismiss(id);
+      if(list && !list.querySelector('.notif-item')) list.innerHTML = '<div class="notif-empty">🔔 अभी तक कोई notification नहीं है।</div>';
+    }, 270);
+  }, 200);
+}
+function bindNotifSwipe(list){
+  if(list._swBound) return; list._swBound = true;
+  let it = null, sx = 0, sy = 0, dx = 0, st = 0, drag = false, pid = null;
+  list.addEventListener('pointerdown', function(e){
+    const t = e.target.closest ? e.target.closest('.notif-item') : null;
+    if(!t || (e.pointerType==='mouse' && e.button!==0)) return;
+    it = t; sx = e.clientX; sy = e.clientY; dx = 0; st = Date.now(); drag = false; pid = e.pointerId;
+  });
+  list.addEventListener('pointermove', function(e){
+    if(!it || e.pointerId!==pid) return;
+    const x = e.clientX - sx, y = e.clientY - sy;
+    if(!drag){
+      if(Math.abs(y) > 10 && Math.abs(y) > Math.abs(x)){ it = null; return; }   // ye vertical scroll hai
+      if(Math.abs(x) <= 8) return;
+      drag = true; it.style.transition = 'none'; try{ it.setPointerCapture(pid); }catch(_){}
+    }
+    dx = x; it.style.transform = 'translateX(' + dx + 'px)';
+    it.style.opacity = String(Math.max(.25, 1 - Math.abs(dx)/(it.offsetWidth*1.1)));
+  });
+  function end(e){
+    if(!it || (e && e.pointerId!==pid)) return;
+    const el = it; it = null;
+    if(!drag) return;
+    el._wasDragged = true; setTimeout(function(){ el._wasDragged = false; }, 80);
+    const w = el.offsetWidth, v = Math.abs(dx)/Math.max(1, Date.now()-st);
+    if(Math.abs(dx) > w*0.38 || (v > 0.6 && Math.abs(dx) > 50)) dismissNotifEl(el, dx>0 ? 1 : -1);
+    else { el.style.transition = 'transform .2s ease, opacity .2s ease'; el.style.transform = ''; el.style.opacity = ''; }
+  }
+  list.addEventListener('pointerup', end);
+  list.addEventListener('pointercancel', end);
+  // Offer wali notification par tap = uska link khule (swipe karte waqt nahi)
+  list.addEventListener('click', function(e){
+    const t = e.target.closest ? e.target.closest('.notif-item') : null;
+    if(!t || t._wasDragged) return;
+    const l = t.getAttribute('data-link');
+    if(l && l.indexOf('https://')===0) window.open(l, '_blank', 'noopener');
+  });
 }
 function escHTML(t){ return String(t==null?'':t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
@@ -3980,22 +4363,31 @@ function renderNotifications(){
   const prevSeen = localStorage.getItem('es_notif_seen_ts');
   const prevSeenMs = prevSeen ? new Date(prevSeen).getTime() : 0;
   const paint = function(items, failed){
+    items = items.filter(n=>!isNotifDismissed(n.id));
     items.sort((a,b)=>notifTs(b)-notifTs(a));
     if(!items.length){
       el.innerHTML = '<div class="notif-empty">'+(failed?'❌ Notifications load नहीं हो पाए।':'🔔 अभी तक कोई notification नहीं है।')+'</div>';
       return;
     }
-    el.innerHTML = items.map(n=>`
-      <div class="notif-item ${notifTs(n)>prevSeenMs?'unread':''}">
+    el.innerHTML = '<div class="notif-hint">↔ किसी notification को स्वाइप करके हटाएँ</div>' + items.map(n=>{
+      const img = (n.image && String(n.image).indexOf('https://')===0) ? ES.safeUrl(n.image) : '';
+      const lnk = (n.link && String(n.link).indexOf('https://')===0) ? ES.safeUrl(n.link) : '';
+      const nid = n.id || ('x-' + ES.hash(String(n.createdAt)+'|'+String(n.title)));
+      return `
+      <div class="notif-item ${notifTs(n)>prevSeenMs?'unread':''}${lnk?' has-link':''}" data-nid="${ES.escAttr(nid)}"${lnk?' data-link="'+ES.escAttr(lnk)+'"':''}>
         <div class="ni-ic">${n.icon||'🔔'}</div>
         <div class="ni-tx">
           <div class="ni-title">${escHTML(n.title)}</div>
           <div class="ni-body">${escHTML(n.body)}</div>
+          ${img?`<img class="ni-img" src="${ES.escAttr(imgTr(img,600))}" alt="" loading="lazy" draggable="false">`:''}
+          ${lnk?'<div class="ni-open">🔗 खोलने के लिए टैप करें</div>':''}
           <div class="ni-time">${formatNotifTime(n.createdAt)}</div>
         </div>
         ${notifTs(n)>prevSeenMs?'<span class="ni-dot"></span>':''}
-      </div>`).join('');
+      </div>`;
+    }).join('');
   };
+  bindNotifSwipe(el);
   const local = lnLoad();
   paint(local.slice(), false);                         // local turant dikhao
   getQueueNotifs().then(q=>{
@@ -4026,7 +4418,7 @@ function updateNotifBadge(){
   show(localUnread);
   getQueueNotifs().then(q=>{
     if(q===null) return;
-    show(localUnread + q.filter(n=>n.createdAt && notifTs(n)>seenMs).length);
+    show(localUnread + q.filter(n=>n.createdAt && notifTs(n)>seenMs && !isNotifDismissed(n.id)).length);
   });
 }
 
@@ -4080,14 +4472,19 @@ function registerFcmToken(){
         fcmForegroundBound = true;
         messaging.onMessage(function(payload){
           const n = (payload && payload.notification) || (payload && payload.data) || {};
-          reg.showNotification(n.title || 'EduSpark', {
+          const d = (payload && payload.data) || {};
+          const link = (typeof d.link === 'string' && d.link.indexOf('https://')===0) ? d.link : '/';
+          const image = n.image || n.imageUrl || d.image || '';
+          const opts = {
             tag: 'fcm-' + ((n.title||'')+(n.body||'')).slice(0,60),
             body: n.body || '',
             icon: '/icon-192.png',
             badge: '/icon-192.png',
             vibrate: [200,100,200],
-            data: { url: '/' }
-          });
+            data: { url: link, kind: d.kind || '' }
+          };
+          if(typeof image === 'string' && image.indexOf('https://')===0) opts.image = image;   // offerwall ki image (URL text nahi)
+          reg.showNotification(n.title || 'EduSpark', opts);
           if (typeof updateNotifBadge === "function") updateNotifBadge();
         });
       }
@@ -4133,8 +4530,7 @@ if (window.ES && ES.bus) {
     if (typeof renderPYQHomeCards === "function") renderPYQHomeCards();
     // Refresh se pehle jis page par the, wahin wapas
     if (typeof restoreNavState === "function") restoreNavState();
-    // Back-gesture guard armed karo — ab back press pehle app ke andar handle hoga
-    armBackGuard();
+    // Back-gesture guard pehle touch par lagta hai (armBackGuard ke upar comment dekhein) — boot par nahi
     // Aaj ka Thought of the Day dikhाओ
     if (typeof maybeShowThoughtOfDay === "function") maybeShowThoughtOfDay();
     // Push notification token register/update karo (agar permission pehle se hai)
@@ -4147,7 +4543,7 @@ if (window.ES && ES.bus) {
   setTimeout(()=>{
     const profile = JSON.parse(localStorage.getItem('es_student')||'null');
     if(!profile){
-      document.getElementById('studentSetup').style.display='flex';
+      showLoginPage();
     }
     if (typeof updateTopbarAvatar === "function") updateTopbarAvatar();
     // Install toast
@@ -4283,7 +4679,7 @@ if('serviceWorker' in navigator){
     var p = list.filter(function(o){ return o.popup; })[0], today = new Date().toDateString();
     if(p && localStorage.getItem('es_offerPopup') !== today){
       localStorage.setItem('es_offerPopup', today);
-      var ov = document.createElement('div');
+      var ov = document.createElement('div'); ov.id = 'offerPopup';
       ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:99999;';
       var box = document.createElement('div'); box.style.cssText = 'width:85%;max-width:380px;position:relative;';
       var x = document.createElement('button'); x.textContent = '✕';

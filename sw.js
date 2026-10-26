@@ -1,4 +1,4 @@
-const CACHE_NAME = "eduspark-v19";
+const CACHE_NAME = "eduspark-v20";
 
 const APP_SHELL = ["/", "/index.html", "/manifest.json", "/icon-192.png", "/icon-512.png"];
 
@@ -72,21 +72,33 @@ self.addEventListener("push", event => {
   const n = data.notification || ((data.data && (data.data.title || data.data.body)) ? data.data : data);
   const title = n.title || "EduSpark";
   const body = n.body || "";
-  let url = (data.data && data.data.url) || (data.fcmOptions && data.fcmOptions.link) || "/";
-  try { const u = new URL(url, self.location.origin); url = (u.origin === self.location.origin) ? u.href : "/"; } catch (e) { url = "/"; }   // purane domain ka link ho to bhi app hi khule
-  event.waitUntil(self.registration.showNotification(title, {
+  const d = data.data || {};
+  const image = n.image || n.imageUrl || d.image || "";
+  const isOffer = d.kind === "offer";                       // offerwall: link bahar ki website ka ho sakta hai
+  let url = d.url || d.link || (data.fcmOptions && data.fcmOptions.link) || "/";
+  try {
+    const u = new URL(url, self.location.origin);
+    // Normal notification: sirf app ka apna link (purane domain ka ho to bhi app hi khule). Offer: koi bhi https link.
+    url = (u.origin === self.location.origin || (isOffer && u.protocol === "https:")) ? u.href : "/";
+  } catch (e) { url = "/"; }
+  const opts = {
     body,
     icon: "/icon-192.png",
     badge: "/icon-192.png",
     vibrate: [200, 100, 200],
     tag: "fcm-" + (title + body).slice(0, 60),   // app khuli ho to duplicate notification na bane
     data: { url }
-  }));
+  };
+  if (typeof image === "string" && image.indexOf("https://") === 0) opts.image = image;   // offer ki image notification me dikhti hai (URL text nahi)
+  event.waitUntil(self.registration.showNotification(title, opts));
 });
 
 self.addEventListener("notificationclick", event => {
   event.notification.close();
   const target = (event.notification.data && event.notification.data.url) || "/";
+  let external = false;
+  try { external = new URL(target, self.location.origin).origin !== self.location.origin; } catch (e) {}
+  if (external) { event.waitUntil(clients.openWindow ? clients.openWindow(target) : undefined); return; }   // offer link seedha khule
   event.waitUntil(
     clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => {
       for (const c of list) {

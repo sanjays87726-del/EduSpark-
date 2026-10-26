@@ -32,7 +32,7 @@ spec:
               app.kubernetes.io/name: eduspark
       containers:
         - name: web
-          image: ghcr.io/sanjays87726-del/eduspark:1.5.0
+          image: ghcr.io/sanjays87726-del/eduspark:1.6.0
           ports:
             - containerPort: 8080
           readinessProbe:            # Service traffic tabhi bhejta hai jab ye pass ho

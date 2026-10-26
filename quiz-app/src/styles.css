@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --canvas: #f4f7fb;
+  --surface: #ffffff;
+  --surface-2: #eef3f9;
+  --ink: #122033;
+  --muted: #5c6b80;
+  --line: #d5dfeb;
+  --primary: #1d4e89;
+  --on-primary: #f7fbff;
+  --accent: #5b3cc4;
+  --good: #0f766e;
+  --bad: #b42318;
+  --warn: #b45309;
+  --primary-soft: #e7efff;
+  --accent-soft: #efe9ff;
+  --good-soft: #e5f6f3;
+  --bad-soft: #fdecea;
+  --shadow: 0 12px 40px rgba(18, 32, 51, 0.06);
+  color-scheme: light;
+}
+
+.dark {
+  --canvas: #0c1220;
+  --surface: #151c2e;
+  --surface-2: #1c263b;
+  --ink: #e7eef8;
+  --muted: #93a0b8;
+  --line: #2a3650;
+  --primary: #8eb6f2;
+  --on-primary: #0c1220;
+  --accent: #c4b5fd;
+  --good: #5eead4;
+  --bad: #fca5a5;
+  --warn: #fbbf24;
+  --primary-soft: #1a2744;
+  --accent-soft: #261f3d;
+  --good-soft: #12332f;
+  --bad-soft: #3a1d24;
+  --shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-primary: var(--primary);
+  --color-on-primary: var(--on-primary);
+  --color-accent: var(--accent);
+  --color-good: var(--good);
+  --color-bad: var(--bad);
+  --color-warn: var(--warn);
+  --color-primary-soft: var(--primary-soft);
+  --color-accent-soft: var(--accent-soft);
+  --color-good-soft: var(--good-soft);
+  --color-bad-soft: var(--bad-soft);
+  --font-sans: "Outfit", "Noto Sans Devanagari", system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    background: var(--canvas);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    min-height: 100vh;
+    background: var(--canvas);
+    color: var(--ink);
+  }
+  h1, h2, h3 { text-wrap: balance; }
+  p { text-wrap: pretty; }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) { cursor: pointer; }
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+  ::selection { background: var(--primary-soft); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

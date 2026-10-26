@@ -19,6 +19,7 @@ service cloud.firestore {
     match /quizzes/{doc}           { allow read: if true; allow write: if isAdmin(); }
     match /pyq/{doc}               { allow read: if true; allow write: if isAdmin(); }
     match /notificationQueue/{doc} { allow read: if true; allow write: if isAdmin(); }
+    match /offers/{doc}            { allow read: if true; allow write: if isAdmin(); }   // offerwall — pehle ye rule nahi tha, isliye students ko offers dikhte hi nahi the
 
     // Doubts: student sirf apne doubts dekh/bhej sakta hai; reply/delete sirf admin.
     // Naya doubt sirf in fields ke saath, status 'pending' aur khali answer ke saath ban sakta hai

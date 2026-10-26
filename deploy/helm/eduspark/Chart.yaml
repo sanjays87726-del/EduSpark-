@@ -3,4 +3,4 @@ name: eduspark
 description: EduSpark static PWA (nginx) — rolling, canary aur blue-green deployment ke saath
 type: application
 version: 0.1.0          # chart ka version
-appVersion: "1.5.0"     # app ka version (image tag ka default) — package.json se match rakho
+appVersion: "1.6.0"     # app ka version (image tag ka default) — package.json se match rakho

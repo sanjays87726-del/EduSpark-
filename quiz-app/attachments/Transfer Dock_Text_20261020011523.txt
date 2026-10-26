@@ -1,0 +1,827 @@
+MASTER PROMPT: Build EduSpark-Quiz — Complete Educational Quiz Platform
+
+1. ROLE AND OBJECTIVE
+
+Act as a senior full-stack developer, UI/UX designer, database architect, security engineer, and education technology product manager.
+
+Build a complete, production-oriented educational quiz application named EduSpark-Quiz.
+
+The application must be a real, functional product, not just a UI prototype, static website, landing page, or collection of non-working buttons.
+
+The platform should help Indian students learn through quizzes, chapter-wise practice, mock tests, explanations, progress tracking, and competitive examination preparation.
+
+Primary users:
+
+- School students from Classes 6–12.
+- Students preparing for SSC, Railway, Police, CET, and other competitive examinations.
+- Teachers and quiz creators.
+- Administrators managing educational content.
+
+Default language: Hindi.
+Additional language: English.
+Target experience: Mobile-first, Android-friendly, fast, accessible, and responsive.
+
+2. TECHNOLOGY STACK
+
+First inspect the existing project and preserve its working architecture wherever practical.
+
+Preferred stack:
+
+- Frontend: React + TypeScript.
+- Build tool: Vite.
+- Styling: Tailwind CSS or the styling system already used by the repository.
+- UI: Reusable components with accessible controls.
+- Backend: Firebase.
+- Authentication: Firebase Authentication.
+- Database: Cloud Firestore.
+- File storage: Firebase Storage, only when needed.
+- Server-side privileged operations: Firebase Cloud Functions or another secure backend.
+- Testing: Vitest and React Testing Library.
+- End-to-end testing: Playwright where supported.
+- Version control: Git and GitHub.
+- Deployment: Firebase Hosting or another compatible static hosting platform.
+
+If the existing repository uses a different framework, evaluate it before changing anything. Do not unnecessarily rewrite a working project.
+
+Never expose Firebase Admin credentials, service account keys, private API keys, or privileged secrets in client-side code.
+
+If Firebase configuration is missing, create a documented setup template and clear instructions. Do not fabricate credentials or claim that Firebase is connected when it is not.
+
+3. BRAND IDENTITY AND DESIGN
+
+App name: EduSpark-Quiz.
+
+Design a modern, trustworthy, student-friendly education interface.
+
+Design requirements:
+
+- Professional education dashboard.
+- Blue and violet accent colors with neutral backgrounds.
+- Light mode and dark mode.
+- Rounded cards, subtle shadows, consistent spacing, and clear typography.
+- Hindi typography that renders correctly on Android.
+- Responsive layouts for mobile, tablet, and desktop.
+- Loading skeletons, empty states, error messages, success messages, and confirmation dialogs.
+- Accessible contrast, keyboard navigation, focus indicators, and readable text.
+- Touch-friendly buttons and form controls.
+- Smooth, restrained animations that do not interfere with learning.
+- Consistent icons and reusable design tokens.
+
+Create the following branding elements:
+
+- App logo featuring a book, spark, or graduation-inspired educational symbol.
+- App icon.
+- Login screen.
+- Splash screen.
+- Dashboard.
+- Quiz question interface.
+- Result screen.
+- User profile.
+- Admin dashboard.
+
+Do not use copyrighted logos or copy another education app's complete design.
+
+4. APPLICATION NAVIGATION
+
+Create the following primary navigation:
+
+1. Home
+2. Explore Quizzes
+3. Practice
+4. Mock Tests
+5. Leaderboard
+6. My Progress
+7. Bookmarks
+8. Profile
+9. Settings
+
+On mobile, use a bottom navigation bar for the most important destinations and a menu for secondary features.
+
+Show administrative navigation only to authorized administrators.
+
+5. AUTHENTICATION AND USER ACCOUNTS
+
+Implement functional authentication using Firebase Authentication.
+
+Required features:
+
+- Email and password registration.
+- Login and logout.
+- Password reset.
+- Google sign-in when configured.
+- Email verification where appropriate.
+- Persistent authenticated sessions.
+- Protected routes.
+- Clear authentication errors.
+- Profile creation and editing.
+- Account deletion flow with confirmation and appropriate data cleanup.
+
+Profile fields:
+
+- Display name.
+- Profile photo.
+- Class or examination target.
+- Preferred language.
+- Selected subjects.
+- Account creation date.
+- Learning statistics.
+
+Collect only necessary personal information. Never collect a student's school address or other sensitive information without a justified need.
+
+If the user is a minor, design appropriate privacy and consent handling.
+
+Never store plaintext passwords or allow users to change their role by editing their own profile document.
+
+6. STUDENT DASHBOARD
+
+Create a personalized dashboard displaying:
+
+- Welcome message.
+- Daily learning goal.
+- Continue Learning.
+- Recommended quizzes.
+- Recently attempted quizzes.
+- Daily quiz.
+- Subject-wise progress.
+- Total questions attempted.
+- Correct and incorrect answers.
+- Accuracy percentage.
+- Completed mock tests.
+- Current learning streak.
+- Bookmarked questions.
+- Recent achievements.
+- Upcoming practice goals.
+
+All statistics must be calculated from real saved records. Do not display fabricated scores or hardcoded progress as if it belonged to the user.
+
+For a new user, display a helpful onboarding state and sample content clearly identified as demo content.
+
+7. CLASSES, SUBJECTS, AND TOPICS
+
+Support these school categories:
+
+- Class 6
+- Class 7
+- Class 8
+- Class 9
+- Class 10
+- Class 11
+- Class 12
+
+Allow administrators to add more classes.
+
+School subjects may include:
+
+- Mathematics
+- Science
+- English
+- Hindi
+- Social Science
+- History
+- Geography
+- Civics
+- General Knowledge
+- Computer Science
+- Reasoning
+
+Competitive examination categories may include:
+
+- SSC GD
+- SSC CGL
+- SSC CHSL
+- SSC MTS
+- SSC CPO
+- Railway examinations
+- State police examinations
+- Rajasthan CET
+- Rajasthan GK
+- General Awareness
+- Quantitative Aptitude
+- Logical Reasoning
+- General Science
+- Current Affairs
+
+Allow filtering by class, subject, chapter, topic, language, difficulty, and examination.
+
+Organize content hierarchically:
+Class or Exam → Subject → Chapter → Topic → Quiz.
+
+Do not present a syllabus as officially verified unless it has been checked against a reliable, current official source.
+
+8. QUIZ ENGINE
+
+Build a complete working quiz engine.
+
+Supported question types:
+
+- Single-correct multiple choice.
+- Multiple-select questions.
+- True or false.
+- Fill in the blank.
+- Numerical answers.
+- Passage-based questions.
+- Image-based questions when relevant.
+
+Each question should support:
+
+- Question text.
+- Optional image.
+- Four options for standard MCQs.
+- Correct answer or answers.
+- Explanation.
+- Difficulty level.
+- Subject and topic.
+- Language.
+- Marks.
+- Negative marks, if applicable.
+- Optional hint.
+- Optional source or reference.
+- Question status and version.
+
+Quiz settings:
+
+- Quiz title and description.
+- Total questions.
+- Time limit.
+- Marks per question.
+- Negative marking.
+- Randomized question order.
+- Optional shuffled answer choices.
+- Previous and next question controls.
+- Question palette.
+- Mark for review.
+- Clear selected answer.
+- Answered and unanswered indicators.
+- Submission confirmation.
+- Auto-submit when the timer expires.
+- Resume behavior when supported by the test rules.
+
+The timer must use a trusted server-side start time and deadline for timed examinations. Do not rely solely on a device clock.
+
+Do not reveal correct answers during an active exam unless the quiz explicitly enables immediate feedback.
+
+Handle browser refreshes, temporary network failures, duplicate submissions, and expired sessions safely.
+
+9. SCORING AND RESULTS
+
+Calculate results accurately.
+
+For a simple quiz with one mark per correct answer and no negative marking:
+
+Score = Number of correct answers × Marks per correct answer.
+
+Support configurable scoring rules, including negative marking.
+
+The result screen must show:
+
+- Total questions.
+- Attempted questions.
+- Correct answers.
+- Incorrect answers.
+- Unanswered questions.
+- Total score.
+- Maximum possible score.
+- Percentage.
+- Time taken.
+- Subject-wise performance.
+- Review of answers.
+- Explanations, when enabled.
+- Retry Quiz.
+- Return to Dashboard.
+
+Percentage must use the maximum possible score when that definition is applicable. Handle zero or invalid maximum scores safely.
+
+Store completed attempts so users can view their previous results.
+
+Do not allow the client to submit an arbitrary score as the authoritative result. Validate answers and scoring on a trusted backend for competitive or high-stakes tests.
+
+10. LEARNING AND PRACTICE FEATURES
+
+Implement:
+
+Practice Mode
+
+- Practice unlimited questions.
+- Immediate feedback when enabled.
+- Detailed explanations.
+- Retry incorrect answers.
+- Topic-wise practice.
+
+Daily Quiz
+
+- A configurable daily quiz.
+- Date-aware availability.
+- Saved attempts.
+- Optional daily learning goal.
+
+Mock Test
+
+- Full-length examination mode.
+- Exam-like timer.
+- Configurable question count.
+- Negative marking.
+- Question palette.
+- Final result and review.
+
+Revision Mode
+
+- Automatically select previously incorrect or bookmarked questions.
+- Track repeated attempts.
+- Show explanations after answering.
+
+Bookmarks
+
+- Save and remove questions.
+- Organize bookmarks by subject or topic.
+- Open saved questions for revision.
+
+Learning Streak
+
+- Calculate activity by local calendar date using a defined timezone.
+- Prevent duplicate activity events from inflating streaks.
+- Provide a clear way to view learning history.
+
+Achievements
+
+- Award badges for real milestones.
+- Examples: first quiz completed, 100 questions attempted, or five-day learning streak.
+- Never award achievements based on fabricated data.
+
+11. LEADERBOARD
+
+Create optional leaderboards:
+
+- Weekly.
+- Monthly.
+- All-time.
+- Quiz-specific.
+
+Requirements:
+
+- Use validated scores.
+- Define tie-breaking rules.
+- Protect users' private information.
+- Allow users to use a display name.
+- Avoid revealing email addresses or sensitive profile information.
+- Use pagination.
+- Prevent repeated submissions from unfairly increasing rankings.
+- Include appropriate privacy and participation settings.
+
+Do not expose private user documents to every leaderboard participant.
+
+12. ADMIN DASHBOARD AND CONTENT MANAGEMENT
+
+Create a secure admin panel with:
+
+- Overview statistics.
+- Total registered users.
+- Active learners.
+- Quiz attempts.
+- Quiz completion rate.
+- Content management.
+- Class and subject management.
+- Chapter and topic management.
+- Question management.
+- Quiz creation and editing.
+- Quiz publishing and unpublishing.
+- User moderation.
+- Reports and feedback.
+- Leaderboard settings.
+- Application settings.
+- Audit logs for sensitive administrative actions.
+
+Question management must support:
+
+- Create.
+- Read.
+- Update.
+- Delete with confirmation.
+- Search.
+- Filters.
+- Bulk import from CSV or validated JSON.
+- Import validation and error reporting.
+- Duplicate detection.
+- Preview before publishing.
+- Draft and published states.
+
+Implement role-based authorization using verified authentication claims or server-controlled role records.
+
+Never grant admin privileges based on a client-editable field or a hidden URL.
+
+Protect administrative functions with backend authorization checks and Firestore Security Rules.
+
+13. FIREBASE DATA MODEL
+
+Design a maintainable Firestore schema.
+
+Suggested collections:
+
+users/{uid}
+
+- displayName
+- photoURL
+- preferredLanguage
+- selectedClass
+- examTargets
+- createdAt
+- updatedAt
+- privacySettings
+
+classes/{classId}
+
+- name
+- order
+- isActive
+
+subjects/{subjectId}
+
+- name
+- classIds
+- examIds
+- isActive
+
+topics/{topicId}
+
+- subjectId
+- parentTopicId
+- name
+- order
+
+questions/{questionId}
+
+- subjectId
+- topicId
+- type
+- difficulty
+- language
+- questionText
+- options
+- correctAnswers
+- explanation
+- marks
+- negativeMarks
+- status
+- createdAt
+- updatedAt
+
+quizzes/{quizId}
+
+- title
+- description
+- subjectIds
+- topicIds
+- classIds
+- examIds
+- questionIds or secure question references
+- durationSeconds
+- scoringRules
+- shuffleQuestions
+- feedbackMode
+- status
+- createdAt
+- updatedAt
+
+attempts/{attemptId}
+
+- userId
+- quizId
+- startedAt
+- submittedAt
+- answers
+- score
+- maximumScore
+- correctCount
+- incorrectCount
+- unansweredCount
+- status
+
+bookmarks/{bookmarkId}
+
+- userId
+- questionId
+- createdAt
+
+dailyActivity/{activityId}
+
+- userId
+- activityDate
+- completedQuizCount
+- questionsAttempted
+
+achievements/{achievementId}
+
+- name
+- description
+- criteria
+
+userAchievements/{recordId}
+
+- userId
+- achievementId
+- awardedAt
+
+reports/{reportId}
+
+- userId
+- contentType
+- contentId
+- reason
+- status
+- createdAt
+
+adminAuditLogs/{logId}
+
+- adminUid
+- action
+- resourceType
+- resourceId
+- createdAt
+
+Adapt the schema as required by Firestore query limitations, document-size limits, security requirements, and expected usage.
+
+Avoid unbounded arrays and oversized documents.
+
+Create required Firestore indexes.
+
+Store sensitive answer keys separately from student-readable quiz content whenever needed to prevent answer leakage.
+
+Use transactions, batched writes, or idempotent backend operations where appropriate.
+
+14. FIRESTORE SECURITY RULES
+
+Create and document production-oriented Firestore Security Rules.
+
+Requirements:
+
+- Users may read and update only permitted fields of their own profiles.
+- Users cannot edit their own role, verified score, administrative privileges, or protected statistics.
+- Users cannot read another user's private profile or attempts without an explicit authorized reason.
+- Quiz drafts are accessible only to authorized content managers.
+- Published quiz content is readable according to its access policy.
+- Correct answers must not be exposed prematurely.
+- Attempts must be tied to the authenticated user.
+- Sensitive scores and leaderboard records must be validated by trusted code.
+- Administrative writes require verified authorization.
+- Reports and audit logs must be protected.
+- Default to deny when no rule explicitly grants access.
+
+Provide a complete firestore.rules file and emulator tests for both allowed and denied operations.
+
+Do not use open public write rules or unrestricted production access rules.
+
+15. USER EXPERIENCE AND ACCESSIBILITY
+
+Every page must have:
+
+- Loading states.
+- Error states.
+- Empty states.
+- Retry behavior where appropriate.
+- Form validation.
+- Clear success feedback.
+- Responsive layouts.
+- Accessible labels and keyboard support.
+
+Handle:
+
+- Slow connections.
+- Offline or interrupted sessions.
+- Expired authentication.
+- Missing documents.
+- Invalid quiz configuration.
+- Empty question lists.
+- Duplicate answer submissions.
+- Timer expiration.
+- Network errors during final submission.
+
+Avoid dead buttons, placeholder links presented as completed features, and forms that silently discard data.
+
+If a feature cannot be completed because a required external service is not configured, clearly mark it and provide setup instructions.
+
+16. PERFORMANCE AND RELIABILITY
+
+Implement:
+
+- Lazy-loaded routes where appropriate.
+- Pagination for large collections.
+- Efficient Firestore queries.
+- Appropriate composite indexes.
+- Reusable components.
+- TypeScript types for data models.
+- Error boundaries.
+- Secure environment configuration.
+- Input validation.
+- Rate limiting on sensitive backend endpoints.
+- Logging that excludes passwords, private tokens, and unnecessary personal data.
+
+Use caching carefully so unpublished content and stale exam results are not accidentally exposed.
+
+Do not create excessive Firestore reads or writes for every timer tick.
+
+17. TESTING REQUIREMENTS
+
+Write automated tests for:
+
+- Registration and login.
+- Route protection.
+- Quiz rendering.
+- Answer selection.
+- Multiple-select validation.
+- Timer expiration.
+- Score calculation.
+- Negative marking.
+- Unanswered questions.
+- Duplicate submission protection.
+- Bookmark operations.
+- Progress calculation.
+- Admin authorization.
+- Firestore Security Rules.
+- Mobile responsive behavior.
+
+Include test cases for malformed input, empty data, interrupted requests, and boundary values.
+
+Run available tests, linting, and production builds. Fix discovered issues rather than merely listing them.
+
+Do not claim that a test passed unless it was actually executed successfully.
+
+18. SAMPLE EDUCATIONAL CONTENT
+
+Provide clearly labeled demo content for development.
+
+Include:
+
+- Class 8 Mathematics.
+- Class 8 Science.
+- English Grammar.
+- General Knowledge.
+- Logical Reasoning.
+- SSC GD practice.
+- Rajasthan GK practice.
+
+Each demo question must have a verified answer and an educational explanation.
+
+Use original questions or appropriately licensed content. Do not copy protected question banks.
+
+Keep sample data separate from real student records.
+
+Provide a seed script or importable JSON file for development.
+
+19. GITHUB REPOSITORY STRUCTURE
+
+Use a clean and maintainable repository structure similar to:
+
+EduSpark-Quiz/
+├── public/
+├── src/
+│   ├── assets/
+│   ├── components/
+│   ├── layouts/
+│   ├── pages/
+│   ├── features/
+│   │   ├── auth/
+│   │   ├── dashboard/
+│   │   ├── quizzes/
+│   │   ├── practice/
+│   │   ├── results/
+│   │   ├── bookmarks/
+│   │   ├── leaderboard/
+│   │   ├── progress/
+│   │   └── admin/
+│   ├── hooks/
+│   ├── lib/
+│   │   ├── firebase.ts
+│   │   └── validation.ts
+│   ├── services/
+│   ├── types/
+│   ├── utils/
+│   ├── App.tsx
+│   └── main.tsx
+├── functions/
+├── tests/
+├── scripts/
+├── firestore.rules
+├── firestore.indexes.json
+├── firebase.json
+├── .env.example
+├── .gitignore
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+├── README.md
+└── LICENSE
+
+Adapt this structure to the actual application. Do not create empty files merely to make the tree look complete.
+
+Include every required configuration, source file, migration or seed script, security rule, and test file that the implemented features need.
+
+Never commit .env files containing secrets, service account keys, node_modules, build caches, or generated credentials.
+
+20. DOCUMENTATION
+
+Create a detailed README.md covering:
+
+1. Project overview.
+2. Feature list.
+3. Technology stack.
+4. Prerequisites.
+5. Installation commands.
+6. Local development.
+7. Firebase project setup.
+8. Authentication provider setup.
+9. Environment variables.
+10. Firestore database creation.
+11. Security rules deployment.
+12. Index deployment.
+13. Demo content import.
+14. Running tests.
+15. Production build.
+16. Hosting deployment.
+17. Admin account provisioning.
+18. Troubleshooting.
+19. Known limitations.
+20. Future improvements.
+
+Create an .env.example file containing variable names and safe placeholders only.
+
+Explain which settings are public client configuration and which credentials must remain server-side.
+
+21. DEPLOYMENT
+
+Prepare the application for deployment to Firebase Hosting or a compatible hosting platform.
+
+Verify:
+
+- Production build succeeds.
+- Client-side routes work after refresh.
+- Environment variables are documented.
+- Firestore rules and indexes are included.
+- Backend functions are deployed separately when required.
+- Authentication authorized domains are configured.
+- No secrets are committed.
+- Deployment instructions match the actual project.
+
+Do not state that deployment is complete unless the deployment actually occurred and was verified.
+
+22. IMPLEMENTATION WORKFLOW
+
+Follow this sequence:
+
+Phase 1: Inspect the existing repository and identify its framework, files, dependencies, current features, and errors.
+
+Phase 2: Write an implementation plan and identify missing configuration or external dependencies.
+
+Phase 3: Build the application shell, design system, navigation, and responsive layouts.
+
+Phase 4: Implement authentication and user profiles.
+
+Phase 5: Implement Firestore models, validation, security rules, and indexes.
+
+Phase 6: Build the quiz engine, scoring, timer, result review, and attempt history.
+
+Phase 7: Implement practice mode, bookmarks, progress, achievements, and leaderboards.
+
+Phase 8: Implement secure administration and educational content management.
+
+Phase 9: Add tests, sample content, error handling, and accessibility improvements.
+
+Phase 10: Run tests, linting, and production builds. Fix issues.
+
+Phase 11: Write complete documentation and deployment instructions.
+
+After each phase, verify the affected features before continuing.
+
+23. FINAL ACCEPTANCE CRITERIA
+
+The project is ready for review when:
+
+- The app starts successfully.
+- Registration and login work with configured authentication.
+- Navigation and protected routes work.
+- Users can browse classes, subjects, and published quizzes.
+- Users can complete a quiz and receive a correctly calculated result.
+- Timer and submission rules work.
+- Attempt history persists.
+- Bookmarks and progress use real saved data.
+- Admin functions enforce authorization.
+- Firestore Security Rules protect private data and answer keys.
+- Required indexes and configuration files exist.
+- Tests cover critical application behavior.
+- Production build succeeds.
+- README setup instructions are complete.
+- Missing external configuration is clearly documented.
+- No critical buttons are nonfunctional.
+- No secrets or fabricated credentials are present.
+
+24. MOST IMPORTANT INSTRUCTIONS
+
+Do not merely explain how to build the application. Implement the actual code and required files in the existing workspace or repository when tool access permits.
+
+Do not replace existing project files blindly.
+
+Do not claim completion without verification.
+
+If the entire application is too large to build in one pass, implement a working end-to-end MVP first, then continue in small, testable phases.
+
+Prioritize a secure, functional quiz flow over decorative features.
+
+Start by inspecting the current project, then report the existing architecture and begin implementation.

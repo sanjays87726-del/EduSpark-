@@ -113,8 +113,31 @@ function pickSlotMessage(slotKey, name, dayOfYear) {
 }
 
 // ── FCM bhejna (sendEach) — galat tokens saaf, errors ginte hue ──
-function webpushOpts() {
-  return { headers: { Urgency: 'high', TTL: '86400' }, fcmOptions: { link: APP_URL } };
+// Offerwall: image + link bhi jaate hain. Sirf https; ImageKit image ko notification ke size me chhota karte hain.
+function httpsOnly(u) { return typeof u === 'string' && /^https:\/\/\S+$/.test(u.trim()) ? u.trim() : ''; }
+function notifImage(u) {
+  const x = httpsOnly(u);
+  return x && x.includes('ik.imagekit.io') && !x.includes('?') ? x + '?tr=w-1000,q-75' : x;
+}
+function webpushOpts(m) {
+  m = m || {};
+  const wp = { headers: { Urgency: 'high', TTL: '86400' }, fcmOptions: { link: httpsOnly(m.link) || APP_URL } };
+  const image = notifImage(m.image);
+  if (image) wp.notification = { image };
+  return wp;
+}
+// m: { token, notification:{title,body}, image?, link?, kind? } -> FCM message
+function buildFcmMessage(m) {
+  const image = notifImage(m.image), link = httpsOnly(m.link);
+  const notification = { title: m.notification.title, body: m.notification.body };
+  if (image) notification.imageUrl = image;
+  const msg = { token: m.token, notification, webpush: webpushOpts(m) };
+  const data = {};
+  if (link) { data.url = link; data.link = link; }
+  if (image) data.image = image;
+  if (m.kind) data.kind = String(m.kind);
+  if (Object.keys(data).length) msg.data = data;
+  return msg;
 }
 const DEAD_TOKEN_CODES = ['messaging/registration-token-not-registered', 'messaging/invalid-registration-token'];
 
@@ -124,9 +147,7 @@ async function sendMessages(db, messages) {
   const CHUNK = 500;
   for (let i = 0; i < messages.length; i += CHUNK) {
     const chunk = messages.slice(i, i + CHUNK);
-    const res = await admin.messaging().sendEach(chunk.map(m => ({
-      token: m.token, notification: m.notification, webpush: webpushOpts()
-    })));
+    const res = await admin.messaging().sendEach(chunk.map(buildFcmMessage));
     out.successCount += res.successCount;
     out.failureCount += res.failureCount;
     const cleanup = db.batch();
@@ -225,7 +246,7 @@ async function processQueue(db) {
     }
     let result;
     try {
-      result = await sendMessages(db, targets.map(s => ({ token: s.fcmToken, studentId: s.id, notification: { title: q.title, body: q.body } })));
+      result = await sendMessages(db, targets.map(s => ({ token: s.fcmToken, studentId: s.id, notification: { title: q.title, body: q.body }, image: q.image, link: q.link, kind: q.kind })));
     } catch (e) {                                // FCM call hi fail — ise bhi ek failed attempt gino (warna infinite loop)
       result = { successCount: 0, failureCount: targets.length, errors: {}, sample: String((e && e.message) || e), okIds: [] };
     }
@@ -334,7 +355,7 @@ async function runDueSlots(db) {
   return anyFailed;
 }
 
-module.exports = { needsInactivityReminder, INACTIVITY_DAYS, istNow, dueSlots, pickSlotMessage, firstName, SLOTS, SLOT_MESSAGES, claimSlot, runDueSlots, processQueue, claimQueueDoc, MAX_ATTEMPTS, RETRY_BASE_MS, LEASE_MS };
+module.exports = { buildFcmMessage, webpushOpts, httpsOnly, needsInactivityReminder, INACTIVITY_DAYS, istNow, dueSlots, pickSlotMessage, firstName, SLOTS, SLOT_MESSAGES, claimSlot, runDueSlots, processQueue, claimQueueDoc, MAX_ATTEMPTS, RETRY_BASE_MS, LEASE_MS };
 
 if (require.main === module) {
   (async () => {

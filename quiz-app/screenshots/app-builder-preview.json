@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "EduSpark Quiz",
+      "hasCanvas": false,
+      "bodyTextLen": 812,
+      "bodyTextHash": "f8378613417deeb86e8f202135374bea9dc3b319299df2ab8e4ffef4aed1ca94",
+      "bodyTextPrefix": "EduSpark EN प्रवेश होम खोज अभ्यास प्रगति मॉक टेस्ट लीडरबोर्ड बुक",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "EduSpark Quiz",
+      "hasCanvas": false,
+      "bodyTextLen": 769,
+      "bodyTextHash": "a106be64a24b3f1411c1af6d009075bbfee642c0e24630585a1de323301e1c6b",
+      "bodyTextPrefix": "EduSpark EN प्रवेश EduSpark Quiz रोज़ थोड़ा अभ्यास। साफ़ परिणाम।",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}
