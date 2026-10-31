@@ -9,7 +9,7 @@
 // phir Gemma ko call karke jawab lautata hai. API key kabhi browser tak nahi pahunchti.
 
 const PROJECT_ID = 'eduspark-41703';
-const ALLOWED_ORIGINS = ['https://eduspark.de5.net', 'https://sanjays87726-del.github.io'];
+const ALLOWED_ORIGINS = ['https://eduspark.live', 'https://sanjays87726-del.github.io'];
 const ADMIN_EMAIL = 'bhupeshkumar36882@gmail.com';   // firestore.rules aur admin.html wala hi — teeno jagah same rakho
 const MODEL = 'gemma-4-26b-a4b-it';
 const JWKS_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';

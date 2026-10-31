@@ -35,7 +35,7 @@ Alert fatigue se bacho: **error** = abhi dekho, **warning** = hafte me ek baar.
 | "आज के N AI जवाब पूरे" (429) | normal — student ki daily limit | kuch nahi |
 | Notifications nahi pahunch rahe | watchdog "dead-letter"; Actions run log; admin Notify history ka status | FCM/service-account error theek karo → Firestore console me doc `status:'pending'`, `attempts:0` (dobara try) |
 | `resource-exhausted` / reads khatam | `ES.debug().firestoreReads`; Firestore → Usage | `ENABLED_SLOTS` kam karo; Blaze + budget alert |
-| Sign-in nahi ho raha | Firebase → Auth → Settings → **Authorized domains** me `eduspark.de5.net`; popup block | domain jodo; redirect fallback chalta hai |
+| Sign-in nahi ho raha | Firebase → Auth → Settings → **Authorized domains** me `eduspark.live`; popup block | domain jodo; redirect fallback chalta hai |
 | Galat/delete hua content | `backups/*.json` (Actions artifact) | `node scripts/restore.js file.json` (dry-run) → `ONLY=content APPLY=1 …` |
 | Naya deploy toota | CI laal? students ko toast mila? | `git revert` + `CACHE_NAME` +1 ; Worker: `deploy-worker.yml` → rollback |
 | Site khula nahi | GitHub Status, watchdog DNS/TLS line | DNS/certificate; fallback `*.github.io` URL |

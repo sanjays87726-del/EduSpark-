@@ -3,8 +3,8 @@
 ## 1) Google sign-in app ke andar (One Tap / FedCM)
 1. Firebase Console → Authentication → Sign-in method → **Google** → *Web SDK configuration* → **Web client ID** copy karo.
 2. `index.html` me `var ES_GOOGLE_CLIENT_ID = '';` ke andar wahi paste karo.
-3. Google Cloud Console → APIs & Services → Credentials → wahi *Web client* → **Authorized JavaScript origins** me `https://eduspark.de5.net` add karo (aur `https://www.eduspark.de5.net` agar use hota ho).
-4. Firebase Console → Authentication → Settings → **Authorized domains** me `eduspark.de5.net` hona chahiye.
+3. Google Cloud Console → APIs & Services → Credentials → wahi *Web client* → **Authorized JavaScript origins** me `https://eduspark.live` add karo (aur `https://www.eduspark.live` agar use hota ho).
+4. Firebase Console → Authentication → Settings → **Authorized domains** me `eduspark.live` hona chahiye.
 5. Khali chhodo to app purane Firebase popup se sign-in karta hai (chalta hai, par Google ka in-app account chooser nahi dikhta).
 
 ## 2) Firestore rules dobara publish karo

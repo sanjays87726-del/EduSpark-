@@ -6,7 +6,7 @@ let n = 0; const t = async (name, fn) => { try { await fn(); n++; console.log('â
 const NOW = Date.parse('2026-10-18T00:00:00Z'), DAY = 86400e3;
 const res = (status, body) => ({ ok: status >= 200 && status < 300, status, text: async () => body, json: async () => JSON.parse(body) });
 function deps(over = {}) {
-  const routes = { 'https://eduspark.de5.net/': res(200, '<title>EduSpark</title>'), 'https://eduspark.de5.net/sw.js': res(200, 'const CACHE_NAME = "eduspark-v19";'),
+  const routes = { 'https://eduspark.live/': res(200, '<title>EduSpark</title>'), 'https://eduspark.live/sw.js': res(200, 'const CACHE_NAME = "eduspark-v19";'),
     'https://bold-dust-6f37.sanjays87726.workers.dev/': res(200, JSON.stringify({ version: 8, RATE: true, GEMINI_KEY: true, DAILY_LIMIT: 5 })), ...(over.routes || {}) };
   return { now: () => NOW, fetch: async (u) => { const r = routes[u]; if (r instanceof Error) throw r; if (!r) throw new Error('unexpected ' + u); return r; },
     resolve4: async () => ['185.199.108.153'], tlsDaysLeft: async () => 60, ...over };
@@ -20,13 +20,13 @@ const run = d => WD.runChecks(d);
     assert.strictEqual(s.errors.length, 0); assert.strictEqual(s.warnings.length, 0); assert.ok(s.text.startsWith('âœ…')); assert.ok(by(r, 'ai-worker').detail.includes('v8'));
   });
   await t('site: 500 / missing brand / network error each => error', async () => {
-    let r = await run(deps({ routes: { 'https://eduspark.de5.net/': res(500, '') } })); assert.strictEqual(by(r, 'site').severity, 'error');
-    r = await run(deps({ routes: { 'https://eduspark.de5.net/': res(200, 'GitHub Pages 404') } })); assert.ok(/EduSpark" nahi/.test(by(r, 'site').detail));
-    r = await run(deps({ routes: { 'https://eduspark.de5.net/': new Error('ECONNRESET') } })); assert.ok(/check crash: ECONNRESET/.test(by(r, 'site').detail)); assert.strictEqual(by(r, 'dns').severity, 'ok');   // baaki checks chale
+    let r = await run(deps({ routes: { 'https://eduspark.live/': res(500, '') } })); assert.strictEqual(by(r, 'site').severity, 'error');
+    r = await run(deps({ routes: { 'https://eduspark.live/': res(200, 'GitHub Pages 404') } })); assert.ok(/EduSpark" nahi/.test(by(r, 'site').detail));
+    r = await run(deps({ routes: { 'https://eduspark.live/': new Error('ECONNRESET') } })); assert.ok(/check crash: ECONNRESET/.test(by(r, 'site').detail)); assert.strictEqual(by(r, 'dns').severity, 'ok');   // baaki checks chale
   });
   await t('service worker without CACHE_NAME / 404 => error', async () => {
-    let r = await run(deps({ routes: { 'https://eduspark.de5.net/sw.js': res(404, 'nf') } })); assert.strictEqual(by(r, 'service-worker').severity, 'error');
-    r = await run(deps({ routes: { 'https://eduspark.de5.net/sw.js': res(200, 'garbage') } })); assert.strictEqual(by(r, 'service-worker').severity, 'error');
+    let r = await run(deps({ routes: { 'https://eduspark.live/sw.js': res(404, 'nf') } })); assert.strictEqual(by(r, 'service-worker').severity, 'error');
+    r = await run(deps({ routes: { 'https://eduspark.live/sw.js': res(200, 'garbage') } })); assert.strictEqual(by(r, 'service-worker').severity, 'error');
   });
   await t('ai-worker: binding missing / HTTP error => error', async () => {
     let r = await run(deps({ routes: { 'https://bold-dust-6f37.sanjays87726.workers.dev/': res(200, JSON.stringify({ version: 8, RATE: true, GEMINI_KEY: false })) } }));

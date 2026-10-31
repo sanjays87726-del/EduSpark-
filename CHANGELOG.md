@@ -4,6 +4,21 @@ Format: [Keep a Changelog](https://keepachangelog.com), versions: [Semantic Vers
 MAJOR = data/URL tootne wala badlav, MINOR = naya feature, PATCH = bug fix.
 Naya version: `package.json` + `index.html` ka `ES.version` + yahan naya `## [x.y.z]` section — CI teeno match karta hai.
 
+## [Unreleased]
+### Added
+- **Search / AdSense pages:** 8 original study guides (CBSE 10/12, BSER 10/12, SSC CGL, SSC CHSL, REET & BSTC, study tips), `disclaimer.html`, `ads-and-cookies.html`; generator `tools/build-pages.py`; JSON-LD, `<noscript>` content and footer links in `index.html`; `tools/seo-audit.py` (Googlebot/Bingbot-style scan).
+- **Notifications:** `cron-trigger/` (alag Cloudflare Worker) GitHub Action ko ThIK samay par chalata hai; tests `slots-release.test.js`, `cron-trigger.test.mjs`; `notificationState/lastRun` debug record.
+- `icon-maskable-512.png` (alag maskable icon), manifest shortcut.
+### Changed
+- `privacy.html`, `terms.html`, `about.html`, `contact.html`, `delete-account.html` fir se English me, strict (AdSense, DPDP/children, AI, copyright, grievance contact).
+- Login screen ab browser me pehle touch/scroll par khulti hai (installed app me pehle jaisa) — crawlers ko login wall nahi dikhti; "Skip for now" button.
+- `<meta charset>` sabse upar, pinch-zoom allowed, robots.txt (Mediapartners-Google allow, internal folders disallow), sitemap (16 URL).
+- Daily reminders ki push TTL 24h → 3h (shaam ka reminder raat ko nahi aata).
+### Fixed
+- `send-notifications.js`: bhejte waqt error aane par slot din bhar ke liye "claimed" reh jaata tha (reminder miss) — ab slot release hota hai.
+- In-app privacy modal ka Ads paragraph `privacy.html` se alag tha (NOTES #9).
+- Notification card ab batata hai ki server reminders ke liye Google sign-in zaruri hai; sign-in ke baad token dobara register hota hai.
+
 ## [1.6.0] - 2026-10-23
 ### Added
 - **Google sign-in app ke andar:** Google Identity Services (official button + One Tap/FedCM) → `signInWithCredential`, redirect/popup ke bina. `ES_GOOGLE_CLIENT_ID` (index.html) paste karna hai; khali ho to purana Firebase popup chalta hai.

@@ -1,4 +1,22 @@
+# EduSpark crawler rules
 User-agent: *
 Allow: /
+Disallow: /admin.html
+Disallow: /eduspark-qr-generator.html
+Disallow: /quiz-app/
+Disallow: /docs/
+Disallow: /scripts/
+Disallow: /tests/
+Disallow: /tools/
+Disallow: /deploy/
+Disallow: /infra/
+Disallow: /cron-trigger/
 
-Sitemap: https://eduspark.de5.net/sitemap.xml
+# AdSense / ad quality crawlers must always reach every public page
+User-agent: Mediapartners-Google
+Allow: /
+
+User-agent: AdsBot-Google
+Allow: /
+
+Sitemap: https://eduspark.live/sitemap.xml

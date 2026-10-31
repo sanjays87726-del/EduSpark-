@@ -23,7 +23,7 @@
 
 const admin = require('firebase-admin');
 
-const APP_URL = 'https://eduspark.de5.net/';
+const APP_URL = 'https://eduspark.live/';
 // Kitne din inactive rehne par "wapas aao" reminder jaye (workflow me env INACTIVITY_DAYS se badal sakte ho). Default 1 din.
 const INACTIVITY_DAYS = parseFloat(process.env.INACTIVITY_DAYS) > 0 ? parseFloat(process.env.INACTIVITY_DAYS) : 1;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -31,6 +31,7 @@ const IST_MS = 5.5 * 60 * 60 * 1000;
 // Roz ke slot ka time thoda aage-peeche hota hai (kal 11:18 par gaya, aaj 11:02 par chalega). Isliye "pichhli baar kab gaya"
 // check me thodi chhoot: warna 1-din wale reminder par student ek din chhoot jaata. Dobara-bhejna slot-claim se hi rukta hai.
 const NOTIFY_SLACK_MS = 3 * 60 * 60 * 1000;
+const REMINDER_TTL_S = 3 * 60 * 60;             // daily reminder ki delivery validity (seconds)
 const ACTIVE_NOW_MS = 15 * 60 * 1000;           // jo abhi app use kar raha ho use daily reminder nahi
 const DAILY_SLOTS_ON = process.env.DAILY_SLOTS !== 'off';
 // Cost lever: har slot (subah/dopahar/shaam) token wale SAARE students padhta hai. 20,000 students × 3 slots = 60,000 reads/din
@@ -121,7 +122,9 @@ function notifImage(u) {
 }
 function webpushOpts(m) {
   m = m || {};
-  const wp = { headers: { Urgency: 'high', TTL: '86400' }, fcmOptions: { link: httpsOnly(m.link) || APP_URL } };
+  // TTL: study reminder sirf 3 ghante valid (phone offline tha to shaam ka reminder raat ko nahi aana chahiye); broadcast/offer 24 ghante
+  const ttl = Number(m.ttl) > 0 ? Math.floor(Number(m.ttl)) : 86400;
+  const wp = { headers: { Urgency: 'high', TTL: String(ttl) }, fcmOptions: { link: httpsOnly(m.link) || APP_URL } };
   const image = notifImage(m.image);
   if (image) wp.notification = { image };
   return wp;
@@ -281,7 +284,7 @@ async function sendDailySlot(db, slot, t) {
   });
   if (!targets.length) { console.log(`ℹ️  ${slot.key}: bhejne layak koi student nahi (token wale: ${students.length}).`); return { ok: true }; }
   const result = await sendMessages(db, targets.map(s => ({
-    token: s.fcmToken, studentId: s.id, notification: pickSlotMessage(slot.key, s.name, t.dayOfYear)
+    token: s.fcmToken, studentId: s.id, ttl: REMINDER_TTL_S, notification: pickSlotMessage(slot.key, s.name, t.dayOfYear)
   })));
   console.log(`🕒 ${slot.key} reminder → ${result.successCount} bheje, ${result.failureCount} fail (token wale: ${students.length})`);
   logErrors(result);
@@ -319,7 +322,7 @@ async function sendInactivityReminders(db) {
     const la = s.lastActive && s.lastActive.toMillis ? s.lastActive.toMillis() : 0;
     const ln = s.lastNotifiedAt && s.lastNotifiedAt.toMillis ? s.lastNotifiedAt.toMillis() : 0;
     if (needsInactivityReminder(la, ln, now)) {
-      messages.push({ token: s.fcmToken, studentId: doc.id, ref: doc.ref, notification: pickInactivityMessage(s.name, Math.max(1, Math.floor((now - la) / MS_PER_DAY))) });
+      messages.push({ token: s.fcmToken, studentId: doc.id, ref: doc.ref, ttl: REMINDER_TTL_S, notification: pickInactivityMessage(s.name, Math.max(1, Math.floor((now - la) / MS_PER_DAY))) });
     }
   });
   if (!messages.length) { console.log('ℹ️  Inactive reminder: koi nahi.'); return { ok: true }; }
@@ -343,14 +346,28 @@ async function runDueSlots(db) {
   const due = dueSlots();
   console.log(`⏰ IST ${t.dateKey} ${String(Math.floor(t.minutes / 60)).padStart(2, '0')}:${String(t.minutes % 60).padStart(2, '0')} | abhi due slots: ${due.map(s => s.key).join(', ') || 'koi nahi'}`);
   let anyFailed = false;
+  const results = [];
   for (const slot of due) {
     const claimed = await claimSlot(db, slot.key, t.dateKey);
     if (!claimed) { console.log(`✔️  ${slot.key} aaj pehle hi ja chuka hai.`); continue; }
-    const r = slot.key === 'inactivity' ? await sendInactivityReminders(db) : await sendDailySlot(db, slot, t);
+    let r;
+    try {
+      r = slot.key === 'inactivity' ? await sendInactivityReminders(db) : await sendDailySlot(db, slot, t);
+    } catch (e) {            // quota / network error: slot wapas kholo, agli run (20 min baad) dobara try karegi
+      console.error(`❌ ${slot.key} bhejte waqt error:`, (e && e.message) || e);
+      r = { ok: false, error: String((e && e.message) || e) };
+    }
+    results.push({ slot: slot.key, ok: !!r.ok, sent: r.result ? r.result.successCount : 0, failed: r.result ? r.result.failureCount : 0, error: r.error || null });
     if (!r.ok) {              // kuch bhi nahi gaya — slot wapas khol do taaki agli run (20 min baad) dobara try kare
       await releaseSlot(db, slot.key).catch(() => {});
       anyFailed = true;
     }
+  }
+  // Debug ke liye: pichhli slot-run ka natija (admin Firebase console me notificationState/lastRun me dikhega)
+  if (results.length) {
+    await db.collection('notificationState').doc('lastRun').set({
+      at: admin.firestore.FieldValue.serverTimestamp(), istDate: t.dateKey, istMinutes: t.minutes, results
+    }).catch(() => {});
   }
   return anyFailed;
 }

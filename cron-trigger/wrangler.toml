@@ -1,0 +1,18 @@
+# EduSpark notification cron (alag Worker). Cron UTC me hota hai: IST = UTC + 5:30
+name = "eduspark-cron"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+workers_dev = true
+
+[triggers]
+crons = [
+  "0 2 * * *",      # 07:30 IST  subah reminder
+  "30 5 * * *",     # 11:00 IST  inactivity reminder
+  "30 8 * * *",     # 14:00 IST  dopahar reminder
+  "30 13 * * *"     # 19:00 IST  shaam reminder
+]
+
+[vars]
+GH_REPO = "REPLACE_OWNER/REPLACE_REPO"   # jaise "bhupesh/EduSpark"
+GH_REF = "main"
+# Secret (file me nahi): npx wrangler secret put GH_TOKEN

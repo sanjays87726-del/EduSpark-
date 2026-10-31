@@ -16,7 +16,7 @@ Legend: ✅ app me hai · 🟡 platform sambhalta hai · ➖ is app me zaroorat 
 ## Protocols
 | Concept | EduSpark me |
 |---|---|
-| **DNS** | `eduspark.de5.net` — subdomain of a free domain provider. `watchdog` har 3 ghante resolve check karta hai. Cutover/rollback se pehle TTL 300 s karo. Installed PWA **origin se bandha** hai — domain badla to students ko dobara install karna padega, isliye domain stable rakho |
+| **DNS** | `eduspark.live` — subdomain of a free domain provider. `watchdog` har 3 ghante resolve check karta hai. Cutover/rollback se pehle TTL 300 s karo. Installed PWA **origin se bandha** hai — domain badla to students ko dobara install karna padega, isliye domain stable rakho |
 | **TCP vs UDP** | App ka sara traffic TCP (HTTPS). QUIC (UDP) tab jab browser + CDN HTTP/3 de. DNS UDP. Real-time voice/video nahi hai (live class YouTube par) ➖ |
 | **HTTP/1.1 → 2 → 3** | 🟡 GitHub Pages/Cloudflare H2/H3 khud dete hain (DevTools → Network → Protocol me `h2`/`h3`). Single-file app = kam requests. Docker nginx plain HTTP/1.1 hai (TLS proxy ke peeche) — gzip ✅, keep-alive ✅ |
 | **gRPC** | 🟡 Firestore SDK browser me gRPC-Web-jaisa WebChannel use karta hai; proxy/Wi-Fi par streaming tootne par `experimentalAutoDetectLongPolling: true` (index.html me ✅) long-polling par girta hai. Hamara Worker REST/JSON hai — browser native gRPC bol hi nahi sakta ➖ |

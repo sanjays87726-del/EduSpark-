@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
+<meta charset="UTF-8"/>
 <!-- Sahmati (consent) + third-party loader: Clarity / Sentry / Firebase Analytics sirf student ki permission ke baad chalte hain -->
 <script>
 var ES_CONSENT_VERSION = 1;
@@ -57,8 +58,6 @@ function loadThirdParty(){
 loadThirdParty();
 </script>
 
-<meta charset="UTF-8"/>
-
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8171673694157232"
      crossorigin="anonymous"></script>
 
@@ -71,7 +70,8 @@ loadThirdParty();
      own cache versioning (see sw.js CACHE_NAME) and could force extra
      reloads inside a Play Store TWA wrapper, hurting offline reliability. -->
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<style>html{touch-action:manipulation;-webkit-text-size-adjust:100%}</style>
 <meta name="theme-color" content="#0F1B35"/>
 <link rel="preconnect" href="https://www.gstatic.com" crossorigin/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -84,15 +84,28 @@ loadThirdParty();
 
 <title>EduSpark – Board Study App</title>
 <meta name="description" content="Free study app for CBSE and BSER Class 10 &amp; 12 students: study material, previous year questions, quizzes and mock tests, plus practice for SSC, REET and BSTC exams."/>
-<link rel="canonical" href="https://eduspark.de5.net/"/>
+<link rel="canonical" href="https://eduspark.live/"/>
 <meta name="robots" content="index, follow, max-image-preview:large"/>
 <meta property="og:type" content="website"/>
 <meta property="og:site_name" content="EduSpark"/>
 <meta property="og:title" content="EduSpark – Board Study App"/>
 <meta property="og:description" content="Free study app for CBSE and BSER Class 10 &amp; 12: study material, PYQ, quizzes and mock tests, plus SSC, REET and BSTC practice."/>
-<meta property="og:url" content="https://eduspark.de5.net/"/>
-<meta property="og:image" content="https://eduspark.de5.net/icon-512.png"/>
+<meta property="og:url" content="https://eduspark.live/"/>
+<meta property="og:image" content="https://eduspark.live/icon-512.png"/>
+<meta property="og:locale" content="hi_IN"/>
+<meta property="og:image:width" content="512"/>
+<meta property="og:image:height" content="512"/>
+<meta property="og:image:alt" content="EduSpark logo"/>
 <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="EduSpark – Board Study App"/>
+<meta name="twitter:description" content="Free study app for CBSE and BSER Class 10 &amp; 12, plus SSC, REET and BSTC practice."/>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+ {"@type":"WebSite","@id":"https://eduspark.live/#website","url":"https://eduspark.live/","name":"EduSpark","inLanguage":["hi-IN","en-IN"],"publisher":{"@id":"https://eduspark.live/#org"}},
+ {"@type":"Organization","@id":"https://eduspark.live/#org","name":"EduSpark","url":"https://eduspark.live/","logo":"https://eduspark.live/icon-512.png","email":"bhupeshkumar36882@gmail.com","contactPoint":{"@type":"ContactPoint","contactType":"customer support","telephone":"+91-8094120884","email":"bhupeshkumar36882@gmail.com","availableLanguage":["Hindi","English"],"areaServed":"IN"}},
+ {"@type":"WebApplication","name":"EduSpark – Board Study App","url":"https://eduspark.live/","applicationCategory":"EducationalApplication","operatingSystem":"Any (Web, installable PWA)","inLanguage":["hi-IN","en-IN"],"isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"INR"},"publisher":{"@id":"https://eduspark.live/#org"}}
+]}
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 
 <!-- Firebase v9 compat SDKs - loaded synchronously before any script -->
@@ -700,6 +713,23 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
 </style>
 </head>
 <body>
+<noscript>
+<main style="max-width:720px;margin:0 auto;padding:24px;font-family:system-ui,sans-serif;line-height:1.6;color:#0F1B35">
+<h1>EduSpark – Free Board &amp; Competitive Exam Study App</h1>
+<p>EduSpark is a free study app for CBSE and BSER (Rajasthan Board) Class 10 and 12 students, with practice quizzes, previous year question papers, study material and a doubt-solving section. It also supports practice for SSC CGL, SSC CHSL, REET and BSTC. The app needs JavaScript; please enable it to continue.</p>
+<nav aria-label="Study guides"><ul>
+<li><a href="/cbse-class-10.html">CBSE Class 10 study guide</a></li>
+<li><a href="/cbse-class-12.html">CBSE Class 12 study guide</a></li>
+<li><a href="/bser-class-10.html">BSER (RBSE) Class 10 study guide</a></li>
+<li><a href="/bser-class-12.html">BSER (RBSE) Class 12 study guide</a></li>
+<li><a href="/ssc-cgl.html">SSC CGL preparation guide</a></li>
+<li><a href="/ssc-chsl.html">SSC CHSL preparation guide</a></li>
+<li><a href="/reet-bstc.html">REET and BSTC preparation guide</a></li>
+<li><a href="/study-tips.html">How to study with PYQs and quizzes</a></li>
+</ul></nav>
+<p><a href="/about.html">About</a> · <a href="/contact.html">Contact</a> · <a href="/privacy.html">Privacy Policy</a> · <a href="/terms.html">Terms of Use</a> · <a href="/disclaimer.html">Disclaimer</a> · <a href="/ads-and-cookies.html">Ads &amp; Cookies</a></p>
+</main>
+</noscript>
 
 <!-- SPLASH -->
 <div id="splash">
@@ -755,6 +785,7 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
   <option value="SSC-CGL">SSC CGL</option>
     </select>
     <button class="ss-btn" onclick="saveStudentProfile()">✅ शुरू करें →</button>
+    <button type="button" onclick="skipLoginPage()" style="display:block;margin:14px auto 0;background:none;border:0;color:rgba(255,255,255,.7);font:500 12.5px 'Poppins',sans-serif;text-decoration:underline;cursor:pointer;">बाद में करूँगा / Skip for now</button>
   </div>
 </div>
 
@@ -799,7 +830,7 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
 </div>
     <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
     <a href="https://instagram.com/bhupesh_jatav_02" target="_blank"
-       style="display:flex;align-items:center;gap:6px;background:linear-gradient(90deg,#E1306C,#833AB4);color:#fff;padding:7px 14px;border-radius:99px;font-size:12px;font-weight:700;text-decoration:none;">
+       style="display:flex;align-items:center;gap:6px;background:linear-gradient(90deg,#E1306C,#833AB4);color:#fff;padding:7px 14px;border-radius:99px;font-size:12px;font-weight:700;text-decoration:none;" rel="noopener">
       📸 @bhupesh_jatav_02
     </a>
     <button id="installBtn" onclick="installApp()" style="display:none;align-items:center;gap:6px;background:linear-gradient(90deg,#10B981,#059669);color:#fff;padding:7px 14px;border-radius:99px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;border:none;">
@@ -843,11 +874,11 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
   </div>
 </div>
         <div class="comm-sec" id="communitySec">
-  <a href="#" id="waJoinBtn" target="_blank" class="comm-btn comm-wa" style="display:none;">
+  <a href="#" id="waJoinBtn" target="_blank" class="comm-btn comm-wa" style="display:none;" rel="noopener">
     <span class="ci-emoji">💬</span>
     <span id="waJoinText">WhatsApp Group Join करें</span>
   </a>
-  <a href="#" id="tgJoinBtn" target="_blank" class="comm-btn comm-tg" style="display:none;">
+  <a href="#" id="tgJoinBtn" target="_blank" class="comm-btn comm-tg" style="display:none;" rel="noopener">
     <span class="ci-emoji">📢</span>
     <span id="tgJoinText">Telegram Group Join करें</span>
   </a>
@@ -866,6 +897,15 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
         <a href="/privacy.html" onclick="return openLegal('/privacy.html','Privacy Policy')" style="font-size:11px;color:var(--g400);text-decoration:underline;">Privacy Policy</a>
         <span style="font-size:11px;color:var(--g400);"> • </span>
         <a href="/terms.html" onclick="return openLegal('/terms.html','Terms of Use')" style="font-size:11px;color:var(--g400);text-decoration:underline;">Terms of Use</a>
+        <span style="font-size:11px;color:var(--g400);"> • </span>
+        <a href="/about.html" onclick="return openLegal('/about.html','About EduSpark')" style="font-size:11px;color:var(--g400);text-decoration:underline;">About</a>
+        <span style="font-size:11px;color:var(--g400);"> • </span>
+        <a href="/contact.html" onclick="return openLegal('/contact.html','Contact / Help')" style="font-size:11px;color:var(--g400);text-decoration:underline;">Contact</a>
+        <span style="font-size:11px;color:var(--g400);"> • </span>
+        <a href="/disclaimer.html" onclick="return openLegal('/disclaimer.html','Disclaimer')" style="font-size:11px;color:var(--g400);text-decoration:underline;">Disclaimer</a>
+        <span style="font-size:11px;color:var(--g400);"> • </span>
+        <a href="/ads-and-cookies.html" onclick="return openLegal('/ads-and-cookies.html','Ads &amp; Cookies')" style="font-size:11px;color:var(--g400);text-decoration:underline;">Ads &amp; Cookies</a>
+        <div style="margin-top:8px;font-size:11px;"><a href="/cbse-class-10.html" style="color:var(--g400);">CBSE 10</a> · <a href="/cbse-class-12.html" style="color:var(--g400);">CBSE 12</a> · <a href="/bser-class-10.html" style="color:var(--g400);">BSER 10</a> · <a href="/bser-class-12.html" style="color:var(--g400);">BSER 12</a> · <a href="/ssc-cgl.html" style="color:var(--g400);">SSC CGL</a> · <a href="/ssc-chsl.html" style="color:var(--g400);">SSC CHSL</a> · <a href="/reet-bstc.html" style="color:var(--g400);">REET/BSTC</a> · <a href="/study-tips.html" style="color:var(--g400);">Study tips</a></div>
         <div style="font-size:10.5px;color:var(--g400);margin-top:8px;line-height:1.5;">EduSpark एक independent study app है। यह CBSE, BSER, SSC या किसी सरकारी संस्था से जुड़ा या उनके द्वारा approved नहीं है। AI के जवाब गलत हो सकते हैं — ज़रूरी बातें किताब/teacher से जाँच लें।</div>
       </div>
 
@@ -1220,7 +1260,7 @@ Sahmati wapas lene ke liye Profile → Logout karein; agli baar login par checkb
 
       <p style="margin-bottom:6px;"><b>5. Ads</b></p>
       <p style="margin-bottom:10px;">
-        Is app mein Google AdSense ka code jud hua hai, par abhi koi advertisement dikhaya nahi ja raha। Future mein ads dikhaye gaye to Google cookies ya device identifiers use kar sakta hai, hum bachchon ko targeted ads nahi dikhayenge, aur is policy ko pehle update karenge।
+        EduSpark mein Google AdSense ke ads dikh sakte hain। Google aur uske partners cookies ya device identifiers use karke ads dikha sakte hain। Hum ads ko non-personalised / restricted data processing mode me rakhne ki koshish karte hain kyunki hamare bahut se users 18 saal se kam umar ke hain। Ads band ya opt-out karne ke liye <a href="/ads-and-cookies.html" onclick="return openLegal('/ads-and-cookies.html','Ads &amp; Cookies')">Ads &amp; Cookies page</a> dekhein। Poori English policy: <a href="/privacy.html" onclick="return openLegal('/privacy.html','Privacy Policy')">Privacy Policy</a>।
       </p>
 
       <p style="margin-bottom:6px;"><b>6. Aapke adhikaar (rights)</b></p>
@@ -1560,7 +1600,7 @@ Sahmati wapas lene ke liye Profile → Logout karein; agli baar login par checkb
   // Sirf http(s) link — javascript:, data: waghera '' ban jaate hain
   function safeUrl(u) {
     try {
-      var base = (typeof location !== 'undefined' && location.origin && location.origin !== 'null') ? location.origin : 'https://eduspark.de5.net';
+      var base = (typeof location !== 'undefined' && location.origin && location.origin !== 'null') ? location.origin : 'https://eduspark.live';
       var raw = String(u == null ? '' : u).trim();
       if (!raw) return '';                                        // khali link ko base URL na bana do
       var x = new URL(raw, base);
@@ -1709,7 +1749,7 @@ function checkStudentProfile(){
   if(!el) return;
   const profile = JSON.parse(localStorage.getItem('es_student')||'null');
   if(!profile){
-    setTimeout(()=>{ showLoginPage(); },500);
+    setTimeout(()=>{ autoShowLogin(); },500);
   } else {
     curBoard = profile.board;
     if(typeof syncBoardListeners==='function') syncBoardListeners();
@@ -1794,7 +1834,7 @@ function legalFrameLoaded(){
 // LOGIN + EK CONSENT CHECKBOX (login page aur Google sign-in sheet dono me)
 // ══════════════════════════════════════════
 // 👇 Firebase Console → Authentication → Sign-in method → Google → "Web SDK configuration" → Web client ID yahan paste karein.
-//    Is client ID ke "Authorized JavaScript origins" me https://eduspark.de5.net hona zaruri hai (Google Cloud Console → APIs & Services → Credentials).
+//    Is client ID ke "Authorized JavaScript origins" me https://eduspark.live hona zaruri hai (Google Cloud Console → APIs & Services → Credentials).
 //    Khali rahe to app Firebase popup se sign-in karta hai (kaam karta hai, par Google ka in-app account chooser nahi dikhta).
 var ES_GOOGLE_CLIENT_ID = '';
 var GOOGLE_ICON_URL = 'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg';
@@ -1897,6 +1937,26 @@ function closeGoogleSheet(){
   var s = document.getElementById('gsSheet');
   if(s && s.style.display !== 'none') s.style.display = 'none';
   try{ if(_gis.state==='ready') google.accounts.id.cancel(); }catch(e){}
+}
+// Login screen kab khule:
+//  • Installed app / Play Store (TWA): pehle ki tarah turant.
+//  • Browser tab: jab visitor khud touch / scroll / key dabaye. Isse Google, Bing aur AdSense crawlers ko login wall ki jagah
+//    asli content dikhta hai (AdSense "pages behind a login" navigation issue). Same behaviour sab visitors ke liye — UA-sniffing nahi.
+//  • "Baad me" dabane par 3 din tak dobara nahi khulta.
+function autoShowLogin(){
+  if(autoShowLogin._done) return;
+  try{ var sk = parseInt(localStorage.getItem('es_login_skip_ts')||'0',10); if(sk && Date.now()-sk < 3*24*3600*1000) return; }catch(e){}
+  var standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true || (document.referrer||'').indexOf('android-app://')===0;
+  if(standalone){ autoShowLogin._done = true; showLoginPage(); return; }
+  if(autoShowLogin._armed) return; autoShowLogin._armed = true;
+  var evs = ['pointerdown','keydown','scroll','touchstart'];
+  var go = function(){ evs.forEach(function(e){ window.removeEventListener(e, go, true); }); autoShowLogin._done = true; setTimeout(showLoginPage, 700); };
+  evs.forEach(function(e){ window.addEventListener(e, go, {capture:true, passive:true}); });
+}
+function skipLoginPage(){
+  try{ localStorage.setItem('es_login_skip_ts', String(Date.now())); }catch(e){}
+  var el = document.getElementById('studentSetup'); if(el) el.style.display = 'none';
+  try{ closeGoogleSheet(); }catch(e){}
 }
 // Login page (pehli baar / logout ke baad): Google button + uske neeche ek hi checkbox
 function showLoginPage(){
@@ -3571,13 +3631,13 @@ function shareApp(){
     navigator.share({
       title: 'EduSpark — Free Board Study App',
       text: 'CBSE & BSER Class 10 & 12 ke liye free study app — PDF, Videos, Quiz, PYQ sab free!',
-      url: 'https://eduspark.de5.net/'
+      url: 'https://eduspark.live/'
     }).then(()=>showToast('✅ Share ho gaya!'))
     .catch(()=>{});
   } else {
-    navigator.clipboard.writeText('https://eduspark.de5.net/')
+    navigator.clipboard.writeText('https://eduspark.live/')
       .then(()=>showToast('✅ Link copy ho gaya!'))
-      .catch(()=>showToast('🔗 https://eduspark.de5.net/'));
+      .catch(()=>showToast('🔗 https://eduspark.live/'));
   }
 }
 
@@ -3828,6 +3888,7 @@ document.addEventListener("DOMContentLoaded", function () {
 // (yahi wo bug tha: pehle sign-in ke baad bhi button dikhta reh jaata tha)
 auth.onAuthStateChanged(function(user){
   const loginBtn = document.getElementById('googleLoginBtn');
+  try{ if(typeof renderNotifPermCard==='function') renderNotifPermCard(); if(user && 'Notification' in window && Notification.permission==='granted' && typeof registerFcmToken==='function') registerFcmToken(); }catch(e){}
   if (typeof updateUsernameLockUI === "function") updateUsernameLockUI();
   if (typeof updateDoubtLoginGate === "function") updateDoubtLoginGate();
   if (typeof listenDoubts === "function") listenDoubts();
@@ -4103,7 +4164,7 @@ function renderNotifPermCard(){
     toggle.checked = true;
     toggle.disabled = true;
     title.textContent = '✅ Push Notifications ON हैं';
-    sub.textContent = 'आपको सभी study reminders मिलते रहेंगे';
+    sub.textContent = (typeof auth !== 'undefined' && auth.currentUser) ? 'आपको सभी study reminders मिलते रहेंगे' : 'रोज़ के reminders पाने के लिए Google से Sign in भी करें (Profile page)';
   } else if(perm === 'denied'){
     toggle.checked = false;
     toggle.disabled = true;
@@ -4543,7 +4604,7 @@ if (window.ES && ES.bus) {
   setTimeout(()=>{
     const profile = JSON.parse(localStorage.getItem('es_student')||'null');
     if(!profile){
-      showLoginPage();
+      autoShowLogin();
     }
     if (typeof updateTopbarAvatar === "function") updateTopbarAvatar();
     // Install toast

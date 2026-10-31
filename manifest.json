@@ -1,8 +1,8 @@
 {
   "name": "EduSpark – Board Study App",
   "short_name": "EduSpark",
-  "description": "CBSE & BSER Class 10 & 12 Free Study App",
-  "lang": "en-IN",
+  "description": "Free study app for CBSE & BSER Class 10 & 12, plus SSC, REET and BSTC practice",
+  "lang": "hi-IN",
   "start_url": "/",
   "id": "/",
   "scope": "/",
@@ -23,22 +23,29 @@
       "purpose": "any"
     },
     {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Practice quiz",
+      "short_name": "Quiz",
+      "url": "/?source=shortcut",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }

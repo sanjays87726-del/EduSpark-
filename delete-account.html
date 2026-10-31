@@ -1,53 +1,95 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en-IN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Account Delete – EduSpark</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Delete Your EduSpark Account and Data</title>
+<meta name="description" content="Step-by-step instructions to delete your EduSpark account and data from inside the app, or by email if you cannot access the app.">
+<link rel="canonical" href="https://eduspark.live/delete-account.html">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#16233F">
+<link rel="icon" href="/icon-192.png" type="image/png">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="EduSpark">
+<meta property="og:title" content="Delete Your EduSpark Account and Data">
+<meta property="og:description" content="Step-by-step instructions to delete your EduSpark account and data from inside the app, or by email if you cannot access the app.">
+<meta property="og:url" content="https://eduspark.live/delete-account.html">
+<meta property="og:image" content="https://eduspark.live/icon-512.png">
+<meta name="twitter:card" content="summary">
+<script>if (window.self !== window.top) document.documentElement.className += ' in-frame';</script>
 <style>
-  :root{--bg:#F8FAFC;--card:#fff;--ink:#0F1B35;--mut:#475569;--line:#E2E8F0;--lnk:#2563EB;}
-  @media (prefers-color-scheme:dark){:root{--bg:#0B1220;--card:#111A2E;--ink:#E5ECF8;--mut:#A8B5CC;--line:#22304A;--lnk:#7DB2FF;}}
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Devanagari",sans-serif;line-height:1.7;}
-  main{max-width:720px;margin:0 auto;padding:20px 18px 48px;}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;}
-  h1{font-size:22px;margin:0 0 12px}
-  h2{font-size:15px;margin:20px 0 6px}
-  p{margin:0 0 10px;color:var(--mut);font-size:14px}
-  p.upd{font-size:12px;opacity:.8}
-  a{color:var(--lnk)}
-  .back{display:inline-block;margin-bottom:14px;font-size:14px;text-decoration:none}
-  .nav{margin-top:18px;font-size:13px;color:var(--mut)}
-  .nav a{margin-right:12px}
-</style>
+:root{--navy:#16233F;--amber:#E8A33D;--teal:#1E7F6C;--bg:#F7F6F2;--card:#fff;--text:#262B33;--muted:#5d6572;--line:#E4E1D8;--link:#1b5fb4}
+@media (prefers-color-scheme:dark){:root{--navy:#dfe7f7;--amber:#f0b45a;--teal:#4fc4a8;--bg:#0f1524;--card:#161e33;--text:#e3e8f3;--muted:#a3adc2;--line:#27314b;--link:#8db8ff}}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Devanagari",sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased}
+.wrap{max-width:720px;margin:0 auto;padding:24px 18px 56px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:16px;margin-bottom:28px;border-bottom:1px solid var(--line)}
+.brand{font-family:Georgia,"Times New Roman",serif;font-weight:700;font-size:22px;color:var(--navy);text-decoration:none}
+.back{font-size:14px;color:var(--muted);text-decoration:none}.back:hover{color:var(--navy)}
+.crumbs{font-size:13px;color:var(--muted);margin:0 0 10px}.crumbs a{color:var(--muted)}
+h1{font-family:Georgia,"Times New Roman",serif;font-weight:700;font-size:clamp(26px,5vw,34px);line-height:1.25;color:var(--navy);margin:0 0 14px}
+h2{font-family:Georgia,"Times New Roman",serif;font-weight:700;font-size:21px;color:var(--navy);margin:34px 0 10px;line-height:1.3}
+h3{font-size:16.5px;color:var(--navy);margin:22px 0 6px}
+p{margin:0 0 14px;font-size:16px}ul,ol{margin:0 0 16px;padding-left:22px}li{margin-bottom:7px;font-size:16px}
+a{color:var(--link)}
+.lead{font-size:17.5px;color:var(--text)}
+.upd{font-size:13px;color:var(--muted);margin:0 0 22px}
+.note{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--amber);border-radius:8px;padding:12px 14px;font-size:14.5px;margin:22px 0}
+.hi{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;font-size:15px;margin:0 0 22px}
+.cta{display:inline-block;margin:6px 0 0;padding:12px 22px;background:var(--amber);color:#16233F;font-weight:700;text-decoration:none;border-radius:8px}
+.cta:hover{filter:brightness(.95)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:0 0 18px}
+.grid a{display:block;padding:12px 14px;background:var(--card);border:1px solid var(--line);border-radius:8px;text-decoration:none;color:var(--navy);font-weight:600;font-size:15px}
+table{border-collapse:collapse;width:100%;margin:0 0 18px;font-size:15px}th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}th{background:var(--card)}
+.tw{overflow-x:auto}
+footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+footer nav{display:flex;gap:8px 18px;flex-wrap:wrap;margin-bottom:10px}footer a{color:var(--muted);text-decoration:none}footer a:hover{color:var(--navy);text-decoration:underline}
+a:focus-visible{outline:2px solid var(--link);outline-offset:3px;border-radius:2px}
+.in-frame header.top .back{display:none}</style>
+<script type="application/ld+json">{"@context": "https://schema.org", "@graph": [{"@type": "WebPage", "@id": "https://eduspark.live/delete-account.html#webpage", "url": "https://eduspark.live/delete-account.html", "name": "Delete Your EduSpark Account and Data", "description": "Step-by-step instructions to delete your EduSpark account and data from inside the app, or by email if you cannot access the app.", "inLanguage": "en-IN", "isPartOf": {"@id": "https://eduspark.live/#website"}, "dateModified": "2026-10-31"}, {"@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "EduSpark", "item": "https://eduspark.live/"}, {"@type": "ListItem", "position": 2, "name": "Delete account", "item": "https://eduspark.live/delete-account.html"}]}]}</script>
 </head>
 <body>
-<main>
-  <a class="back" href="/">← EduSpark par wapas</a>
-  <div class="card">
-    <h1>🗑 Account aur Data Delete</h1>
-<p>Aap apna EduSpark account aur data kabhi bhi delete kar sakte hain। Ye page batata hai kaise।</p>
-<p class="upd">Aakhri update: 13 October 2026</p>
-<h2>App ke andar se (sabse tez)</h2>
-<p>1. EduSpark kholo aur upar apni <b>profile photo</b> par tap karo<br>
-2. Profile page par neeche jao aur <b>"🗑 Account और data delete करें"</b> dabao<br>
-3. Confirm karo aur <b>DELETE</b> likho<br>
-4. Agar Google se sign in tha, to suraksha ke liye Google se ek baar dobara sign in karna padega<br>
-Delete hote hi data turant hata diya jata hai aur app naye sire se shuru ho jata hai।</p>
-<h2>Kya delete hota hai</h2>
-<p>• Aapka profile: naam, username, photo, board<br>
-• Aapka email aur Google user ID ka record<br>
-• Notification token<br>
-• Aapke bheje saare doubts (aur unke jawab)<br>
-• Aapka Firebase login account</p>
-<h2>Kya delete nahi hota</h2>
-<p>Agar aapne optional analytics/crash reports allow kiye the, to unka anonymous data Google (Firebase Analytics), Microsoft (Clarity) aur Sentry ke paas unke apne niyamon ke hisaab se rehta hai। Hum use aapke naam ya email se nahi jodte।</p>
-<h2>App tak access nahi hai?</h2>
-<p>Agar aap app khol nahi pa rahe (phone kho gaya, account tak pahunch nahi), to email <a href="mailto:bhupeshkumar36882@gmail.com">bhupeshkumar36882@gmail.com</a> ya Instagram par <a href="https://instagram.com/bhupesh_jatav_02" target="_blank" rel="noopener">@bhupesh_jatav_02</a> ko message karein: "Delete my EduSpark data", saath mein apna username ya registered email likhein। Pehchan ki jaanch ke baad hum jaldi se jaldi (aam taur par 7 din ke andar) aapka data delete kar denge।</p>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="/">EduSpark</a>
+    <a class="back" href="/">Open the app &rarr;</a>
+  </header>
+  <main>
+    <p class="crumbs"><a href="/">Home</a> &rsaquo; Delete account</p>
+    <h1>Delete Your Account and Data</h1>
+    <p class="upd">Last updated: 31 October 2026</p>
 
-    <div class="nav"><a href="/privacy.html">Privacy Policy</a><a href="/terms.html">Terms of Use</a><a href="/delete-account.html">Account Delete</a></div>
-  </div>
-</main>
-<script>/* app ke andar (iframe) khule to 'wapas' link chhupao — app ka apna wapas button hai */ if(window.top!==window.self){var b=document.querySelector('.back');if(b)b.style.display='none';}</script>
+
+<p>You can delete your EduSpark account and data at any time. This page explains how.</p>
+<h2>Option 1: inside the app (fastest)</h2>
+<ol>
+<li>Open EduSpark and tap your <strong>profile photo</strong> at the top.</li>
+<li>On the Profile page, scroll down and tap <strong>&ldquo;Delete account and data&rdquo;</strong>.</li>
+<li>Confirm and type <strong>DELETE</strong> when asked.</li>
+<li>If you signed in with Google, you may be asked to sign in once more for security.</li>
+</ol>
+<p>When you confirm, the data below is removed immediately and the app starts fresh.</p>
+<h2>What is deleted</h2>
+<ul>
+<li>Your profile: name, username, photo and board.</li>
+<li>Your email and Google user ID record.</li>
+<li>Your notification token.</li>
+<li>All doubts you submitted (and their answers).</li>
+<li>Your Firebase sign-in account.</li>
+</ul>
+<h2>What is not deleted</h2>
+<p>If you accepted crash reports, anonymous technical error data may remain with Sentry under its own retention rules; we do not link it to your name or email. Backups held by service providers are overwritten on their normal schedule.</p>
+<h2>Option 2: if you cannot open the app</h2>
+<p>If you lost your phone or cannot access your account, email <a href="mailto:bhupeshkumar36882@gmail.com">bhupeshkumar36882@gmail.com</a> or message <a href="https://instagram.com/bhupesh_jatav_02" rel="noopener">@bhupesh_jatav_02</a> on Instagram with the subject <strong>&ldquo;Delete my EduSpark data&rdquo;</strong> and include your username or registered email. After we verify that the account is yours, we will delete the data, usually within 7 days.</p>
+<p lang="hi"><strong>हिंदी में:</strong> App खोलें &rarr; ऊपर profile photo &rarr; नीचे &ldquo;Account और data delete करें&rdquo; &rarr; DELETE लिखकर confirm करें। App न खुले तो ऊपर दिए email या Instagram पर &ldquo;Delete my EduSpark data&rdquo; लिखकर भेजें।</p>
+<p>See also: <a href="/privacy.html">Privacy Policy</a> &middot; <a href="/terms.html">Terms of Use</a>.</p>
+
+
+  </main>
+  <footer>
+    <nav aria-label="Site links"><a href="/about.html">About</a> <a href="/contact.html">Contact</a> <a href="/privacy.html">Privacy Policy</a> <a href="/terms.html">Terms of Use</a> <a href="/disclaimer.html">Disclaimer</a> <a href="/ads-and-cookies.html">Ads &amp; Cookies</a> <a href="/delete-account.html">Delete Account</a></nav>
+    <div>&copy; 2026 EduSpark. An independent study app &mdash; not affiliated with CBSE, BSER/RBSE, SSC or any government body.</div>
+  </footer>
+</div>
 </body>
 </html>

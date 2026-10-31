@@ -7,7 +7,7 @@ EduSpark is a student-focused learning platform built to make studying simpler, 
 
 Whether you're preparing for Board Exams, SSC, REET, BSTC, or other competitive examinations, EduSpark brings useful learning resources together in one place.
 
-🌐 Visit EduSpark: https://eduspark.de5.net
+🌐 Visit EduSpark: https://eduspark.live
 
 ---
 

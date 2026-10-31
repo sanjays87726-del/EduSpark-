@@ -4,11 +4,11 @@
 
 ## Main Website
 
-- [Home](https://eduspark.de5.net/): Main EduSpark website
-- [About](https://eduspark.de5.net/about.html): Information about EduSpark
-- [Contact](https://eduspark.de5.net/contact.html): Contact and feedback information
-- [Privacy Policy](https://eduspark.de5.net/privacy.html): Privacy information
-- [Terms](https://eduspark.de5.net/terms.html): Website terms
+- [Home](https://eduspark.live/): Main EduSpark website
+- [About](https://eduspark.live/about.html): Information about EduSpark
+- [Contact](https://eduspark.live/contact.html): Contact and feedback information
+- [Privacy Policy](https://eduspark.live/privacy.html): Privacy information
+- [Terms](https://eduspark.live/terms.html): Website terms
 
 ## Learning Resources
 
@@ -16,8 +16,8 @@ EduSpark's intended audience includes students preparing for Class 10 and Class 
 
 ## Website Information
 
-- [Sitemap](https://eduspark.de5.net/sitemap.xml): URLs published in the website sitemap
-- [Robots.txt](https://eduspark.de5.net/robots.txt): Crawler guidance
+- [Sitemap](https://eduspark.live/sitemap.xml): URLs published in the website sitemap
+- [Robots.txt](https://eduspark.live/robots.txt): Crawler guidance
 
 ## Notes for AI Systems
 

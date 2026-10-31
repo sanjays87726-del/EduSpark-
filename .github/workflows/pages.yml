@@ -1,0 +1,45 @@
+name: Deploy site (whitelist only)
+
+# Abhi GitHub Pages poori repo (docs/, tests/, firestore.rules, NOTES-mistakes.md, quiz-app/ ...) public kar raha hai.
+# Ye workflow sirf website ki files `_site/` me daal kar deploy karta hai.
+# Use karne ke liye: Repo → Settings → Pages → Build and deployment → Source = "GitHub Actions", phir is workflow ko "Run workflow" se chalao.
+# (Source badalne se pehle ye chalana zaruri nahi; branch-deploy chalta rahega.) Har content/code push par chalane ke liye `on:` me `push: branches: [main]` jodo.
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Checks (site + SEO scan)
+        run: |
+          node tools/check-repo.js
+          python3 tools/seo-audit.py
+      - name: Public files ko _site me copy karo
+        run: |
+          mkdir -p _site
+          cp *.html _site/
+          cp CNAME .nojekyll ads.txt robots.txt sitemap.xml llm.txt BingSiteAuth.xml manifest.json sw.js icon-192.png icon-512.png icon-maskable-512.png _site/
+          test -d .well-known && cp -r .well-known _site/ || true
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

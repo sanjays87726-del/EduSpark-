@@ -44,7 +44,7 @@ resources:
 ingress:
   enabled: false
   className: nginx
-  host: eduspark.de5.net
+  host: eduspark.live
   tls:
     enabled: false
     secretName: eduspark-tls

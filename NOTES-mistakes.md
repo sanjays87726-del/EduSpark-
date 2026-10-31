@@ -28,7 +28,7 @@
 | 24 | App Check enable nahi — Firestore ka public `apiKey` script se hit ho sakta hai (rules limits hain par rate-limit nahi) | Firebase | Open — RUNBOOK §5 |
 | 25 | `ES.checkClockSkew` HTTP `Date` header (1 sec resolution) par tikka hai — chhote skew (<10 min) pakadne ke liye nahi bana | index.html | Known limit |
 | 26 | Sign-in: popup band karne par (`popup-closed-by-user`) code seedha `signInWithRedirect` par bhej deta tha — student app se bahar nikal jata | index.html | Fixed (ab chupchap rukta hai) |
-| 27 | `signInWithRedirect` custom domain (`eduspark.de5.net`) + `firebaseapp.com` authDomain par naye browsers me storage-partition se silently fail hota hai ("sign in kaam nahi karta") | index.html / Firebase | Fixed: Google Identity Services se `signInWithCredential`. **Tumhe karna hai:** Web client ID paste + Google Cloud me origin add (neeche notes) |
+| 27 | `signInWithRedirect` custom domain (`eduspark.live`) + `firebaseapp.com` authDomain par naye browsers me storage-partition se silently fail hota hai ("sign in kaam nahi karta") | index.html / Firebase | Fixed: Google Identity Services se `signInWithCredential`. **Tumhe karna hai:** Web client ID paste + Google Cloud me origin add (neeche notes) |
 | 28 | Sign-in errors par sirf raw message dikhta tha | index.html | Fixed (`authErrMsg`, Hindi) |
 | 29 | Back guard boot par bina user-touch ke push hota tha — Chrome aisi history entry back par **skip** kar deta hai → kabhi-kabhi app seedha band | index.html | Fixed (pehle touch par arm) |
 | 30 | Back handler me error aaye to `armBackGuard()` chalta hi nahi tha → agla back app band | index.html | Fixed (guard pehle, handler baad me, try/catch) |

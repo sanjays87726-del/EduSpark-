@@ -9,7 +9,7 @@ const webhook = require('./lib/webhook.js');
 
 const DAY = 86400e3;
 const defaults = {
-  siteUrl: 'https://eduspark.de5.net/',
+  siteUrl: 'https://eduspark.live/',
   workerUrl: 'https://bold-dust-6f37.sanjays87726.workers.dev/',
   tlsWarnDays: 14, tlsErrorDays: 3, slowMs: 3000, backupMaxDays: 10, stuckMs: 30 * 60e3
 };

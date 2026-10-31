@@ -117,7 +117,7 @@ const mkStore = () => { const s = {}; return { getItem: k => (k in s ? s[k] : nu
   // ───────── service worker: offer image + link ─────────
   const mkSW = () => {
     const L = {}; const shown = [], opened = [];
-    const self = { addEventListener: (ty, f) => { L[ty] = f; }, location: { origin: 'https://eduspark.de5.net' }, registration: { showNotification: (title, o) => { shown.push({ title, o }); return Promise.resolve(); } }, skipWaiting() {}, clients: { claim() {} } };
+    const self = { addEventListener: (ty, f) => { L[ty] = f; }, location: { origin: 'https://eduspark.live' }, registration: { showNotification: (title, o) => { shown.push({ title, o }); return Promise.resolve(); } }, skipWaiting() {}, clients: { claim() {} } };
     const ctx = { self, location: self.location, URL, caches: { open: async () => ({ addAll: async () => {}, put: async () => {}, match: async () => null }), keys: async () => [], match: async () => null, delete: async () => true },
       clients: { matchAll: async () => [], openWindow: u => { opened.push(u); return Promise.resolve(); } }, fetch: async () => ({}), console, Response, Promise, setTimeout, Date };
     vm.runInNewContext(sw, ctx);
@@ -146,7 +146,7 @@ const mkStore = () => { const s = {}; return { getItem: k => (k in s ? s[k] : nu
     assert.strictEqual(m.notification.imageUrl, 'https://ik.imagekit.io/x/o.png?tr=w-1000,q-75'); assert.strictEqual(m.webpush.notification.image, m.notification.imageUrl);
     assert.strictEqual(m.webpush.fcmOptions.link, 'https://shop.example/o'); assert.deepStrictEqual(m.data, { url: 'https://shop.example/o', link: 'https://shop.example/o', image: m.notification.imageUrl, kind: 'offer' });
     const p = S.buildFcmMessage({ token: 'tk', notification: { title: 'T', body: 'B' } });
-    assert.deepStrictEqual(Object.keys(p).sort(), ['notification', 'token', 'webpush']); assert.strictEqual(p.webpush.fcmOptions.link, 'https://eduspark.de5.net/');
+    assert.deepStrictEqual(Object.keys(p).sort(), ['notification', 'token', 'webpush']); assert.strictEqual(p.webpush.fcmOptions.link, 'https://eduspark.live/');
     const bad = S.buildFcmMessage({ token: 'tk', notification: { title: 'T', body: 'B' }, image: 'javascript:1', link: 'http://x' }); assert.ok(!bad.data && !bad.notification.imageUrl);
   });
   await t('firestore.rules: offers collection is publicly readable, admin-only write', () => {

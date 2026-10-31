@@ -12,7 +12,7 @@ function fixture() {
   fs.mkdirSync(path.join(d, 'deploy/helm/eduspark'), { recursive: true }); fs.mkdirSync(path.join(d, 'deploy/k8s'), { recursive: true });
   fs.copyFileSync(path.join(ROOT, 'deploy/helm/eduspark/Chart.yaml'), path.join(d, 'deploy/helm/eduspark/Chart.yaml'));
   fs.copyFileSync(path.join(ROOT, 'deploy/k8s/deployment.yaml'), path.join(d, 'deploy/k8s/deployment.yaml'));
-  for (const f of ['icon-192.png', 'icon-512.png', 'about.html', 'contact.html']) fs.writeFileSync(path.join(d, f), 'x');
+  for (const f of ['icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'about.html', 'contact.html', 'disclaimer.html', 'ads-and-cookies.html', 'cbse-class-10.html', 'cbse-class-12.html', 'bser-class-10.html', 'bser-class-12.html', 'ssc-cgl.html', 'ssc-chsl.html', 'reet-bstc.html', 'study-tips.html']) fs.writeFileSync(path.join(d, f), 'x');
   return d;
 }
 const w = (d, f, fn) => fs.writeFileSync(path.join(d, f), fn(fs.readFileSync(path.join(d, f), 'utf8')));
