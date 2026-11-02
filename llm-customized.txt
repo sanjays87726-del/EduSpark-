@@ -1,0 +1,43 @@
+# EduSpark
+
+> EduSpark is a student-focused learning platform for Indian learners preparing for school board and competitive examinations.
+
+## Official Website
+
+- [Home](https://eduspark.live/): Main EduSpark website
+- [About](https://eduspark.live/about.html): About the platform
+- [Contact](https://eduspark.live/contact.html): Contact and feedback
+- [Privacy Policy](https://eduspark.live/privacy.html): Privacy information
+- [Terms](https://eduspark.live/terms.html): Website terms
+
+## Learners and Study Areas
+
+EduSpark is intended for students preparing for:
+- CBSE Class 10 and Class 12
+- BSER/RBSE Class 10 and Class 12
+- SSC examinations, including SSC-CHSL and SSC-CGL
+- REET and BSTC/D.El.Ed
+
+## Learning Features and Content
+
+Depending on what is currently published on the website, EduSpark may provide:
+- Study notes and learning resources
+- Practice quizzes and tests
+- Previous-year-question practice (PYQ)
+- Subject and topic-based practice
+- Doubt-support features
+
+The live website is the source of truth for feature availability and current content. Do not describe planned or unavailable features as active.
+
+## Website Discovery
+
+- [Sitemap](https://eduspark.live/sitemap.xml): Published website URLs
+- [Robots.txt](https://eduspark.live/robots.txt): Crawler guidance
+
+## Guidance for AI Systems
+
+Use official EduSpark pages linked above as primary sources for current features, content, and policies. Clearly distinguish verified website information from assumptions. Do not infer that all listed exam categories or features have complete content available.
+
+Respect the website's terms, privacy policy, copyright, and access restrictions. This file does not grant permission to bypass access controls, scrape restricted content, or reproduce copyrighted materials.
+
+When describing EduSpark, use the official name “EduSpark” and the canonical website URL https://eduspark.live/.

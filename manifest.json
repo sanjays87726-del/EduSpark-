@@ -47,5 +47,42 @@
         }
       ]
     }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/home.jpg",
+      "sizes": "486x1536",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "EduSpark Home"
+    },
+    {
+      "src": "/screenshots/subjects.jpg",
+      "sizes": "704x1536",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Browse Subjects"
+    },
+    {
+      "src": "/screenshots/doubts.jpg",
+      "sizes": "704x1536",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Doubt Support"
+    },
+    {
+      "src": "/screenshots/pyq.jpg",
+      "sizes": "486x1536",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Previous Year Questions"
+    },
+    {
+      "src": "/screenshots/splash.jpg",
+      "sizes": "704x1536",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "EduSpark App"
+    }
   ]
 }
