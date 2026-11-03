@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "live.eduspark.twa",
+        "sha256_cert_fingerprints": ["5E:14:83:17:BE:C1:97:66:AB:26:A7:EB:8E:91:F1:EB:FF:5E:34:4E:92:E4:C5:D3:7E:B0:C0:8C:53:39:FD:3B"]
+      }
+    }]
