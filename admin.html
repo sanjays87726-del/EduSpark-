@@ -27,6 +27,8 @@ const FB_CFG = {
   appId: "1:455546882437:web:093e07eef1d8c685915cec",
   measurementId: "G-WGP977E30D"
 };
+// Admin panel kisi doosri site ke iframe me na khule (clickjacking)
+if (window.top !== window.self) { try { window.top.location = window.self.location; } catch (e) { document.documentElement.style.display = 'none'; } }
 if (!firebase.apps.length) { firebase.initializeApp(FB_CFG); }
 const auth = firebase.auth();
 const db   = firebase.firestore();
@@ -725,9 +727,9 @@ async function renderOffers(){
         + '<img src="'+esc(o.img)+'" style="width:100%;border-radius:8px;" alt="">'
         + '<div style="font-size:12px;margin:6px 0;"><b>'+esc(o.title||'(no title)')+'</b> · '+st+(o.popup?' · 🔔 popup':'')+'<br>'
         + (ms2d(o.startAt)||'abhi se')+' → '+(ms2d(o.endAt)||'no expiry')+' · order '+esc(o.order||0)+'</div>'
-        + '<button class="add-btn" style="margin:0 4px 4px 0;width:auto;padding:6px 12px;" onclick="editOffer(\''+o.id+'\')">✏️ Edit</button>'
-        + '<button class="add-btn" style="margin:0 4px 4px 0;width:auto;padding:6px 12px;" onclick="toggleOffer(\''+o.id+'\')">'+(o.active?'Off करें':'On करें')+'</button>'
-        + '<button class="add-btn" style="margin:0 0 4px;width:auto;padding:6px 12px;background:#c62828;" onclick="delOffer(\''+o.id+'\')">🗑 Delete</button></div>';
+        + '<button class="add-btn" style="margin:0 4px 4px 0;width:auto;padding:6px 12px;" data-act="editOffer" data-id="\'+esc(o.id)+\'">✏️ Edit</button>'
+        + '<button class="add-btn" style="margin:0 4px 4px 0;width:auto;padding:6px 12px;" data-act="toggleOffer" data-id="\'+esc(o.id)+\'">'+(o.active?'Off करें':'On करें')+'</button>'
+        + '<button class="add-btn" style="margin:0 0 4px;width:auto;padding:6px 12px;background:#c62828;" data-act="delOffer" data-id="\'+esc(o.id)+\'">🗑 Delete</button></div>';
     }).join('') : '<div style="color:var(--g400);">अभी कोई offer नहीं है</div>';
   }catch(err){ box.textContent = '❌ '+err.message; }
 }
@@ -1115,10 +1117,10 @@ function renderPYQManage(){
       ? items.map(p=>`
           <div class="mgmt-item">
             <div>
-              <div class="mgmt-nm">${p.year} — ${p.title}</div>
-              <div class="mgmt-sb">${p.board} • ${p.subject} • ${p.examType||''}</div>
+              <div class="mgmt-nm">${esc(p.year)} — ${esc(p.title)}</div>
+              <div class="mgmt-sb">${esc(p.board)} • ${esc(p.subject)} • ${esc(p.examType||'')}</div>
             </div>
-            <button class="del-btn" onclick="delPYQ('${p.id}')">🗑</button>
+            <button class="del-btn" data-act="delPYQ" data-id="${esc(p.id)}">🗑</button>
           </div>`).join('')
       : '<div class="empty"><div class="ei">📜</div><p>कोई PYQ नहीं।</p></div>';
   }).catch(()=>{});
@@ -1130,12 +1132,12 @@ function renderAManage(){
       document.getElementById('aManageList').innerHTML=items.length
         ? items.map(c=>{
             const sb = c.type==='quiz'
-              ? `${c.board} • 🧩 Quiz • ${(c.questions||[]).length} प्रश्न`
-              : `${c.board} • ${c.type}`;
+              ? `${esc(c.board)} • 🧩 Quiz • ${(c.questions||[]).length} प्रश्न`
+              : `${esc(c.board)} • ${esc(c.type)}`;
             return `
             <div class="mgmt-item">
-              <div><div class="mgmt-nm">${c.title}</div><div class="mgmt-sb">${sb}</div></div>
-              <button class="del-btn" onclick="delContent('${c.id}')">🗑</button>
+              <div><div class="mgmt-nm">${esc(c.title)}</div><div class="mgmt-sb">${sb}</div></div>
+              <button class="del-btn" data-act="delContent" data-id="${esc(c.id)}">🗑</button>
             </div>`;}).join('')
         : '<div class="empty"><div class="ei">📭</div><p>कोई content नहीं।</p></div>';
     }).catch(()=>showToast('❌ Load error!'));
@@ -1150,8 +1152,8 @@ function renderQuizManage(){
             const type = q.type==='mock' ? '🎯 Mock' : '📝 Practice';
             return `
             <div class="mgmt-item">
-              <div><div class="mgmt-nm">${q.title}</div><div class="mgmt-sb">${q.board} • ${totalQ} Questions • ${type}${q.sectional?' • Sectional':''}</div></div>
-              <button class="del-btn" onclick="delQuiz('${q.id}')">🗑</button>
+              <div><div class="mgmt-nm">${esc(q.title)}</div><div class="mgmt-sb">${esc(q.board)} • ${totalQ} Questions • ${type}${q.sectional?' • Sectional':''}</div></div>
+              <button class="del-btn" data-act="delQuiz" data-id="${esc(q.id)}">🗑</button>
             </div>`;}).join('')
         : '<div class="empty"><div class="ei">🧩</div><p>कोई quiz नहीं।</p></div>';
     }).catch(()=>{});
@@ -1188,9 +1190,9 @@ function renderADoubts(){
             <div class="mgmt-item" style="flex-direction:column;align-items:flex-start;gap:8px;">
               <div><div class="mgmt-nm">❓ ${esc((d.text||'').slice(0,60))}...</div><div class="mgmt-sb">${esc(d.name||'')} • ${esc(d.board||'')}</div></div>
               <div style="display:flex;gap:6px;width:100%;">
-                <input id="ans_${d.id}" placeholder="जवाब लिखें..." style="flex:1;border:1.5px solid var(--g200);border-radius:8px;padding:7px 10px;font-size:12px;font-family:inherit;outline:none;"/>
-                <button class="rply-btn" onclick="replyDoubt('${d.id}')">✅</button>
-                <button class="del-btn" onclick="delDoubt('${d.id}')">🗑</button>
+                <input id="ans_${esc(d.id)}" placeholder="जवाब लिखें..." style="flex:1;border:1.5px solid var(--g200);border-radius:8px;padding:7px 10px;font-size:12px;font-family:inherit;outline:none;"/>
+                <button class="rply-btn" data-act="replyDoubt" data-id="${esc(d.id)}">✅</button>
+                <button class="del-btn" data-act="delDoubt" data-id="${esc(d.id)}">🗑</button>
               </div>
             </div>`).join('')
         : '<div class="empty"><div class="ei">✅</div><p>सभी doubts answer हो गए!</p></div>';
@@ -1222,6 +1224,16 @@ function delDoubt(id){
     .then(()=>{ showToast('🗑 Delete हो गया'); renderADoubts(); })
     .catch(e=>showToast('❌ Error: '+e.message));
 }
+// ── Safe click handler: doc ID kabhi inline JS/HTML me nahi jaata — data-id attribute se aata hai ──
+(function(){
+  const ACT = { delPYQ, delContent, delQuiz, replyDoubt, delDoubt, editOffer, toggleOffer, delOffer };
+  document.addEventListener('click', function(e){
+    const b = e.target && e.target.closest ? e.target.closest('[data-act]') : null;
+    if(!b) return;
+    const fn = ACT[b.getAttribute('data-act')];
+    if(typeof fn === 'function') fn(b.getAttribute('data-id'));
+  });
+})();
 </script>
 </body>
 </html>

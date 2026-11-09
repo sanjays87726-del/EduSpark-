@@ -35,7 +35,8 @@ jobs:
         run: |
           mkdir -p _site
           cp *.html _site/
-          cp CNAME .nojekyll ads.txt robots.txt sitemap.xml llm.txt BingSiteAuth.xml manifest.json sw.js icon-192.png icon-512.png icon-maskable-512.png _site/
+          cp CNAME .nojekyll ads.txt robots.txt sitemap.xml llm.txt BingSiteAuth.xml manifest.json sw.js icon-192.png icon-512.png icon-maskable-512.png badge-96.png favicon.ico _site/
+          cp -r screenshots _site/   # manifest ke screenshots (pehle ye copy nahi hote the -> 404)
           test -d .well-known && cp -r .well-known _site/ || true
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

@@ -27,6 +27,7 @@ service cloud.firestore {
     match /doubts/{doc} {
       allow read: if isAdmin() || (request.auth != null && resource.data.uid == request.auth.uid);
       allow create: if request.auth != null
+        && doc.matches('[A-Za-z0-9]{20}')   // app .add() se banti hai (auto-ID); apni marzi ki ID se admin panel me XSS ho sakta tha
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly(['board','subject','topic','text','name','date','status','answer','uid','deviceId'])
         && request.resource.data.keys().hasAll(['text','uid'])
@@ -68,12 +69,18 @@ service cloud.firestore {
     function ownsStudentDoc(id) {
       return request.auth != null && request.auth.uid == id;
     }
+    // email: khali/null chalega; warna apne Google login wala hi (koi doosre ka email na likh sake)
+    function emailOk() {
+      return !('email' in request.resource.data) || request.resource.data.email == null
+        || request.resource.data.email.lower() == request.auth.token.email.lower();
+    }
     match /students/{id} {
       allow get: if isAdmin() || (request.auth != null && request.auth.uid == id);
       allow list: if isAdmin();
-      allow create: if photoOk() && request.resource.data.keys().hasOnly(studentKeys()) && studentSane(request.resource.data) && ownsStudentDoc(id);
+      allow create: if photoOk() && request.resource.data.keys().hasOnly(studentKeys()) && studentSane(request.resource.data) && emailOk() && ownsStudentDoc(id);
       // update me sirf wahi fields check hoti hain jo app badalta hai (server-side fields par asar nahi)
-      allow update: if photoOk() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(studentKeys()) && studentSane(request.resource.data) && ownsStudentDoc(id);
+      allow update: if photoOk() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(studentKeys()) && studentSane(request.resource.data)
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['email']) || emailOk()) && ownsStudentDoc(id);
       // Student apna record delete kar sakta hai (login wale: id == uid, bina-login: "dev_..." device id); baaki sirf admin
       allow delete: if isAdmin() || (request.auth != null && request.auth.uid == id);
     }
@@ -82,6 +89,7 @@ service cloud.firestore {
     match /usernames/{name} {
       allow get: if true;
       allow create: if request.auth != null
+        && (isAdmin() || !(name in ['admin','administrator','eduspark','eduspark_official','official','support','teacher','moderator','owner']))
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly(['uid','username','updatedAt'])
         && name.size() <= 600

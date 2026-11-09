@@ -13,6 +13,6 @@ crons = [
 ]
 
 [vars]
-GH_REPO = "REPLACE_OWNER/REPLACE_REPO"   # jaise "bhupesh/EduSpark"
+GH_REPO = "sanjays87726-del/EduSpark-"
 GH_REF = "main"
 # Secret (file me nahi): npx wrangler secret put GH_TOKEN
