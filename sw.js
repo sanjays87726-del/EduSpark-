@@ -1,6 +1,6 @@
 const CACHE_NAME = "eduspark-v21.5";
 
-const APP_SHELL = ["/", "/index.html", "/manifest.json", "/eduspark-icon-v2.png", "/eduspark-icon-512-v2.png", "/badge-96.png"];
+const APP_SHELL = ["/", "/index.html", "/manifest.json", "/icon-192.png ", "/icon-512.png ", "/badge-96.png"];
 
 // Firebase SDK + fonts: pehle ye offline me cache nahi hote the (opaque response ko
 // "ok" nahi mana jaata tha) — isi wajah se internet band hone par app khulta hi nahi tha.
@@ -83,7 +83,7 @@ self.addEventListener("push", event => {
   } catch (e) { url = "/"; }
   const opts = {
     body,
-    icon: "/eduspark-icon-v2.png",
+    icon: "/icon-192.png ",
     badge: "/badge-96.png",                      // Android status-bar icon: sirf safed shape + transparent (rangeen icon dene par khali square dikhta tha)
     vibrate: [200, 100, 200],
     tag: "fcm-" + (title + body).slice(0, 60),   // app khuli ho to duplicate notification na bane
