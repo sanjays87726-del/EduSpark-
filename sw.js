@@ -1,4 +1,4 @@
-const CACHE_NAME = "eduspark-v21.3";
+const CACHE_NAME = "eduspark-v21.4";
 
 const APP_SHELL = ["/", "/index.html", "/manifest.json", "/icon-192.png", "/icon-512.png", "/badge-96.png"];
 
