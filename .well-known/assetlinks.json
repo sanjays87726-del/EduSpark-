@@ -3,6 +3,6 @@
       "target": {
         "namespace": "android_app",
         "package_name": "live.eduspark.twa",
-        "sha256_cert_fingerprints": ["5E:14:83:17:BE:C1:97:66:AB:26:A7:EB:8E:91:F1:EB:FF:5E:34:4E:92:E4:C5:D3:7E:B0:C0:8C:53:39:FD:3B"]
+        "sha256_cert_fingerprints": ["8D:54:CF:49:D9:0D:C0:7D:D1:B8:32:8E:B9:60:5E:BB:EB:A5:53:B7:55:8B:AC:1E:A9:7A:0F:A3:23:6F:58:6E"]
       }
     }]
