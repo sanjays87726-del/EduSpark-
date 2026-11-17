@@ -607,9 +607,127 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
 .notif-item .ni-dot{position:absolute;top:12px;right:12px;width:8px;height:8px;border-radius:50%;background:var(--blue);}
 .tb-theme{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;cursor:pointer;flex-shrink:0;-webkit-tap-highlight-color:transparent;transition:transform .25s ease,background .2s;}
 .tb-theme:active{transform:rotate(25deg) scale(.92);background:rgba(255,255,255,.28);}
+
+/* ── 3-BAR MENU (hamburger) + DRAWER + DONATE SCREEN ── */
+.tb-menu{width:36px;height:34px;border-radius:10px;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.25);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;flex-shrink:0;padding:0;-webkit-tap-highlight-color:transparent;transition:transform .15s ease,background .2s;}
+.tb-menu span{display:block;width:16px;height:2px;border-radius:2px;background:#fff;}
+.tb-menu span:nth-child(2){width:12px;align-self:flex-start;margin-left:10px;}
+.tb-menu:active{transform:scale(.92);background:rgba(255,255,255,.28);}
+.tb-menu:focus-visible,.dr-link:focus-visible,.dr-donate:focus-visible,.dn-btn:focus-visible,.dn-way:focus-visible,.dn-chip:focus-visible,.dn-back:focus-visible{outline:3px solid var(--saffron);outline-offset:2px;}
+.es-drawer-scrim{position:fixed;inset:0;z-index:99995;background:rgba(8,14,30,.58);opacity:0;visibility:hidden;transition:opacity .25s ease,visibility 0s linear .25s;-webkit-tap-highlight-color:transparent;}
+.es-drawer-scrim.open{opacity:1;visibility:visible;transition-delay:0s;}
+.es-drawer{position:fixed;top:0;left:0;bottom:0;z-index:99996;width:min(86vw,330px);background:var(--white);display:flex;flex-direction:column;transform:translateX(-102%);visibility:hidden;transition:transform .28s cubic-bezier(.2,.8,.2,1),visibility 0s linear .28s;box-shadow:6px 0 30px rgba(0,0,0,.35);}
+.es-drawer.open{transform:none;visibility:visible;transition-delay:0s;}
+.es-drawer:focus,.dn-overlay:focus{outline:none;}
+.dr-x:focus-visible{outline:2px solid var(--saffron);outline-offset:2px;}
+.dr-head{position:relative;background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;padding:calc(20px + env(safe-area-inset-top,0px)) 18px 16px;flex-shrink:0;}
+.dr-brand{font-size:21px;font-weight:800;letter-spacing:.2px;}
+.dr-brand span{color:var(--saffron);}
+.dr-tag{font-size:11px;opacity:.82;margin-top:3px;font-weight:500;}
+.dr-x{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:12px;width:34px;height:34px;border-radius:50%;border:none;background:rgba(255,255,255,.16);color:#fff;font-size:15px;cursor:pointer;font-family:inherit;}
+.dr-body{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:14px 12px 8px;}
+.dr-donate{width:100%;display:flex;align-items:center;gap:12px;text-align:left;border:none;cursor:pointer;font-family:inherit;background:linear-gradient(120deg,#F59E0B,#F97316);color:#2A1500;border-radius:14px;padding:13px 14px;box-shadow:0 6px 18px rgba(245,158,11,.35);margin-bottom:6px;}
+.dr-donate .dd-ic{font-size:26px;line-height:1;animation:dnBeat 1.8s ease-in-out infinite;}
+.dr-donate .dd-t{display:block;font-size:14px;font-weight:800;}
+.dr-donate .dd-s{display:block;font-size:11px;font-weight:600;opacity:.82;margin-top:1px;line-height:1.35;}
+.dr-donate .dd-go{margin-left:auto;font-size:18px;font-weight:800;}
+.dr-sec{font-size:10.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:var(--g400);padding:16px 8px 6px;}
+.dr-link{display:flex;align-items:center;gap:12px;padding:11px 10px;border-radius:12px;color:var(--g800);text-decoration:none;font-size:13.5px;font-weight:600;-webkit-tap-highlight-color:transparent;}
+.dr-link .dl-ic{width:34px;height:34px;border-radius:10px;background:var(--g100);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.dr-link small{display:block;font-size:10.5px;font-weight:500;color:var(--g600);margin-top:1px;}
+.dr-link:active,.dr-link:hover{background:var(--g100);}
+.dr-mini{display:flex;flex-wrap:wrap;gap:4px 14px;padding:10px 10px 4px;}
+.dr-mini a{font-size:11px;color:var(--g600);text-decoration:underline;}
+.dr-foot{flex-shrink:0;text-align:center;font-size:10.5px;color:var(--g400);padding:10px 12px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--g200);}
+@keyframes dnBeat{0%,100%{transform:scale(1)}14%{transform:scale(1.18)}28%{transform:scale(1)}42%{transform:scale(1.12)}70%{transform:scale(1)}}
+@keyframes dnUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+.dn-overlay{display:none;position:fixed;inset:0;z-index:99998;background:var(--g50);flex-direction:column;}
+.dn-overlay.open{display:flex;}
+.dn-bar{display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top,0px)) 14px 10px;border-bottom:1px solid var(--g200);background:var(--white);flex-shrink:0;}
+.dn-back{border:none;background:var(--g100);color:var(--g800);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+.dn-bar-t{font-size:14px;font-weight:700;color:var(--g800);}
+.dn-scroll{flex:1;overflow-y:auto;overscroll-behavior:contain;padding-bottom:calc(96px + env(safe-area-inset-bottom,0px));scroll-behavior:smooth;}
+.dn-wrap{max-width:560px;margin:0 auto;padding:0 14px;}
+.dn-hero{background:linear-gradient(160deg,var(--navy) 0%,var(--navy2) 70%,#2a4f9a 100%);color:#fff;text-align:center;padding:30px 22px 34px;position:relative;overflow:hidden;}
+.dn-hero::before,.dn-hero::after{content:'';position:absolute;border-radius:50%;pointer-events:none;}
+.dn-hero::before{width:200px;height:200px;right:-70px;top:-70px;background:rgba(245,158,11,.14);}
+.dn-hero::after{width:150px;height:150px;left:-60px;bottom:-60px;background:rgba(59,130,246,.18);}
+.dn-heart{font-size:52px;line-height:1;display:inline-block;animation:dnBeat 1.8s ease-in-out infinite;filter:drop-shadow(0 6px 14px rgba(245,158,11,.45));position:relative;}
+.dn-hero h2{font-size:23px;line-height:1.4;font-weight:800;margin:14px 0 10px;position:relative;}
+.dn-hero h2 span{color:var(--saffron);}
+.dn-hero p{font-size:13.5px;line-height:1.75;opacity:.92;position:relative;max-width:420px;margin:0 auto;}
+.dn-card{background:var(--white);border:1px solid var(--g200);border-radius:var(--r);box-shadow:var(--shsm);padding:18px 16px;margin-top:14px;animation:dnUp .5s ease both;}
+.dn-card h3{font-size:15px;font-weight:800;color:var(--ink);margin-bottom:8px;line-height:1.45;}
+.dn-card p{font-size:13px;line-height:1.8;color:var(--g600);margin-bottom:10px;}
+.dn-card p:last-child{margin-bottom:0;}
+.dn-card b{color:var(--ink);}
+.dn-first{margin-top:-18px;position:relative;}
+.dn-costs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0 12px;}
+.dn-cost{display:flex;align-items:center;gap:9px;background:var(--g100);border-radius:12px;padding:10px;font-size:12px;font-weight:600;color:var(--g800);line-height:1.35;}
+.dn-cost i{font-style:normal;font-size:19px;}
+.dn-ways{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;}
+.dn-way{display:block;text-align:left;text-decoration:none;border:1.5px solid var(--g200);background:var(--g50);border-radius:14px;padding:13px 12px;cursor:pointer;font-family:inherit;color:inherit;-webkit-tap-highlight-color:transparent;transition:transform .15s,border-color .2s,box-shadow .2s;width:100%;}
+.dn-way:active{transform:scale(.97);}
+.dn-way:hover{border-color:var(--saffron);box-shadow:0 4px 14px rgba(245,158,11,.18);}
+.dn-way .w-ic{font-size:25px;line-height:1;display:block;margin-bottom:6px;}
+.dn-way .w-t{display:block;font-size:13px;font-weight:800;color:var(--ink);}
+.dn-way .w-s{display:block;font-size:11px;line-height:1.45;color:var(--g600);margin-top:2px;font-weight:500;}
+.dn-way.main{grid-column:1/-1;background:linear-gradient(120deg,rgba(245,158,11,.16),rgba(249,115,22,.12));border-color:rgba(245,158,11,.55);}
+.dn-note{font-size:11.5px;line-height:1.65;color:var(--g600);background:var(--g100);border-radius:10px;padding:10px 12px;margin-top:12px;}
+.dn-note div+div{margin-top:7px;}
+.dn-mob{display:none;}
+.dn-overlay.is-mobile .dn-mob{display:block;}
+.dn-chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 14px;}
+.dn-chip{border:1.5px solid var(--g200);background:var(--g50);color:var(--g800);border-radius:99px;padding:9px 16px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;min-height:40px;-webkit-tap-highlight-color:transparent;transition:all .15s;}
+.dn-chip[aria-pressed="true"]{background:var(--saffron);border-color:var(--saffron);color:#2A1500;transform:scale(1.04);box-shadow:0 4px 12px rgba(245,158,11,.4);}
+.dn-chip.free{font-size:12px;}
+.dn-btn{display:flex;align-items:center;justify-content:center;text-align:center;gap:8px;width:100%;min-height:48px;border-radius:13px;border:none;padding:12px 16px;font-family:inherit;font-size:14px;font-weight:800;text-decoration:none;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.dn-btn:active{transform:scale(.98);}
+.dn-btn-main{background:linear-gradient(120deg,#F59E0B,#F97316);color:#2A1500;box-shadow:0 8px 20px rgba(245,158,11,.38);}
+.dn-btn-wa{background:#25D366;color:#06371b;}
+.dn-btn-soft{background:var(--g100);color:var(--g800);border:1px solid var(--g200);font-size:12.5px;min-height:44px;}
+.dn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;}
+.dn-or{display:flex;align-items:center;gap:10px;color:var(--g400);font-size:11px;font-weight:700;margin:16px 0 12px;}
+.dn-or::before,.dn-or::after{content:'';flex:1;height:1px;background:var(--g200);}
+.dn-qr{background:#fff;border-radius:16px;padding:10px;max-width:290px;margin:0 auto;box-shadow:0 6px 22px rgba(15,27,53,.16);border:1px solid #E2E8F0;}
+.dn-qr img{display:block;width:100%;height:auto;border-radius:8px;background:#fff;}
+.dn-qr-cap{text-align:center;font-size:12px;color:var(--g600);margin-top:10px;line-height:1.6;}
+.dn-qr-cap b{color:var(--ink);}
+.dn-upi{display:none;}
+.dn-upi.on{display:block;}
+.dn-thanks{text-align:center;background:linear-gradient(160deg,var(--navy),var(--navy2));border-color:transparent;}
+.dn-thanks p{color:rgba(255,255,255,.9);}
+.dn-thanks b{color:#fff;}
+.dn-sign{font-size:13.5px;line-height:1.8;color:#fff;margin-top:14px;}
+.dn-sign span{color:var(--saffron);font-weight:800;}
+.dn-sticky{position:absolute;left:0;right:0;bottom:0;padding:10px 14px calc(12px + env(safe-area-inset-bottom,0px));background:linear-gradient(to top,var(--g50) 62%,rgba(0,0,0,0));transform:translateY(120%);transition:transform .3s ease;pointer-events:none;}
+.dn-sticky.show{transform:none;pointer-events:auto;}
+.dn-sticky .dn-btn{max-width:532px;margin:0 auto;}
+@media (max-width:380px){
+  .topbar{padding-left:12px;padding-right:12px;}
+  .tb-left{gap:8px;}
+  .tb-menu{width:32px;height:32px;}
+  .tb-right{gap:6px !important;}
+  .board-pill{max-width:86px !important;}
+  .dn-hero h2{font-size:21px;}
+  .dn-costs,.dn-ways{gap:7px;}
+}
+@media (max-width:340px){
+  .tb-left{gap:6px;}
+  .tb-brand{font-size:14px;}
+  .board-pill{max-width:54px !important;padding:5px 7px !important;}
+}
+@media (prefers-reduced-motion:reduce){
+  .dn-heart,.dr-donate .dd-ic{animation:none;}
+  .dn-card{animation:none;}
+  .es-drawer,.es-drawer-scrim,.dn-sticky{transition:none;}
+  .dn-scroll{scroll-behavior:auto;}
+}
+
 /* Chhoti screen par topbar ke items aapas me overlap na karein */
 @media (max-width:380px){
-  .tb-left>span:first-child{display:none;}
+  .tb-left>.tb-logo{display:none;}
   .tb-brand{font-size:16px;}
   .board-pill{font-size:10px !important;padding:5px 9px !important;max-width:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .tb-bell,.tb-avatar,.tb-theme{width:32px;height:32px;}
@@ -749,6 +867,137 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
   <iframe id="legalFrame" title="EduSpark" style="flex:1;border:0;width:100%;background:var(--white);" onload="if(window.legalFrameLoaded)legalFrameLoaded()"></iframe>
 </div>
 
+<!-- 3-BAR MENU: guides + About + Contact + Donate -->
+<div class="es-drawer-scrim" id="esDrawerScrim" onclick="closeDrawer()"></div>
+<aside class="es-drawer" id="esDrawer" tabindex="-1" role="dialog" aria-modal="true" aria-label="EduSpark मेन्यू" aria-hidden="true">
+  <div class="dr-head">
+    <div class="dr-brand">📚 Edu<span>Spark</span></div>
+    <div class="dr-tag">Learn Smarter. Practice Better. Achieve More.</div>
+    <button class="dr-x" type="button" id="drClose" onclick="closeDrawer()" aria-label="मेन्यू बंद करें">✕</button>
+  </div>
+  <nav class="dr-body" aria-label="EduSpark मेन्यू">
+    <button class="dr-donate" type="button" onclick="drawerDonate()">
+      <span class="dd-ic" aria-hidden="true">💛</span>
+      <span><span class="dd-t">EduSpark को सपोर्ट करें</span><span class="dd-s">Money · PYQ · Paper · Test — आपका साथ, किसी का सपना</span></span>
+      <span class="dd-go" aria-hidden="true">›</span>
+    </button>
+
+    <div class="dr-sec">📘 बोर्ड एग्ज़ाम गाइड</div>
+    <a class="dr-link" href="/cbse-class-10.html" onclick="return drawerOpen('/cbse-class-10.html','CBSE Class 10 Guide')"><span class="dl-ic">📗</span><span>CBSE Class 10<small>Study plan, PYQ और revision</small></span></a>
+    <a class="dr-link" href="/cbse-class-12.html" onclick="return drawerOpen('/cbse-class-12.html','CBSE Class 12 Guide')"><span class="dl-ic">📘</span><span>CBSE Class 12<small>Study plan, PYQ और revision</small></span></a>
+    <a class="dr-link" href="/bser-class-10.html" onclick="return drawerOpen('/bser-class-10.html','BSER (RBSE) Class 10 Guide')"><span class="dl-ic">🏫</span><span>BSER (RBSE) Class 10<small>राजस्थान बोर्ड गाइड</small></span></a>
+    <a class="dr-link" href="/bser-class-12.html" onclick="return drawerOpen('/bser-class-12.html','BSER (RBSE) Class 12 Guide')"><span class="dl-ic">🎓</span><span>BSER (RBSE) Class 12<small>राजस्थान बोर्ड गाइड</small></span></a>
+
+    <div class="dr-sec">🏆 कॉम्पिटिशन एग्ज़ाम गाइड</div>
+    <a class="dr-link" href="/ssc-cgl.html" onclick="return drawerOpen('/ssc-cgl.html','SSC CGL Guide')"><span class="dl-ic">📋</span><span>SSC CGL<small>Preparation guide</small></span></a>
+    <a class="dr-link" href="/ssc-chsl.html" onclick="return drawerOpen('/ssc-chsl.html','SSC CHSL Guide')"><span class="dl-ic">📝</span><span>SSC CHSL<small>Preparation guide</small></span></a>
+    <a class="dr-link" href="/reet-bstc.html" onclick="return drawerOpen('/reet-bstc.html','REET &amp; BSTC Guide')"><span class="dl-ic">👩‍🏫</span><span>REET &amp; BSTC<small>Preparation guide</small></span></a>
+
+    <div class="dr-sec">💡 पढ़ाई का तरीका</div>
+    <a class="dr-link" href="/study-tips.html" onclick="return drawerOpen('/study-tips.html','Study Tips')"><span class="dl-ic">🧠</span><span>Study Tips<small>PYQ और Quiz से कैसे पढ़ें</small></span></a>
+
+    <div class="dr-sec">EduSpark</div>
+    <a class="dr-link" href="/about.html" onclick="return drawerOpen('/about.html','About Us')"><span class="dl-ic">ℹ️</span><span>About Us<small>हम कौन हैं और क्यों बनाया</small></span></a>
+    <a class="dr-link" href="/contact.html" onclick="return drawerOpen('/contact.html','Contact Us')"><span class="dl-ic">✉️</span><span>Contact Us<small>Email · WhatsApp · Instagram</small></span></a>
+    <div class="dr-mini">
+      <a href="/privacy.html" onclick="return drawerOpen('/privacy.html','Privacy Policy')">Privacy Policy</a>
+      <a href="/terms.html" onclick="return drawerOpen('/terms.html','Terms of Use')">Terms</a>
+      <a href="/disclaimer.html" onclick="return drawerOpen('/disclaimer.html','Disclaimer')">Disclaimer</a>
+    </div>
+  </nav>
+  <div class="dr-foot">Made with ❤️ in Rajasthan · eduspark.live</div>
+</aside>
+
+<!-- DONATE / SUPPORT SCREEN -->
+<div class="dn-overlay" id="donateOverlay" tabindex="-1" role="dialog" aria-modal="true" aria-label="EduSpark को सपोर्ट करें" aria-hidden="true">
+  <div class="dn-bar">
+    <button class="dn-back" type="button" id="dnBack" onclick="closeDonate()">← वापस</button>
+    <div class="dn-bar-t">💛 EduSpark को सपोर्ट करें</div>
+  </div>
+  <div class="dn-scroll" id="dnScroll">
+    <section class="dn-hero">
+      <div class="dn-heart" aria-hidden="true">💛</div>
+      <h2>एक छोटा-सा साथ,<br>किसी का <span>बड़ा सपना</span></h2>
+      <p>EduSpark उन बच्चों के लिए बना है जिनके सपने बड़े हैं — पर coaching की fees और महँगी किताबों के पैसे नहीं।</p>
+    </section>
+
+    <div class="dn-wrap">
+      <section class="dn-card dn-first">
+        <h3>ये app क्यों बना? 🌱</h3>
+        <p>कितने ही students रात-रात भर जागकर पढ़ते हैं — क्योंकि उनके पीछे माँ-बाप की उम्मीदें हैं और आँखों में अपना सपना। सपने तो सबके बराबर बड़े होते हैं, बस <b>मौके</b> बराबर नहीं मिलते।</p>
+        <p>EduSpark उसी फ़र्क को थोड़ा कम करने की कोशिश है: <b>Class 10, 12, SSC, REET, BSTC — PYQ, Quiz, Notes, सब कुछ FREE.</b></p>
+      </section>
+
+      <section class="dn-card">
+        <h3>पर "free" हमारे लिए free नहीं है 🙏</h3>
+        <p>आपको एक रुपया न देना पड़े, इसके पीछे हर महीने-साल का असली खर्च है:</p>
+        <div class="dn-costs">
+          <div class="dn-cost"><i>🌐</i>Domain<br>(eduspark.live)</div>
+          <div class="dn-cost"><i>☁️</i>Hosting &amp;<br>Server</div>
+          <div class="dn-cost"><i>🗄️</i>Database &amp;<br>Storage</div>
+          <div class="dn-cost"><i>🔔</i>Notifications</div>
+          <div class="dn-cost"><i>🛠️</i>Updates &amp;<br>नया content</div>
+          <div class="dn-cost"><i>⏳</i>रात-दिन की<br>मेहनत</div>
+        </div>
+        <p>अगर EduSpark ने आपकी पढ़ाई में ज़रा-सी भी मदद की है, तो इस सफ़र का हिस्सा बनिए। <b>आपकी हर मदद सीधे इसे सबके लिए free रखने में लगती है।</b></p>
+      </section>
+
+      <section class="dn-card">
+        <h3>आप कैसे साथ दे सकते हैं? 💪</h3>
+        <p style="margin-bottom:0">पैसे ही ज़रूरी नहीं — आपका content और आपका time भी उतना ही कीमती है।</p>
+        <div class="dn-ways">
+          <button class="dn-way main" type="button" onclick="dnGoMoney()"><span class="w-ic">💰</span><span class="w-t">पैसों से सपोर्ट (UPI)</span><span class="w-s">₹11 भी बहुत मायने रखता है — hosting &amp; domain का खर्च निकलता है</span></button>
+          <a class="dn-way" data-wa="pyq" target="_blank" rel="noopener"><span class="w-ic">📄</span><span class="w-t">PYQ दें</span><span class="w-s">पुराने साल के प्रश्न-पत्र</span></a>
+          <a class="dn-way" data-wa="paper" target="_blank" rel="noopener"><span class="w-ic">📝</span><span class="w-t">Paper / Notes दें</span><span class="w-s">Sample / Model paper, notes</span></a>
+          <a class="dn-way" data-wa="test" target="_blank" rel="noopener"><span class="w-ic">🧪</span><span class="w-t">Test दें</span><span class="w-s">Mock test या chapter-wise quiz</span></a>
+          <button class="dn-way" type="button" onclick="dnShare()"><span class="w-ic">📣</span><span class="w-t">Share करें</span><span class="w-s">एक दोस्त को बताइए — free है!</span></button>
+          <a class="dn-way" data-wa="other" target="_blank" rel="noopener" style="grid-column:1/-1"><span class="w-ic">🤝</span><span class="w-t">और कुछ — अपना तरीका बताइए</span><span class="w-s">Design, ideas, पढ़ाने का time, content check... कुछ भी</span></a>
+        </div>
+        <div class="dn-note">📲 PYQ / Paper / Test वाले बटन दबाते ही हमारे WhatsApp पर message पहले से लिखा हुआ खुलेगा — बस file भेज दीजिए।<br>✅ सिर्फ़ वही content भेजिए जो आपका अपना हो या जिसे share करने की आपको अनुमति हो।</div>
+      </section>
+
+      <section class="dn-card" id="dnMoney">
+        <h3>💰 पैसों से साथ दीजिए</h3>
+        <p style="margin-bottom:0">जितना दिल करे उतना — बिल्कुल अपनी मर्ज़ी से। छोटी-छोटी बूँदों से ही दरिया बनता है 💧</p>
+        <div class="dn-chips" role="group" aria-label="सपोर्ट की राशि चुनें" id="dnChips">
+          <button class="dn-chip" type="button" data-amt="11" aria-pressed="false">₹11</button>
+          <button class="dn-chip" type="button" data-amt="21" aria-pressed="false">₹21</button>
+          <button class="dn-chip" type="button" data-amt="51" aria-pressed="true">₹51</button>
+          <button class="dn-chip" type="button" data-amt="101" aria-pressed="false">₹101</button>
+          <button class="dn-chip" type="button" data-amt="251" aria-pressed="false">₹251</button>
+          <button class="dn-chip free" type="button" data-amt="0" aria-pressed="false">अपनी मर्ज़ी</button>
+        </div>
+        <div class="dn-upi" id="dnUpiBox">
+          <a class="dn-btn dn-btn-main" id="dnUpiBtn" href="#" onclick="dnUpiClick()">📲 UPI app से ₹51 दें</a>
+          <div class="dn-or">या QR से</div>
+        </div>
+        <div class="dn-qr"><img src="/donate-qr.png" width="660" height="720" alt="EduSpark को सपोर्ट करने के लिए UPI QR कोड — BHUPESH KUMAR" loading="lazy" decoding="async"></div>
+        <div class="dn-qr-cap">किसी भी UPI app (PhonePe, Google Pay, Paytm, BHIM…) से स्कैन करें।<br>Payment के समय नाम दिखेगा: <b>BHUPESH KUMAR</b></div>
+        <div class="dn-row">
+          <a class="dn-btn dn-btn-soft" href="/donate-qr.png" download="EduSpark-UPI-QR.png">⬇️ QR सेव करें</a>
+          <button class="dn-btn dn-btn-soft" type="button" onclick="dnCopyUpi()">📋 UPI ID कॉपी</button>
+        </div>
+        <div class="dn-note">
+          <div class="dn-mob">💡 एक ही फ़ोन पर अपनी screen स्कैन नहीं होती — ऊपर वाला <b>UPI app बटन</b> दबाइए, या QR सेव करके अपने UPI app में gallery से स्कैन कीजिए।</div>
+          <div>🔒 UPI PIN या OTP किसी को कभी न बताइए। Payment आपके अपने UPI app से होता है — EduSpark आपके bank / UPI की जानकारी store नहीं करता।</div>
+          <div>👨‍👩‍👦 18 साल से कम हैं? तो पेमेंट सिर्फ़ parents की permission से कीजिए। पढ़ाई पहले, सपोर्ट बाद में।</div>
+          <div>🤍 सपोर्ट पूरी तरह optional है — इससे कोई extra feature नहीं मिलता, और न करने पर भी app आपके लिए पहले जैसा ही है।</div>
+        </div>
+        <a class="dn-btn dn-btn-wa" data-wa="thanks" target="_blank" rel="noopener" style="margin-top:12px">💬 सपोर्ट कर दिया? WhatsApp पर "धन्यवाद" भेजिए</a>
+      </section>
+
+      <section class="dn-card dn-thanks">
+        <p><b>पैसे अभी नहीं हैं? कोई बात नहीं 🤗</b></p>
+        <p>आपकी एक दुआ, एक share, किसी दोस्त से बस इतना कहना — "EduSpark use कर, free है" — ये भी हमारे लिए उतना ही कीमती है।</p>
+        <button class="dn-btn dn-btn-main" type="button" onclick="dnShare()" style="margin-top:6px">📣 दोस्तों को भेजें</button>
+        <div class="dn-sign">आपके साथ से ही ये सफ़र चलता है।<br><span>दिल से शुक्रिया 🙏</span><br>— Team EduSpark</div>
+      </section>
+      <div style="height:14px"></div>
+    </div>
+  </div>
+  <div class="dn-sticky" id="dnSticky"><button class="dn-btn dn-btn-main" type="button" onclick="dnGoMoney()">💛 अभी साथ दें</button></div>
+</div>
+
 <!-- GOOGLE SIGN-IN SHEET (app ke andar hi; Google ka official button + ek consent checkbox) -->
 <div id="gsSheet" style="display:none;position:fixed;inset:0;z-index:99990;background:rgba(15,27,53,.6);align-items:flex-end;justify-content:center;" onclick="if(event.target===this)closeGoogleSheet()">
   <div class="gs-card" role="dialog" aria-modal="true" aria-label="Google Sign In">
@@ -793,10 +1042,11 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
 <div id="app">
   <div class="topbar">
     <div class="tb-left">
-      <span style="font-size:22px;">📚</span>
+      <button class="tb-menu" id="tbMenu" type="button" onclick="openDrawer()" aria-label="मेन्यू खोलें" aria-haspopup="dialog" aria-expanded="false"><span></span><span></span><span></span></button>
+      <span class="tb-logo" style="font-size:22px;">📚</span>
       <span class="tb-brand">Edu<span>Spark</span></span>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;">
+    <div class="tb-right" style="display:flex;align-items:center;gap:8px;">
       <div class="board-pill" id="boardPill" onclick="openCategorySel()">
 📚 Select Category
 </div>
@@ -1802,6 +2052,148 @@ function updateUsernameLockUI(){
   }
 }
 
+// ══════════════════════════════════════════
+// 3-BAR MENU (DRAWER) + DONATE / SUPPORT SCREEN
+// ══════════════════════════════════════════
+// Yahin se number / UPI badlo (WhatsApp: country code ke saath, bina + ke). UPI ID wahi hai jo QR (donate-qr.png) me hai.
+var ES_DONATE = {
+  wa: '918094120884',
+  upi: { pa: '8094120884-2@ibl', pn: 'BHUPESH KUMAR' },
+  site: 'https://eduspark.live',
+  msgs: {
+    thanks: 'नमस्ते EduSpark टीम 🙏\nमैंने EduSpark को सपोर्ट किया है — आपका काम बहुत बढ़िया है, लगे रहिए! 💛\n\nमेरा नाम: ',
+    pyq:    'नमस्ते EduSpark टीम 🙏\nमैं students की मदद के लिए *PYQ (पुराने साल के प्रश्न-पत्र)* देना चाहता/चाहती हूँ।\n\nExam / Board: \nClass / Year: \nSubject: \n\nFile / photo मैं इसी chat में भेज रहा/रही हूँ। इसे share करने का मुझे अधिकार है ✅',
+    paper:  'नमस्ते EduSpark टीम 🙏\nमैं *Paper / Notes* (Sample paper, Model paper, Notes) देना चाहता/चाहती हूँ।\n\nExam / Board: \nClass: \nSubject / Chapter: \n\nFile / photo मैं इसी chat में भेज रहा/रही हूँ। इसे share करने का मुझे अधिकार है ✅',
+    test:   'नमस्ते EduSpark टीम 🙏\nमैं *Test / Quiz* (Mock test या chapter-wise quiz) देना चाहता/चाहती हूँ।\n\nExam / Board: \nSubject / Chapter: \nQuestions की संख्या: \n\nFile मैं इसी chat में भेज रहा/रही हूँ। इसे share करने का मुझे अधिकार है ✅',
+    other:  'नमस्ते EduSpark टीम 🙏\nमैं EduSpark की किसी और तरह से मदद करना चाहता/चाहती हूँ।\n\nमैं ये कर सकता/सकती हूँ: '
+  },
+  shareText: 'EduSpark — Class 10, 12, SSC, REET, BSTC के लिए PYQ, Quiz और Notes, सब FREE! 📚💛'
+};
+var _dnAmt = 51, _dnObs = null, _dnInit = false, _dnPrevFocus = null, _drPrevFocus = null;
+function esWaUrl(kind){ return 'https://wa.me/' + ES_DONATE.wa + '?text=' + encodeURIComponent(ES_DONATE.msgs[kind] || ES_DONATE.msgs.other); }
+function esUpiUrl(amt){
+  var u = ES_DONATE.upi;
+  var q = 'pa=' + u.pa + '&pn=' + encodeURIComponent(u.pn) + '&cu=INR&tn=' + encodeURIComponent('EduSpark Support');
+  var a = parseInt(amt, 10);
+  if(a > 0 && a <= 100000) q += '&am=' + a + '.00';
+  return 'upi://pay?' + q;
+}
+function _esMobile(){ return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || ''); }
+
+// ── Drawer ──
+function isDrawerOpen(){ var d = document.getElementById('esDrawer'); return !!d && d.classList.contains('open'); }
+function openDrawer(){
+  var d = document.getElementById('esDrawer'), sc = document.getElementById('esDrawerScrim'), b = document.getElementById('tbMenu');
+  if(!d || !sc) return;
+  _drPrevFocus = document.activeElement;
+  d.classList.add('open'); sc.classList.add('open');
+  d.setAttribute('aria-hidden', 'false'); if(b) b.setAttribute('aria-expanded', 'true');
+  setTimeout(function(){ try{ d.focus({preventScroll:true}); }catch(e){} }, 60);
+}
+function closeDrawer(){
+  var d = document.getElementById('esDrawer'), sc = document.getElementById('esDrawerScrim'), b = document.getElementById('tbMenu');
+  if(!d || !sc || !d.classList.contains('open')) return;
+  d.classList.remove('open'); sc.classList.remove('open');
+  d.setAttribute('aria-hidden', 'true'); if(b) b.setAttribute('aria-expanded', 'false');
+  var f = _drPrevFocus || b; _drPrevFocus = null;
+  if(f && f.focus) try{ f.focus({preventScroll:true}); }catch(e){}
+}
+// Guide / About / Contact: menu band karo, phir app ke andar (iframe) kholo — wapas aane par app dobara load nahi hota
+function drawerOpen(url, title){
+  closeDrawer();
+  return openLegal(url, title);
+}
+function drawerDonate(){ closeDrawer(); openDonate(); }
+
+// ── Donate screen ──
+function isDonateOpen(){ var o = document.getElementById('donateOverlay'); return !!o && o.classList.contains('open'); }
+function _dnInitOnce(){
+  if(_dnInit) return; _dnInit = true;
+  // WhatsApp links pehle se likhe message ke saath
+  document.querySelectorAll('#donateOverlay [data-wa]').forEach(function(a){ a.setAttribute('href', esWaUrl(a.getAttribute('data-wa'))); });
+  // Amount chips
+  document.querySelectorAll('#dnChips .dn-chip').forEach(function(c){
+    c.addEventListener('click', function(){ _dnSetAmt(parseInt(c.getAttribute('data-amt'), 10) || 0); });
+  });
+  _dnSetAmt(_dnAmt);
+  // UPI button sirf phone par (desktop par QR hi kaafi hai)
+  var box = document.getElementById('dnUpiBox'), ov = document.getElementById('donateOverlay');
+  if(_esMobile()){ if(box) box.classList.add('on'); if(ov) ov.classList.add('is-mobile'); }
+  // Sticky "अभी साथ दें" button: jab tak paise wala section screen par na ho
+  var sc = document.getElementById('dnScroll'), money = document.getElementById('dnMoney'), st = document.getElementById('dnSticky');
+  if(sc && money && st && 'IntersectionObserver' in window){
+    _dnObs = new IntersectionObserver(function(es){
+      var e = es[0]; var scrolled = sc.scrollTop > 240;
+      st.classList.toggle('show', !e.isIntersecting && scrolled);
+    }, { root: sc, threshold: 0.12 });
+    _dnObs.observe(money);
+    sc.addEventListener('scroll', function(){
+      var r = money.getBoundingClientRect(), pr = sc.getBoundingClientRect();
+      var visible = r.top < pr.bottom - 80 && r.bottom > pr.top + 80;
+      st.classList.toggle('show', !visible && sc.scrollTop > 240);
+    }, { passive: true });
+  }
+}
+function _dnSetAmt(a){
+  _dnAmt = a;
+  document.querySelectorAll('#dnChips .dn-chip').forEach(function(c){
+    c.setAttribute('aria-pressed', (parseInt(c.getAttribute('data-amt'), 10) || 0) === a ? 'true' : 'false');
+  });
+  var btn = document.getElementById('dnUpiBtn');
+  if(btn){
+    btn.setAttribute('href', esUpiUrl(a));
+    btn.textContent = a > 0 ? '📲 UPI app से ₹' + a + ' दें' : '📲 UPI app से अपनी राशि भरें';
+  }
+}
+function openDonate(){
+  var o = document.getElementById('donateOverlay'); if(!o) return;
+  _dnInitOnce();
+  _dnPrevFocus = document.activeElement;
+  o.classList.add('open'); o.setAttribute('aria-hidden', 'false');
+  var sc = document.getElementById('dnScroll'); if(sc){ sc.style.scrollBehavior = 'auto'; sc.scrollTop = 0; setTimeout(function(){ sc.style.scrollBehavior = ''; }, 50); }
+  var st = document.getElementById('dnSticky'); if(st) st.classList.remove('show');
+  setTimeout(function(){ try{ o.focus({preventScroll:true}); }catch(e){} }, 60);
+}
+function closeDonate(){
+  var o = document.getElementById('donateOverlay'); if(!o || !o.classList.contains('open')) return;
+  o.classList.remove('open'); o.setAttribute('aria-hidden', 'true');
+  var f = _dnPrevFocus; _dnPrevFocus = null;
+  if(f && f.focus && document.contains(f)) try{ f.focus({preventScroll:true}); }catch(e){}
+}
+function dnGoMoney(){
+  var m = document.getElementById('dnMoney'); if(!m) return;
+  try{ m.scrollIntoView({ behavior: 'smooth', block: 'start' }); }catch(e){ m.scrollIntoView(); }
+}
+function dnUpiClick(){
+  // UPI app na khule (iPhone / koi UPI app nahi) to 2 sec baad madad ka sandesh
+  var t = setTimeout(function(){
+    if(!document.hidden) showToast('UPI app नहीं खुला? QR सेव करके स्कैन करें या UPI ID कॉपी करें');
+  }, 2200);
+  var clear = function(){ if(document.hidden){ clearTimeout(t); document.removeEventListener('visibilitychange', clear); } };
+  document.addEventListener('visibilitychange', clear);
+}
+function dnCopyUpi(){
+  var id = ES_DONATE.upi.pa;
+  var done = function(){ showToast('UPI ID कॉपी हो गई ✅'); };
+  var fallback = function(){
+    try{
+      var ta = document.createElement('textarea'); ta.value = id; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); done();
+    }catch(e){ showToast('UPI ID: ' + id); }
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(id).then(done, fallback); } else fallback();
+}
+function dnShare(){
+  var text = ES_DONATE.shareText, url = ES_DONATE.site;
+  if(navigator.share){ navigator.share({ title: 'EduSpark', text: text, url: url }).catch(function(){}); return; }
+  var w = 'https://wa.me/?text=' + encodeURIComponent(text + '\n' + url);
+  var a = document.createElement('a'); a.href = w; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+document.addEventListener('keydown', function(e){
+  if(e.key !== 'Escape') return;
+  if(isDonateOpen()) closeDonate(); else if(isDrawerOpen()) closeDrawer();
+});
+
 let profileReturnPageId = 'pageHome';
 // ── Legal/info pages app ke andar kholo (iframe) ──
 function openLegal(url, title){
@@ -2273,6 +2665,8 @@ document.addEventListener('visibilitychange', function(){ if(!document.hidden &&
 function performBack(){
   const legalO = document.getElementById('legalOverlay');
   if(legalO && legalO.style.display==='flex'){ closeLegal(); return true; }
+  if(isDonateOpen()){ closeDonate(); return true; }       // Donate screen / 3-bar menu bhi back se band hon
+  if(isDrawerOpen()){ closeDrawer(); return true; }
   const offerP = document.getElementById('offerPopup');
   if(offerP){ offerP.remove(); return true; }
   const gsS = document.getElementById('gsSheet');
@@ -4065,7 +4459,7 @@ function isAppBusy(){
   if(document.getElementById('thoughtModal').classList.contains('show')) return true;
   if(document.getElementById('videoModal') && document.getElementById('videoModal').classList.contains('show')) return true;
   if(document.getElementById('boardSel').classList.contains('show')) return true;
-  if(vis('privacyModal') || vis('quizExitModal') || vis('consentSheet') || vis('legalOverlay')) return true;
+  if(vis('privacyModal') || vis('quizExitModal') || vis('consentSheet') || vis('legalOverlay') || isDonateOpen() || isDrawerOpen()) return true;
   if(document.body.classList.contains('quiz-mode')) return true;
   if(document.getElementById('installToast')) return true; // Install banner hat jaaye tab dikhao, dono overlap na hon
   return false;

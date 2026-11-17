@@ -1,6 +1,6 @@
-const CACHE_NAME = "eduspark-v21.6";
+const CACHE_NAME = "eduspark-v21.7";
 
-const APP_SHELL = ["/", "/index.html", "/manifest.json", "/icon-192.png", "/icon-512.png", "/badge-96.png"];
+const APP_SHELL = ["/", "/index.html", "/manifest.json", "/icon-192.png", "/icon-512.png", "/badge-96.png", "/donate-qr.png"];
 
 // Firebase SDK + fonts: pehle ye offline me cache nahi hote the (opaque response ko
 // "ok" nahi mana jaata tha) — isi wajah se internet band hone par app khulta hi nahi tha.
