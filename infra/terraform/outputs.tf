@@ -3,5 +3,5 @@ output "kv_namespace_id" {
 }
 
 output "worker_name" {
-  value = cloudflare_worker_script.ai.name
+  value = cloudflare_workers_script.ai.script_name
 }
