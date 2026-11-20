@@ -164,6 +164,57 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
 @media print{ body *{visibility:hidden;} #rpOut,#rpOut *{visibility:visible;} #rpOut{position:absolute;left:0;top:0;width:100%;} }
 #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--navy);color:#fff;padding:12px 20px;border-radius:99px;font-size:13px;font-weight:600;transition:.3s;z-index:99999;max-width:92vw;text-align:center;}
 #toast.show{transform:translateX(-50%) translateY(0);}
+
+/* Responsive admin polish — consistent cards, actions, forms and tables */
+*{box-sizing:border-box}
+html,body{max-width:100%;overflow-x:hidden}
+#adminApp,.shell,#adminMain,#adminMain>div[id^="aTab_"]{min-width:0;width:100%}
+#adminMain>div[id^="aTab_"]{max-width:100%}
+.mgmt-item{min-width:0;max-width:100%;flex-wrap:wrap;align-items:flex-start;gap:10px;padding:12px}
+.mgmt-item>div:first-child{flex:1 1 220px;min-width:0;overflow-wrap:anywhere;word-break:normal}
+.mgmt-nm,.mgmt-sb{max-width:100%;overflow-wrap:anywhere;word-break:normal;white-space:normal;line-height:1.5}
+.mgmt-item>div:last-child{display:flex;flex:0 1 auto;min-width:0;max-width:100%;flex-wrap:wrap;align-items:center;gap:6px}
+.mgmt-item button{margin:0;min-height:34px;white-space:nowrap}
+.af,.mdl,.cd,.hint,.tbl-wrap{min-width:0;max-width:100%}
+.af input,.af select,.af textarea,.mdl input,.mdl select,.mdl textarea,.toolbar input,.toolbar select{min-width:0;max-width:100%}
+.tbl-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl{min-width:560px}
+button,input,select,textarea{max-width:100%}
+@media(max-width:640px){
+  #adminApp{padding:8px 8px 36px}
+  .topbar{top:4px;padding:10px;gap:7px;border-radius:13px}
+  .tb-t{font-size:14px}
+  .role-chip{font-size:9px;padding:3px 7px}
+  .tb-btn,.logout-btn,.menu-btn{padding:8px 9px}
+  .shell{display:block}
+  #adminMain{width:100%;min-width:0}
+  #adminMain>div[id^="aTab_"]{width:100%;max-width:none}
+  .af{padding:12px;border-radius:12px}
+  .h2{font-size:15px;flex-wrap:wrap}
+  .cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .cd{padding:10px}
+  .toolbar{gap:7px}
+  .toolbar input,.toolbar select{flex:1 1 100%;width:100%}
+  .mgmt-item:not([style*="flex-direction:column"]){display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:12px}
+  .mgmt-item:not([style*="flex-direction:column"])>div:first-child{flex:1 1 auto;width:100%}
+  .mgmt-item:not([style*="flex-direction:column"])>div:last-child{width:100%;flex:1 1 auto;display:flex;flex-wrap:wrap;gap:7px}
+  .mgmt-item button{flex:1 1 auto;padding:8px 10px;font-size:12px}
+  .mgmt-item .pub-btn{margin-right:0}
+  .kv{grid-template-columns:minmax(84px,110px) minmax(0,1fr);overflow-wrap:anywhere}
+  .mrow{flex-wrap:wrap}
+  .mrow .mini{min-width:110px}
+  .mdl{padding:14px;max-height:90dvh}
+  .srow{min-width:0}
+  .tbl{font-size:11px}
+}
+@media(max-width:380px){
+  #adminApp{padding-left:6px;padding-right:6px}
+  .topbar{gap:5px;padding:8px}
+  .role-chip{display:none}
+  .cards{grid-template-columns:1fr 1fr}
+  .mgmt-item button{font-size:11px;padding:7px 8px}
+}
+
 </style>
 </head>
 <body>
