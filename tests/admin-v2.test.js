@@ -10,6 +10,14 @@ const block = admin.slice(admin.indexOf('// <pure-helpers>'), admin.indexOf('// 
 assert.ok(block.length > 500, 'pure-helpers block not found in ops-portal-7c91e4.html');
 const H = new Function(block + '\nreturn { ROLES, SEC_NAMES, TABS, SOON, MENU, canAccess, parseTarget, secOf, itemVisible, secLockState, buildCountBody, fsVal, istDayStart, csvCell, toCsv, validEmail, relTime, auditInfo, logCategory, verNum, SEC_BY_COLL };')();
 
+t('admin route is renamed and Worker verification fails closed', () => {
+  assert.ok(admin.includes("if(!r.ok || !j.ok){ clearGate(); showGate();"), 'entry token must be server-verified');
+  assert.ok(admin.includes("catch(e){ clearGate(); showGate();"), 'Worker outage must not open the panel');
+  const verify = admin.slice(admin.indexOf('async function verifySec'), admin.indexOf('function askSectionPassword'));
+  assert.ok(verify.includes('Verification unavailable: section locked rahega'));
+  assert.ok(verify.includes('saveSec(); return false;'));
+  assert.ok(!verify.includes('catch(e){ return true; }'), 'section verification must not fail open');
+});
 t('roles: Super Admin sees every tab; teacher/editor/notifier only their own; unknown role nothing', () => {
   for (const tab of Object.keys(H.TABS)) assert.ok(H.canAccess('super', tab), tab);
   assert.ok(H.canAccess('teacher', 'doubts') && H.canAccess('teacher', 'add') && H.canAccess('teacher', 'courses'));
