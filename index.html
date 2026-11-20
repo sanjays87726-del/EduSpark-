@@ -3054,14 +3054,17 @@ function loadSubjectContent(type){
 
   let items=allContent.filter(c=>c.board===curBoard&&(c.subject===curSubject||c.subject==='all'));
   if(type!=='all') items=items.filter(c=>c.type===type);
+  items.sort((x,y)=>{ const xo=x.sortOrder===null||x.sortOrder===undefined||x.sortOrder===''?NaN:Number(x.sortOrder), yo=y.sortOrder===null||y.sortOrder===undefined||y.sortOrder===''?NaN:Number(y.sortOrder); if(Number.isFinite(xo)&&Number.isFinite(yo)&&xo!==yo) return xo-yo; if(Number.isFinite(xo)!==Number.isFinite(yo)) return Number.isFinite(xo)?-1:1; return String(y.date||'').localeCompare(String(x.date||'')); });
   document.getElementById('subjCount').textContent=items.length+' items';
 
   const labels={all:'🗂 All',pdf:'📄 PDF',note:'🗒️ Notes',video:'🎥 Video',dpp:'📗 DPP',quiz:'🧩 Quiz'};
   document.getElementById('typeTabs').innerHTML=['all','pdf','note','video','dpp','quiz'].map(t=>
     `<div class="type-tab ${curType===t?'active':''}" onclick="loadSubjectContent('${t}')">${labels[t]}</div>`).join('');
 
+  const groups = [];
+  items.forEach(c=>{ const name=String(c.heading||'').trim() || 'Other Resources'; let g=groups.find(x=>x.name===name); if(!g){ g={name:name,items:[]}; groups.push(g); } g.items.push(c); });
   document.getElementById('subjContent').innerHTML=items.length
-    ? items.map(c=>cHTML(c)).join('')
+    ? groups.map(g=>'<div class="sec-t" style="padding:14px 0 8px;">📁 '+ES.sanitize(g.name)+'</div>'+g.items.map(c=>cHTML(c)).join('')).join('')
     : '<div class="empty"><div class="ei">📭</div><p>इस category में content नहीं है।</p></div>';
 }
 
@@ -3476,23 +3479,27 @@ function clearAllTimers(){
   ovTimerInt=secTimerInt=qStopInt=null;
 }
 
+function quizCategory(q){
+  const c=String(q.category||'').toLowerCase();
+  if(['practice','mock','chapter','subject','previous-year','daily'].includes(c)) return c;
+  return q.type==='mock'?'mock':'practice';
+}
 function renderQuizList(){
   exitQuiz();
   const list=allQuizzes.filter(q=>q.board===curBoard);
-  document.getElementById('quizListSec').innerHTML=list.length
-    ? list.map((q,i)=>`
-        <div class="qz-card">
-          <div class="qzc-t">${ES.sanitize(q.title)}</div>
-          <div class="qzc-s">${subjDisplayName(q.board,q.subject)}</div>
-          <div class="qzc-meta">
-            <span class="qzc-tag">📝 ${totalQFor(q)} Questions</span>
-            <span class="qzc-tag">⏱ ${totalTimeFor(q)} min</span>
-            ${q.sectional?'<span class="qzc-tag">🧩 Sectional</span>':''}
-            ${q.subject==='fullmock'?'<span class="qzc-tag" style="background:var(--saffron-l);color:var(--saffron);">🎯 Full Mock</span>':''}
-          </div>
-          <button class="start-btn" onclick="startQuiz(${i})">▶ Start Quiz</button>
-        </div>`).join('')
-    : '<div class="empty"><div class="ei">🧩</div><p>अभी कोई quiz नहीं।</p></div>';
+  const defs=[['practice','📝 Practice'],['mock','🎯 Mock Test'],['chapter','📖 Chapter-wise'],['subject','📚 Subject-wise'],['previous-year','📜 Previous Year'],['daily','📅 Daily Quiz']];
+  const html=defs.map(([key,label])=>{
+    const group=list.filter(q=>quizCategory(q)===key);
+    if(!group.length) return '';
+    return '<div class="sec-t" style="padding:18px 0 8px;">'+label+'</div>'+group.map(q=>`
+      <div class="qz-card">
+        <div class="qzc-t">${ES.sanitize(q.title)}</div>
+        <div class="qzc-s">${subjDisplayName(q.board,q.subject)}</div>
+        <div class="qzc-meta"><span class="qzc-tag">📝 ${totalQFor(q)} Questions</span><span class="qzc-tag">⏱ ${totalTimeFor(q)} min</span>${q.sectional?'<span class="qzc-tag">🧩 Sectional</span>':''}</div>
+        <button class="start-btn" onclick="startQuizById('${q.id}')">▶ Start Quiz</button>
+      </div>`).join('');
+  }).join('');
+  document.getElementById('quizListSec').innerHTML=html || '<div class="empty"><div class="ei">🧩</div><p>अभी कोई quiz नहीं।</p></div>';
 }
 function startQuiz(idx){
   const list=allQuizzes.filter(q=>q.board===curBoard);

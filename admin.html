@@ -255,6 +255,8 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
         </div>
       </div>
       <label>Chapter</label><input type="text" id="aChap" placeholder="Chapter name"/>
+      <label>Custom Heading / Folder (optional)</label><input type="text" id="aHeading" maxlength="80" placeholder="जैसे Chapter 1, Important Questions, Unit 2"/>
+      <label>Display Order (छोटा number पहले, optional)</label><input type="number" id="aSortOrder" min="0" max="9999" placeholder="खाली = newest first"/>
       <button class="add-btn" id="addBtn" onclick="addContent()">✅ Add Content</button>
     </div>
   </div>
@@ -283,6 +285,13 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
         <option value="practice">📝 Practice (तुरंत सही/गलत दिखे)</option>
         <option value="mock">🎯 Mock Test (Result पर ही पता चले)</option>
       </select>
+      <label>Student Subsection / Category</label>
+      <select id="qCategory">
+        <option value="practice">📝 Practice</option><option value="mock">🎯 Mock Test</option>
+        <option value="chapter">📖 Chapter-wise</option><option value="subject">📚 Subject-wise</option>
+        <option value="previous-year">📜 Previous Year</option><option value="daily">📅 Daily Quiz</option>
+      </select>
+      <div class="hint">Quiz Type scoring behaviour तय करता है; Subsection तय करता है कि student को quiz किस tab में दिखेगा।</div>
 
       <label style="display:flex;align-items:center;gap:8px;">
         <input type="checkbox" id="qSectional" onchange="toggleSectionalUI()" style="width:auto;margin:0;"/>
@@ -1049,6 +1058,8 @@ function addContent(){
     type,
     title, desc:document.getElementById('aDesc').value.trim(),
     chapter:document.getElementById('aChap').value.trim(),
+    heading:document.getElementById('aHeading').value.trim().slice(0,80),
+    sortOrder:document.getElementById('aSortOrder').value.trim()==='' ? null : Math.max(0,Math.min(9999,Number(document.getElementById('aSortOrder').value)||0)),
     date:new Date().toISOString(),
     schema:SCHEMA_VERSION
   };
@@ -1072,7 +1083,7 @@ function addContent(){
 
   btn.disabled=true; btn.textContent='Adding...';
   db.collection('content').add(payload).then(()=>{
-    ['aTitle','aDesc','aLink','aChap','aQuizQs','aQuizTime','aPass','aMpq','aNeg'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
+    ['aTitle','aDesc','aLink','aChap','aHeading','aSortOrder','aQuizQs','aQuizTime','aPass','aMpq','aNeg'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
     btn.disabled=false; btn.textContent='✅ Add Content';
     showToast('✅ Content add हो गया!');
     renderAManage();
@@ -1097,6 +1108,7 @@ function addQuiz(){
     board: document.getElementById('qBoard').value,
     subject: document.getElementById('qSubj').value,
     type: document.getElementById('qType').value,
+    category: document.getElementById('qCategory').value || document.getElementById('qType').value,
     sectional,
     date: new Date().toISOString(),
     schema: SCHEMA_VERSION
@@ -1132,6 +1144,7 @@ function addQuiz(){
   Object.assign(quizData, readScoring('q'));
   db.collection('quizzes').add(quizData).then(()=>{
     document.getElementById('qTitle').value='';
+    document.getElementById('qCategory').value=document.getElementById('qType').value;
     document.getElementById('qQs').value='';
     document.getElementById('qSectionsJson').value='';
     document.getElementById('qTimeLimit').value='';
@@ -1308,9 +1321,10 @@ function renderQuizManage(){
         ? items.map(q=>{
             const totalQ = q.sectional ? (q.sections||[]).reduce((a,s)=>a+(s.questions||[]).length,0) : (q.questions||[]).length;
             const type = q.type==='mock' ? '🎯 Mock' : '📝 Practice';
+            const category = ({practice:'Practice',mock:'Mock Test',chapter:'Chapter-wise',subject:'Subject-wise','previous-year':'Previous Year',daily:'Daily Quiz'})[q.category] || (q.type==='mock'?'Mock Test':'Practice');
             return `
             <div class="mgmt-item">
-              <div><div class="mgmt-nm">${esc(q.title)}</div><div class="mgmt-sb">${esc(q.board)} • ${totalQ} Questions • ${type}${q.sectional?' • Sectional':''}</div></div>
+              <div><div class="mgmt-nm">${esc(q.title)}</div><div class="mgmt-sb">${esc(q.board)} • ${totalQ} Questions • ${type} • 📂 ${category}${q.sectional?' • Sectional':''}</div></div>
               <div style="display:flex;gap:4px;"><button class="pub-btn${q.published===false?' off':''}" data-v2="togglePub" data-coll="quizzes" data-id="${esc(q.id)}" data-pub="${q.published===false?0:1}">${q.published===false?'Publish':'Unpublish'}</button><button class="del-btn" data-act="delQuiz" data-id="${esc(q.id)}">🗑</button></div>
             </div>`;}).join('')
         : '<div class="empty"><div class="ei">🧩</div><p>कोई quiz नहीं।</p></div>';
@@ -1923,9 +1937,9 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
   }
   function renderCourses(){
     const b = $('coBoard').value, t = $('coType').value, st = $('coState').value, q = $('coQ').value.trim().toLowerCase();
-    const rows = CO.rows.filter(function(c){ return (!b || c.board === b) && (!t || c.type === t) && (!st || (st === 'live') === (c.published !== false)) && (!q || String(c.title || '').toLowerCase().indexOf(q) >= 0); });
+    const rows = CO.rows.filter(function(c){ return (!b || c.board === b) && (!t || c.type === t) && (!st || (st === 'live') === (c.published !== false)) && (!q || String(c.title || '').toLowerCase().indexOf(q) >= 0); }).sort(function(x,y){ const xo=x.sortOrder===null||x.sortOrder===undefined||x.sortOrder===''?NaN:Number(x.sortOrder), yo=y.sortOrder===null||y.sortOrder===undefined||y.sortOrder===''?NaN:Number(y.sortOrder); if(Number.isFinite(xo)&&Number.isFinite(yo)&&xo!==yo) return xo-yo; if(Number.isFinite(xo)!==Number.isFinite(yo)) return Number.isFinite(xo)?-1:1; return String(y.date||'').localeCompare(String(x.date||'')); });
     $('coList').innerHTML = (rows.length ? rows.map(function(c){
-      const live = c.published !== false, sb = esc(c.board) + ' • ' + esc(c.subject) + ' • ' + esc(c.type) + (c.type === 'quiz' ? ' • ' + (c.questions || []).length + ' प्रश्न' : '') + (c.chapter ? ' • ' + esc(c.chapter) : '');
+      const live = c.published !== false, sb = esc(c.board) + ' • ' + esc(c.subject) + ' • ' + esc(c.type) + (c.type === 'quiz' ? ' • ' + (c.questions || []).length + ' प्रश्न' : '') + (c.chapter ? ' • ' + esc(c.chapter) : '') + (c.heading ? ' • 📁 ' + esc(c.heading) : '') + ((c.sortOrder !== null && c.sortOrder !== undefined && c.sortOrder !== '' && Number.isFinite(Number(c.sortOrder))) ? ' • क्रम ' + Number(c.sortOrder) : '');
       return '<div class="mgmt-item" style="flex-wrap:wrap;"><div style="min-width:0;flex:1;"><div class="mgmt-nm">' + (live ? '🟢 ' : '⚪ ') + esc(c.title) + '</div><div class="mgmt-sb">' + sb + '</div></div>'
         + '<div style="display:flex;gap:4px;"><button class="pub-btn' + (live ? '' : ' off') + '" data-v2="togglePub" data-coll="content" data-id="' + esc(c.id) + '" data-pub="' + (live ? 1 : 0) + '">' + (live ? 'Unpublish' : 'Publish') + '</button><button class="rply-btn" data-v2="coEdit" data-id="' + esc(c.id) + '">✏️</button><button class="del-btn" data-v2="coDel" data-id="' + esc(c.id) + '">🗑</button></div></div>';
     }).join('') : '<div class="empty"><div class="ei">📚</div><p>कोई content नहीं मिला।</p></div>') + '<div class="hint">सबसे नए 200 दिखते हैं। ⚪ Draft = students को नहीं दिखता।</div>';
@@ -1943,14 +1957,15 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
   };
   A.coEdit = function(id){
     const c = CO.rows.filter(function(x){ return x.id === id; })[0]; if(!c) return;
-    openModal('<h3>✏️ Content बदलें</h3><label>Title</label><input id="ceTitle" maxlength="150" value="' + esc(c.title || '') + '"><label>Description</label><input id="ceDesc" maxlength="300" value="' + esc(c.desc || '') + '"><label>Chapter</label><input id="ceChap" maxlength="150" value="' + esc(c.chapter || '') + '">'
+    openModal('<h3>✏️ Content बदलें</h3><label>Title</label><input id="ceTitle" maxlength="150" value="' + esc(c.title || '') + '"><label>Description</label><input id="ceDesc" maxlength="300" value="' + esc(c.desc || '') + '"><label>Chapter</label><input id="ceChap" maxlength="150" value="' + esc(c.chapter || '') + '"><label>Custom Heading / Folder</label><input id="ceHeading" maxlength="80" value="' + esc(c.heading || '') + '" placeholder="जैसे Chapter 1 / Important Questions"><label>Display Order (छोटा number पहले)</label><input id="ceSortOrder" type="number" min="0" max="9999" value="' + ((c.sortOrder !== null && c.sortOrder !== undefined && c.sortOrder !== '' && Number.isFinite(Number(c.sortOrder))) ? Number(c.sortOrder) : '') + '">'
       + (c.type === 'quiz' ? '' : '<label>Link (https://)</label><input id="ceLink" maxlength="500" value="' + esc(c.link || '') + '">')
       + '<div class="mrow"><button class="mini pri" data-v2="coSave" data-id="' + esc(id) + '">💾 Save</button><button class="mini" data-v2="mClose">रद्द</button></div>');
   };
   A.coSave = async function(id){
     const c = CO.rows.filter(function(x){ return x.id === id; })[0]; if(!c) return;
     const title = $('ceTitle').value.trim(); if(!title){ showToast('❌ Title खाली है'); return; }
-    const upd = { title: title.slice(0, 150), desc: $('ceDesc').value.trim().slice(0, 300), chapter: $('ceChap').value.trim().slice(0, 150) };
+    const orderRaw = $('ceSortOrder').value.trim();
+    const upd = { title: title.slice(0, 150), desc: $('ceDesc').value.trim().slice(0, 300), chapter: $('ceChap').value.trim().slice(0, 150), heading: $('ceHeading').value.trim().slice(0, 80), sortOrder: orderRaw === '' ? firebase.firestore.FieldValue.delete() : Math.max(0, Math.min(9999, Number(orderRaw) || 0)) };
     if($('ceLink')){ const l = $('ceLink').value.trim(); if(l && !/^https:\/\//.test(l)){ showToast('❌ Link https:// से शुरू होना चाहिए'); return; } upd.link = l; }
     try{ await db.collection('content').doc(id).update(upd); Object.assign(c, upd); showToast('✅ Save हो गया'); closeModal(); renderCourses(); }catch(e){ showToast('❌ ' + e.message); }
   };
