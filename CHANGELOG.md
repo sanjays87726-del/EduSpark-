@@ -1,7 +1,7 @@
 # Changelog
 
 ## Unreleased
-- Super Admin ke liye alag `SUPER_ADMIN_PASS` secret; purana shared `ADMIN_PASS` ab master access nahi deta. Staff `PASS_STAFF` aur section passwords se hi limited access lete hain. Worker v12.
+- `ADMIN_PASS` ab sirf Admin Panel kholta hai; naya alag `SUPER_ADMIN_PASS` sabhi sections unlock karta hai. `PASS_<SECTION>` apne section tak limited, `PASS_STAFF` staff ke liye. Worker v13.
 
 Format: [Keep a Changelog](https://keepachangelog.com), versions: [Semantic Versioning](https://semver.org).
 MAJOR = data/URL tootne wala badlav, MINOR = naya feature, PATCH = bug fix.
