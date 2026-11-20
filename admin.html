@@ -228,7 +228,7 @@ button,input,select,textarea{max-width:100%}
   <div class="g-title">EduSpark Admin</div>
   <div class="g-sub">Sirf authorised Google account hi access kar sakta hai</div>
   <div class="g-card">
-    <div id="gPassBox"><input type="password" id="gatePass" placeholder="Admin password" autocomplete="current-password" style="width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--g200);margin-bottom:10px;box-sizing:border-box;"/>
+    <div id="gPassBox"><input type="password" id="gatePass" placeholder="Super Admin / Staff password" autocomplete="current-password" style="width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--g200);margin-bottom:10px;box-sizing:border-box;"/>
       <button class="g-btn" id="gateUnlockBtn" onclick="unlockGate()">🔓 Unlock</button></div>
     <button class="g-btn" id="gateGoogleBtn" style="display:none;">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20" alt="Google">
@@ -1656,7 +1656,7 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
     if(!gateValid()){ showGate(); return; }
     const need = ROLE === 'super' ? 'master' : 'staff';
     if(GATE_SCOPE !== need){ clearGate(); showGate(); showToast('⚠️ इस account के लिए ' + (need === 'master' ? 'Admin' : 'Staff') + ' password डालें'); return; }
-    try{      // server se token jaanch (ADMIN_PASS badla ho to purana token bekaar)
+    try{      // server se token jaanch (SUPER_ADMIN_PASS badla ho to purana token bekaar)
       const r = await fetch(IK_WORKER + '/admin-verify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ gate: GATE, scope: need }) });
       if(r.ok){ const j = await r.json(); if(!j.ok){ clearGate(); showGate(); showToast('⚠️ Session खत्म — दोबारा password डालें'); return; } }
     }catch(e){ /* Worker nahi mila: local expiry par chalte hain, Firestore rules phir bhi email se bachati hain */ }
@@ -2240,11 +2240,11 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
     const secs = Object.keys(SEC_NAMES).map(function(k){
       const st = SEC_STATUS === null ? '❔' : (SEC_STATUS[k] ? (lockStateNow(k) === 'unlocked' ? '🔓 खुला' : '🔒 बंद') : '⚠️ password set नहीं');
       return '<tr><td>' + esc(SEC_NAMES[k]) + '</td><td>' + st + '</td></tr>'; }).join('');
-    $('secBody').innerHTML = '<dl class="kv"><dt>Login</dt><dd>' + esc(u ? u.email : '') + '</dd><dt>Role</dt><dd>' + esc(ROLES[ROLE] || '') + '</dd><dt>Panel session</dt><dd>' + (exp ? fmtDT(exp) + ' तक' : '—') + ' (12 घंटे)</dd><dt>Idle lock</dt><dd>15 मिनट निष्क्रिय रहने पर सभी sections फिर lock</dd><dt>Activity log</dt><dd>' + (AUDIT_ON ? '✅ हर बदलाव दर्ज हो रहा है' : '❌ auto-log चालू नहीं हुआ') + '</dd><dt>Worker version</dt><dd>' + (WORKER_VER || 'पता नहीं') + (WORKER_VER && WORKER_VER < 11 ? ' ⚠️ पुराना — नया worker.js deploy करें' : '') + '</dd></dl>'
+    $('secBody').innerHTML = '<dl class="kv"><dt>Login</dt><dd>' + esc(u ? u.email : '') + '</dd><dt>Role</dt><dd>' + esc(ROLES[ROLE] || '') + '</dd><dt>Panel session</dt><dd>' + (exp ? fmtDT(exp) + ' तक' : '—') + ' (12 घंटे)</dd><dt>Idle lock</dt><dd>15 मिनट निष्क्रिय रहने पर सभी sections फिर lock</dd><dt>Activity log</dt><dd>' + (AUDIT_ON ? '✅ हर बदलाव दर्ज हो रहा है' : '❌ auto-log चालू नहीं हुआ') + '</dd><dt>Worker version</dt><dd>' + (WORKER_VER || 'पता नहीं') + (WORKER_VER && WORKER_VER < 12 ? ' ⚠️ पुराना — नया worker.js deploy करें' : '') + '</dd></dl>'
       + '<div class="mrow"><button class="mini pri" data-v2="lockNow">🔒 अभी सभी sections lock करें</button><button class="mini dng" data-v2="doLogout">🚪 Logout</button></div>'
       + '<div class="h2" style="margin-top:16px;">🔑 Section passwords</div><div class="tbl-wrap"><table class="tbl"><tr><th>Section</th><th>स्थिति</th></tr>' + secs + '</table></div>'
       + (SEC_STATUS === null ? '<div class="hint bad">Worker से status नहीं मिला — Worker बंद है या पुराना है।</div>' : '')
-      + '<div class="hint"><b>Password बदलना:</b> Cloudflare → Worker → Settings → Variables and Secrets (या <code>wrangler secret put PASS_USERS</code>)। <b>ADMIN_PASS बदलते ही सभी पुराने sessions/tokens बेकार</b> हो जाते हैं (= सब जगह logout)।</div>'
+      + '<div class="hint"><b>Password बदलना:</b> Cloudflare → Worker → Settings → Variables and Secrets (या <code>wrangler secret put PASS_USERS</code>)। <b>SUPER_ADMIN_PASS बदलते ही सभी पुराने sessions/tokens बेकार</b> हो जाते हैं (= सब जगह logout)।</div>'
       + '<div class="hint warn"><b>सच्ची सीमा:</b> Section password एक <i>अतिरिक्त ताला</i> है (खुला/चोरी हुआ phone, कंधे के ऊपर से झाँकना)। Firestore का असली data <b>आपके Google email + Firebase rules</b> से सुरक्षित है — कोई तकनीकी व्यक्ति Google login के साथ browser की JS बदलकर सिर्फ़ UI ताला लाँघ सकता है, इसलिए Google account पर 2-step verification ज़रूर चालू रखें।</div>';
   }
   A.lockNow = function(){ if(lockAll('manual')){ showToast('🔒 सब lock हो गए'); relockCurrent(); } else showToast('ℹ️ अभी कोई section खुला नहीं'); renderSecurity(); };
