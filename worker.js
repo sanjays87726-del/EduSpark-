@@ -5,7 +5,7 @@
 //   KV bind  RATE        -> ek KV namespace (naam kuch bhi, binding name RATE)
 //   Variable DAILY_LIMIT -> (optional) har student ke liye roz kitne AI jawab, default 5
 //   Admin panel (v2) ke secrets — docs/ADMIN.md me poori list:
-//     ADMIN_PASS      -> Super Admin master password (panel kholta hai + har section unlock karta hai)
+//     SUPER_ADMIN_PASS      -> Super Admin master password (panel kholta hai + har section unlock karta hai)
 //     PASS_STAFF      -> (optional) staff ka panel-entry password
 //     PASS_<SECTION>  -> (optional) har section ka apna password: USERS ACADEMIC COURSES QUESTIONS EXAMS RESULTS FINANCE COMMS MEDIA SUPPORT SYSTEM REPORTS
 //
@@ -80,7 +80,7 @@ export default {
 
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
     // Browser me Worker ka URL kholo -> status dikhega (version + binding jude hain ya nahi)
-    if (request.method === 'GET') return reply(200, { worker: 'eduspark-ai', version: 11, apiVersions: ['v1'], RATE: !!env.RATE, GEMINI_KEY: !!env.GEMINI_KEY, IMAGEKIT_PRIVATE_KEY: !!env.IMAGEKIT_PRIVATE_KEY, ADMIN_PASS: !!env.ADMIN_PASS, PASS_STAFF: !!env.PASS_STAFF, sections: sectionStatus(env), DAILY_LIMIT: parseInt(env.DAILY_LIMIT) || 5 });
+    if (request.method === 'GET') return reply(200, { worker: 'eduspark-ai', version: 12, apiVersions: ['v1'], RATE: !!env.RATE, GEMINI_KEY: !!env.GEMINI_KEY, IMAGEKIT_PRIVATE_KEY: !!env.IMAGEKIT_PRIVATE_KEY, SUPER_ADMIN_PASS: !!env.SUPER_ADMIN_PASS, PASS_STAFF: !!env.PASS_STAFF, sections: sectionStatus(env), DAILY_LIMIT: parseInt(env.DAILY_LIMIT) || 5 });
     if (request.method !== 'POST') return reply(405, { error: 'POST only' });
     if (!okOrigin) return reply(403, { error: 'Not allowed' });
     // API versioning: /v1/ask canonical hai; "/" purana (legacy) alias — purane students ke cached app ke liye hamesha chalta rahega (docs/API.md)
@@ -98,10 +98,10 @@ export default {
 };
 
 // Admin password gates (password sirf Worker secrets me hain, code/GitHub me kabhi nahi):
-//   • Panel-entry gate  : POST /admin-gate {password}            -> ADMIN_PASS (Super Admin, scope "master") ya PASS_STAFF (scope "staff")
-//   • Section gate      : POST /admin-gate {password, section}   -> PASS_<SECTION> ya ADMIN_PASS (Super Admin har section khol sakta hai)
+//   • Panel-entry gate  : POST /admin-gate {password}            -> SUPER_ADMIN_PASS (Super Admin, scope "master") ya PASS_STAFF (scope "staff")
+//   • Section gate      : POST /admin-gate {password, section}   -> PASS_<SECTION> ya SUPER_ADMIN_PASS (Super Admin har section khol sakta hai)
 //   • Token verify      : POST /admin-verify {gate, scope}       -> {ok} (admin.html har locked section kholne se pehle poochta hai)
-// Sahi password par 12 ghante ka HMAC-signed "gate" token milta hai (kunji = ADMIN_PASS: ADMIN_PASS badalte hi saare purane tokens bekaar = "sab sessions logout").
+// Sahi password par 12 ghante ka HMAC-signed "gate" token milta hai (kunji = SUPER_ADMIN_PASS: SUPER_ADMIN_PASS badalte hi saare purane tokens bekaar = "sab sessions logout").
 // /imagekit-auth sirf "master" token maanta hai.
 // Dhyan: Firestore ka asli data email + firestore.rules se bachta hai; section password ek EXTRA taala hai (khula/chori hua phone), rules ka vikalp nahi.
 const SECTIONS = ['users', 'academic', 'courses', 'questions', 'exams', 'results', 'finance', 'comms', 'media', 'support', 'system', 'reports'];
@@ -112,16 +112,16 @@ async function hmacHex(secret, msg) {
   return Array.from(new Uint8Array(await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(msg))), b => b.toString(16).padStart(2, '0')).join('');
 }
 const gateMsg = (scope, exp) => (scope === 'master' ? 'gate' + exp : 'gate:' + scope + ':' + exp);   // master ka format purane tokens jaisa hi
-async function signGate(env, scope, exp) { return exp + '.' + await hmacHex(env.ADMIN_PASS, gateMsg(scope, exp)); }
+async function signGate(env, scope, exp) { return exp + '.' + await hmacHex(env.SUPER_ADMIN_PASS, gateMsg(scope, exp)); }
 async function gateOk(env, gate, scope = 'master') {
   const [exp, sig] = String(gate || '').split('.');
-  if (!env.ADMIN_PASS || !sig || !(+exp > Date.now())) return false;
-  return (await hmacHex(env.ADMIN_PASS, gateMsg(scope, exp))) === sig;
+  if (!env.SUPER_ADMIN_PASS || !sig || !(+exp > Date.now())) return false;
+  return (await hmacHex(env.SUPER_ADMIN_PASS, gateMsg(scope, exp))) === sig;
 }
 // Dono strings ko HMAC karke compare — lambai/timing se kuch pata nahi chalta
 async function sameSecret(a, b) { return typeof a === 'string' && typeof b === 'string' && b.length > 0 && (await hmacHex('cmp', a)) === (await hmacHex('cmp', b)); }
 async function adminGate(request, env, reply) {
-  if (!env.ADMIN_PASS) return reply(500, { error: 'Setup अधूरा: Secret "ADMIN_PASS" नहीं जुड़ा' });
+  if (!env.SUPER_ADMIN_PASS) return reply(500, { error: 'Setup अधूरा: Secret "SUPER_ADMIN_PASS" नहीं जुड़ा' });
   let body;
   try { const raw = await request.text(); if (raw.length > 1024) return reply(413, { error: 'Request बहुत बड़ी है' }); body = JSON.parse(raw); }
   catch { return reply(400, { error: 'Bad request' }); }
@@ -136,7 +136,7 @@ async function adminGate(request, env, reply) {
   if (fails >= 5) return reply(429, { error: 'बहुत ज़्यादा गलत कोशिशें — कल दोबारा try करें' });
   const pw = body.password;
   let scope = '';
-  if (await sameSecret(pw, env.ADMIN_PASS)) scope = section || 'master';
+  if (await sameSecret(pw, env.SUPER_ADMIN_PASS)) scope = section || 'master';
   else if (!section && await sameSecret(pw, env.PASS_STAFF)) scope = 'staff';
   else if (section && await sameSecret(pw, sectionSecret(env, section))) scope = section;
   if (!scope) {
