@@ -201,7 +201,8 @@ await t('admin v2: section with no password configured reports open; wrong passw
   assert.strictEqual((await gate({ password: SUPER_ADMIN_PASS }, ip)).status, 200);                                                // entry gate ka counter alag
 });
 await t('admin v2: rotating ADMIN_PASS invalidates panel token; rotating SUPER_ADMIN_PASS invalidates master-issued section tokens', async () => {
-  const f = await gate({ password: env.PASS_FINANCE, section: 'finance' }); assert.strictEqual(await verify(f.j.gate, 'finance'), true);
-  const oldMaster = env.SUPER_ADMIN_PASS; env.SUPER_ADMIN_PASS = 'rotated_new_master_pw'; assert.strictEqual(await verify(f.j.gate, 'finance'), false); env.SUPER_ADMIN_PASS = oldMaster; const p = await gate({ password: ADMIN_PASS }); const oldPanel = env.ADMIN_PASS; env.ADMIN_PASS = 'rotated_panel_pw'; assert.strictEqual(await verify(p.j.gate, 'panel'), false); env.ADMIN_PASS = oldPanel;
+  const f = await gate({ password: SUPER_ADMIN_PASS, section: 'finance' }); assert.strictEqual(await verify(f.j.gate, 'finance'), true);
+  const oldMaster = env.SUPER_ADMIN_PASS; env.SUPER_ADMIN_PASS = 'rotated_new_master_pw'; assert.strictEqual(await verify(f.j.gate, 'finance'), false); env.SUPER_ADMIN_PASS = oldMaster;
+  const p = await gate({ password: ADMIN_PASS }); assert.strictEqual(await verify(p.j.gate, 'panel'), true); const oldPanel = env.ADMIN_PASS; env.ADMIN_PASS = 'rotated_panel_pw'; assert.strictEqual(await verify(p.j.gate, 'panel'), false); env.ADMIN_PASS = oldPanel;
 });
 console.log(`\n${n} worker tests passed`);
