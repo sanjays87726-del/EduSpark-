@@ -81,7 +81,7 @@ jobs:
           python3 tools/check-manifests.py /tmp/canary.yaml --service-matches 2
           python3 tools/check-manifests.py /tmp/bluegreen.yaml --service-matches 1 --hpa-target eduspark-green
           python3 tools/check-manifests.py deploy/k8s/*.yaml --service-matches 1
-      - uses: hashicorp/setup-terraform@v3
+      - uses: hashicorp/setup-terraform@v4
       - name: Terraform validate
         working-directory: infra/terraform
         run: |
