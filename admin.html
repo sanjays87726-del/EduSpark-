@@ -228,7 +228,7 @@ button,input,select,textarea{max-width:100%}
   <div class="g-title">EduSpark Admin</div>
   <div class="g-sub">Sirf authorised Google account hi access kar sakta hai</div>
   <div class="g-card">
-    <div id="gPassBox"><input type="password" id="gatePass" placeholder="Super Admin / Staff password" autocomplete="current-password" style="width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--g200);margin-bottom:10px;box-sizing:border-box;"/>
+    <div id="gPassBox"><input type="password" id="gatePass" placeholder="ADMIN_PASS / SUPER_ADMIN_PASS / Staff password" autocomplete="current-password" style="width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--g200);margin-bottom:10px;box-sizing:border-box;"/>
       <button class="g-btn" id="gateUnlockBtn" onclick="unlockGate()">🔓 Unlock</button></div>
     <button class="g-btn" id="gateGoogleBtn" style="display:none;">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20" alt="Google">
@@ -1632,6 +1632,7 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
   let ROLE = '', SEC_STATUS = null, STAFF_PW = false, WORKER_VER = 0, AUDIT_ON = false;
   let SEC_TOK = {}; try{ SEC_TOK = JSON.parse(sessionStorage.getItem('adm_sec') || '{}') || {}; }catch(e){}
   let GATE_SCOPE = sessionStorage.getItem('adm_scope') || (sessionStorage.getItem('adm_gate') ? 'master' : '');
+  let MASTER_UNLOCKED = false;
   let CUR_KEY = '', LAST_ACT = Date.now(), HIDDEN_AT = 0, VERIFIED = {}, idleTimer = null, navBuilt = false;
   const A = {};                                                      // data-v2 actions
 
@@ -1639,7 +1640,7 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
   function clearGate(){
     try{ GATE = ''; }catch(e){}
     ['adm_gate','adm_scope','adm_sec','adm_logged'].forEach(function(k){ sessionStorage.removeItem(k); });
-    SEC_TOK = {}; GATE_SCOPE = ''; VERIFIED = {};
+    SEC_TOK = {}; GATE_SCOPE = ''; MASTER_UNLOCKED = false; VERIFIED = {};
   }
   async function resolveAndEnter(user){
     if(!user){ showGate(); return; }
@@ -1660,6 +1661,7 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
       const r = await fetch(IK_WORKER + '/admin-verify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ gate: GATE, scope: need }) });
       if(r.ok){ const j = await r.json(); if(!j.ok){ clearGate(); showGate(); showToast('⚠️ Session खत्म — दोबारा password डालें'); return; } }
     }catch(e){ /* Worker nahi mila: local expiry par chalte hain, Firestore rules phir bhi email se bachati hain */ }
+    MASTER_UNLOCKED = ROLE === 'super' && GATE_SCOPE === 'master';
     $('gateLoading').style.display = 'none'; $('gate').style.display = 'none'; $('adminApp').style.display = 'block';
     $('tbEmail').textContent = user.email; $('tbRole').textContent = ROLES[ROLE];
     installAuditLog(); startIdleWatch();
@@ -1712,15 +1714,15 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
   }
 
   // ───────────── Section password locks ─────────────
-  function lockStateNow(sec){ if(ROLE === 'super' && GATE_SCOPE === 'master') return 'unlocked'; return secLockState(SEC_STATUS, SEC_TOK, sec, Date.now()); }
+  function lockStateNow(sec){ if(ROLE === 'super' && MASTER_UNLOCKED) return 'unlocked'; return secLockState(SEC_STATUS, SEC_TOK, sec, Date.now()); }
   function saveSec(){ try{ sessionStorage.setItem('adm_sec', JSON.stringify(SEC_TOK)); }catch(e){} }
   function lockAll(why){
-    if(!Object.keys(SEC_TOK).length) return false;
-    SEC_TOK = {}; VERIFIED = {}; saveSec(); logAct('lock', 'system', '', why || 'manual');
+    if(!Object.keys(SEC_TOK).length && !(ROLE === 'super' && MASTER_UNLOCKED)) return false;
+    MASTER_UNLOCKED = false; SEC_TOK = {}; VERIFIED = {}; saveSec(); logAct('lock', 'system', '', why || 'manual');
     if(navBuilt) buildNav(); return true;
   }
   async function verifySec(sec){
-    if(ROLE === 'super' && GATE_SCOPE === 'master') return true;
+    if(ROLE === 'super' && MASTER_UNLOCKED) return true;
     if(SEC_STATUS === null) return true;                               // Worker purana/unreachable: server verify ka raasta nahi
     if(VERIFIED[sec] && Date.now() - VERIFIED[sec] < 120000) return true;
     try{
