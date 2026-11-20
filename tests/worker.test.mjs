@@ -33,7 +33,7 @@ globalThis.fetch = async (url, opts = {}) => {
   }
   throw new Error('unexpected fetch ' + url);
 };
-const kv = new Map(); const IK_KEY = 'private_test_key_123', ADMIN_PASS = 'test_admin_pass_456'; const env = { GEMINI_KEY: 'secret', DAILY_LIMIT: '5', IMAGEKIT_PRIVATE_KEY: IK_KEY, ADMIN_PASS, RATE: { get: async k => kv.get(k) ?? null, put: async (k, v) => { kv.set(k, v); } } };
+const kv = new Map(); const IK_KEY = 'private_test_key_123', SUPER_ADMIN_PASS = 'test_super_admin_pass_456'; const env = { GEMINI_KEY: 'secret', DAILY_LIMIT: '5', IMAGEKIT_PRIVATE_KEY: IK_KEY, SUPER_ADMIN_PASS, ADMIN_PASS: 'legacy_shared_pw', RATE: { get: async k => kv.get(k) ?? null, put: async (k, v) => { kv.set(k, v); } } };
 const post = (body, { origin = ORIGIN, headers = {}, path = '/' } = {}) => worker.fetch(new Request('https://w.example' + path, { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json', ...headers }, body: typeof body === 'string' ? body : JSON.stringify(body) }), env);
 const Q = 'Newton ka pehla niyam kya hai?';
 let n = 0; const t = async (name, fn) => { try { await fn(); n++; console.log('✓', name); } catch (e) { console.log('✗', name, '\n  ', e.stack); process.exitCode = 1; } };
@@ -118,7 +118,7 @@ await t('API versioning: / (legacy) and /v1/ask behave identically; apiVersion i
 await t('imagekit-auth: admin gets {token, expire, signature}; signature = HMAC-SHA1(privateKey, token+expire) hex', async () => {
   const { createHmac } = await import('crypto');
   const before = kv.size;
-  const g = await post({ password: ADMIN_PASS }, { path: '/admin-gate' }); assert.strictEqual(g.status, 200);
+  const g = await post({ password: SUPER_ADMIN_PASS }, { path: '/admin-gate' }); assert.strictEqual(g.status, 200);
   const gate = (await g.json()).gate;                                                                 // sahi password -> 12 ghante ka signed gate token
   const noGate = await post({ idToken: await token({ uid: 'adm1', claims: { email: 'bhupeshkumar36882@gmail.com', email_verified: true } }) }, { path: '/imagekit-auth' });
   assert.strictEqual(noGate.status, 401);                                                             // admin email sahi par gate nahi -> 401
@@ -163,12 +163,13 @@ const adminTok = async () => token({ uid: 'adm9', claims: { email: 'bhupeshkumar
 await t('admin v2: GET status lists which section/staff passwords are configured', async () => {
   env.PASS_FINANCE = 'fin_pw_000_x'; env.PASS_STAFF = 'staff_pw_789_x';
   const j = await (await worker.fetch(new Request('https://w.example/'), env)).json();
-  assert.strictEqual(j.PASS_STAFF, true); assert.strictEqual(j.sections.finance, true); assert.strictEqual(j.sections.users, false);
+  assert.strictEqual(j.SUPER_ADMIN_PASS, true); assert.strictEqual(j.PASS_STAFF, true); assert.strictEqual(j.sections.finance, true); assert.strictEqual(j.sections.users, false);
   assert.strictEqual(Object.keys(j.sections).length, 12);
-  assert.ok(!JSON.stringify(j).includes('fin_pw_000_x') && !JSON.stringify(j).includes(ADMIN_PASS));        // password kabhi status me nahi
+  assert.ok(!JSON.stringify(j).includes('fin_pw_000_x') && !JSON.stringify(j).includes(SUPER_ADMIN_PASS));        // password kabhi status me nahi
 });
+await t('admin v2: legacy shared ADMIN_PASS is rejected; only the new Super Admin secret grants master', async () => { const old = await gate({ password: env.ADMIN_PASS }); assert.strictEqual(old.status, 401); const fresh = await gate({ password: SUPER_ADMIN_PASS }); assert.strictEqual(fresh.status, 200); assert.strictEqual(fresh.j.scope, 'master'); });
 await t('admin v2: master entry -> scope master, works for image auth; staff entry -> scope staff, image auth refused', async () => {
-  const m = await gate({ password: ADMIN_PASS }); assert.strictEqual(m.status, 200); assert.strictEqual(m.j.scope, 'master');
+  const m = await gate({ password: SUPER_ADMIN_PASS }); assert.strictEqual(m.status, 200); assert.strictEqual(m.j.scope, 'master');
   const ok = await post({ idToken: await adminTok(), gate: m.j.gate }, { path: '/imagekit-auth' }); assert.strictEqual(ok.status, 200);
   const st = await gate({ password: env.PASS_STAFF }); assert.strictEqual(st.status, 200); assert.strictEqual(st.j.scope, 'staff');
   const no = await post({ idToken: await adminTok(), gate: st.j.gate }, { path: '/imagekit-auth' }); assert.strictEqual(no.status, 401);
@@ -178,7 +179,7 @@ await t('admin v2: section password opens only that section; master (Super Admin
   const f = await gate({ password: env.PASS_FINANCE, section: 'finance' }); assert.strictEqual(f.status, 200); assert.strictEqual(f.j.scope, 'finance');
   assert.strictEqual(await verify(f.j.gate, 'finance'), true);
   assert.strictEqual(await verify(f.j.gate, 'users'), false); assert.strictEqual(await verify(f.j.gate, 'master'), false);   // token kisi aur scope par nahi chalta
-  const m = await gate({ password: ADMIN_PASS, section: 'finance' }); assert.strictEqual(m.status, 200); assert.strictEqual(m.j.scope, 'finance');
+  const m = await gate({ password: SUPER_ADMIN_PASS, section: 'finance' }); assert.strictEqual(m.status, 200); assert.strictEqual(m.j.scope, 'finance');
   const bad = await gate({ password: env.PASS_FINANCE }); assert.strictEqual(bad.status, 401);                              // section password se panel nahi khulta
   const wrongSec = await gate({ password: env.PASS_FINANCE, section: 'users' }); assert.strictEqual(wrongSec.status, 401);
 });
@@ -195,10 +196,10 @@ await t('admin v2: section with no password configured reports open; wrong passw
   for (let i = 0; i < 5; i++) assert.strictEqual((await gate({ password: 'nope' + i, section: 'finance' }, ip)).status, 401);
   assert.strictEqual((await gate({ password: 'nope', section: 'finance' }, ip)).status, 429);
   assert.strictEqual((await gate({ password: env.PASS_FINANCE, section: 'finance' }, ip)).status, 429);                      // lock ke baad sahi password bhi nahi
-  assert.strictEqual((await gate({ password: ADMIN_PASS }, ip)).status, 200);                                                // entry gate ka counter alag
+  assert.strictEqual((await gate({ password: SUPER_ADMIN_PASS }, ip)).status, 200);                                                // entry gate ka counter alag
 });
-await t('admin v2: rotating ADMIN_PASS invalidates every old token (= logout everywhere)', async () => {
+await t('admin v2: rotating SUPER_ADMIN_PASS invalidates every old token (= logout everywhere)', async () => {
   const f = await gate({ password: env.PASS_FINANCE, section: 'finance' }); assert.strictEqual(await verify(f.j.gate, 'finance'), true);
-  const old = env.ADMIN_PASS; env.ADMIN_PASS = 'rotated_new_master_pw'; assert.strictEqual(await verify(f.j.gate, 'finance'), false); env.ADMIN_PASS = old;
+  const old = env.SUPER_ADMIN_PASS; env.SUPER_ADMIN_PASS = 'rotated_new_master_pw'; assert.strictEqual(await verify(f.j.gate, 'finance'), false); env.SUPER_ADMIN_PASS = old;
 });
 console.log(`\n${n} worker tests passed`);
