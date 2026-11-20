@@ -6,7 +6,7 @@ const CUR = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'))
 // 1) Asli repo ka fixture copy: icons/about/contact jaise binary/aur-pages sirf is test ke liye banao
 function fixture() {
   const d = fs.mkdtempSync(path.join(os.tmpdir(), 'es-repo-'));
-  for (const f of ['index.html', 'admin.html', 'privacy.html', 'terms.html', 'delete-account.html', 'sw.js', 'worker.js', 'manifest.json', 'package.json', 'CHANGELOG.md', 'firestore.rules', 'sitemap.xml', 'ads.txt', 'robots.txt']) fs.copyFileSync(path.join(ROOT, f), path.join(d, f));
+  for (const f of ['index.html', 'ops-portal-7c91e4.html', 'privacy.html', 'terms.html', 'delete-account.html', 'sw.js', 'worker.js', 'manifest.json', 'package.json', 'CHANGELOG.md', 'firestore.rules', 'sitemap.xml', 'ads.txt', 'robots.txt']) fs.copyFileSync(path.join(ROOT, f), path.join(d, f));
   fs.mkdirSync(path.join(d, 'scripts/lib'), { recursive: true });
   for (const f of fs.readdirSync(path.join(ROOT, 'scripts'))) if (f.endsWith('.js')) fs.copyFileSync(path.join(ROOT, 'scripts', f), path.join(d, 'scripts', f));
   for (const f of fs.readdirSync(path.join(ROOT, 'scripts/lib'))) fs.copyFileSync(path.join(ROOT, 'scripts/lib', f), path.join(d, 'scripts/lib', f));

@@ -1,5 +1,5 @@
 const assert=require('assert'),fs=require('fs');
-const h=fs.readFileSync(require('path').join(__dirname,'../admin.html'),'utf8');
+const h=fs.readFileSync(require('path').join(__dirname,'../ops-portal-7c91e4.html'),'utf8');
 function grab(n,kw='function '){const i=h.indexOf(kw+n+'(');assert.ok(i>0,n);let d=0,j=h.indexOf('{',i);for(let k=j;k<h.length;k++){if(h[k]==='{')d++;if(h[k]==='}'){d--;if(d===0)return h.slice(i,k+1);}}}
 const esc=t=>String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const st=new Function('esc',grab('notifStatusText')+';return notifStatusText;')(esc);

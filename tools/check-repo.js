@@ -3,7 +3,7 @@
 // EduSpark — repo checks (CI me chalta hai; local: npm run check)
 //   node tools/check-repo.js [--base origin/main] [--strict-cache]
 // Kya dekhta hai: HTML ke inline scripts compile hote hain, JS/JSON files sahi hain, internal links maujood hain,
-// app-shell files maujood hain, version (package.json = index.html = CHANGELOG), rules ka admin email = admin.html ka,
+// app-shell files maujood hain, version (package.json = index.html = CHANGELOG), rules ka admin email = ops-portal-7c91e4.html ka,
 // aur --base par: app shell badla par sw.js ka CACHE_NAME nahi badla.
 // ══════════════════════════════════════════════════════════════
 const fs = require('fs'), path = require('path'), vm = require('vm'), os = require('os');
@@ -102,12 +102,12 @@ function check(root, opts = {}) {
     if (has('CHANGELOG.md') ? !read('CHANGELOG.md').split('\n').some(l => l.startsWith('## [' + pkgV + ']')) : true) err(`CHANGELOG.md me "## [${pkgV}]" section nahi`);
   }
 
-  // 7) Admin email: firestore.rules == admin.html (drift se admin lock ho sakta hai)
-  if (has('firestore.rules') && has('admin.html')) {
+  // 7) Admin email: firestore.rules == ops-portal-7c91e4.html (drift se admin lock ho sakta hai)
+  if (has('firestore.rules') && has('ops-portal-7c91e4.html')) {
     const r = (read('firestore.rules').match(/token\.email\s*==\s*"([^"]+)"/) || [])[1];
-    const a = (read('admin.html').match(/ADMIN_EMAIL\s*=\s*"([^"]+)"/) || [])[1];
-    if (!r || !a) err('ADMIN email firestore.rules ya admin.html me nahi mila');
-    else if (r !== a) err(`admin email mismatch: rules=${r}, admin.html=${a}`);
+    const a = (read('ops-portal-7c91e4.html').match(/ADMIN_EMAIL\s*=\s*"([^"]+)"/) || [])[1];
+    if (!r || !a) err('ADMIN email firestore.rules ya ops-portal-7c91e4.html me nahi mila');
+    else if (r !== a) err(`admin email mismatch: rules=${r}, ops-portal-7c91e4.html=${a}`);
     if (!/rules_version\s*=\s*'2'/.test(read('firestore.rules'))) err("firestore.rules: rules_version = '2' nahi");
   }
 

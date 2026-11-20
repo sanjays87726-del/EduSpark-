@@ -55,7 +55,7 @@ def read(p):
 def has(p): return os.path.exists(os.path.join(ROOT,p))
 
 htmls = sorted(f for f in os.listdir(ROOT) if f.endswith('.html'))
-NOINDEX_OK = {'admin.html','eduspark-qr-generator.html'}
+NOINDEX_OK = {'ops-portal-7c91e4.html','eduspark-qr-generator.html'}
 parsed = {}
 for f in htmls:
     raw = read(f); p = P(); p.feed(raw); parsed[f]=(raw,p)

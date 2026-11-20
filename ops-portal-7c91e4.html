@@ -1657,10 +1657,11 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
     if(!gateValid()){ showGate(); return; }
     const need = ROLE === 'super' ? GATE_SCOPE : 'staff';
     if((ROLE === 'super' && need !== 'panel' && need !== 'master') || (ROLE !== 'super' && need !== 'staff')){ clearGate(); showGate(); showToast('⚠️ इस account के लिए ' + (ROLE === 'super' ? 'ADMIN_PASS या SUPER_ADMIN_PASS' : 'Staff') + ' password डालें'); return; }
-    try{      // server se token jaanch (SUPER_ADMIN_PASS badla ho to purana token bekaar)
+    try{      // Server verification अनिवार्य है; Worker unreachable/invalid हो तो fail closed.
       const r = await fetch(IK_WORKER + '/admin-verify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ gate: GATE, scope: need }) });
-      if(r.ok){ const j = await r.json(); if(!j.ok){ clearGate(); showGate(); showToast('⚠️ Session खत्म — दोबारा password डालें'); return; } }
-    }catch(e){ /* Worker nahi mila: local expiry par chalte hain, Firestore rules phir bhi email se bachati hain */ }
+      const j = await r.json().catch(function(){ return {}; });
+      if(!r.ok || !j.ok){ clearGate(); showGate(); showToast('⚠️ Session verify नहीं हुआ — दोबारा password डालें'); return; }
+    }catch(e){ clearGate(); showGate(); showToast('⚠️ Security server से संपर्क नहीं हुआ — access बंद है'); return; }
     MASTER_UNLOCKED = ROLE === 'super' && GATE_SCOPE === 'master';
     $('gateLoading').style.display = 'none'; $('gate').style.display = 'none'; $('adminApp').style.display = 'block';
     $('tbEmail').textContent = user.email; $('tbRole').textContent = ROLES[ROLE];
@@ -1723,13 +1724,13 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
   }
   async function verifySec(sec){
     if(ROLE === 'super' && MASTER_UNLOCKED) return true;
-    if(SEC_STATUS === null) return true;                               // Worker purana/unreachable: server verify ka raasta nahi
+    // Status fetch fail ho sakta hai; signed section token ko /admin-verify se phir bhi check karo.
     if(VERIFIED[sec] && Date.now() - VERIFIED[sec] < 120000) return true;
     try{
       const r = await fetch(IK_WORKER + '/admin-verify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ gate: SEC_TOK[sec], scope: sec }) });
       const j = await r.json().catch(function(){ return {}; });
       if(r.ok && j.ok){ VERIFIED[sec] = Date.now(); return true; }
-    }catch(e){ return true; }
+    }catch(e){ /* Verification unavailable: section locked rahega. */ }
     delete SEC_TOK[sec]; saveSec(); return false;
   }
   function askSectionPassword(sec){

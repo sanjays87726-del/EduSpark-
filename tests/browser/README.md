@@ -1,6 +1,6 @@
 # Browser smoke tests (optional — `npm test` me nahi chalte)
 
-Asli browser (Chromium) me `admin.html` aur `index.html` kholkar check karte hain — Firebase ki jagah `fakefb.js` (in-memory nakli Firebase) lagta hai, isliye internet/Firebase ki zaroorat nahi.
+Asli browser (Chromium) me `ops-portal-7c91e4.html` aur `index.html` kholkar check karte hain — Firebase ki jagah `fakefb.js` (in-memory nakli Firebase) lagta hai, isliye internet/Firebase ki zaroorat nahi.
 
 ```bash
 npm i --no-save playwright && npx playwright install chromium     # ek baar
