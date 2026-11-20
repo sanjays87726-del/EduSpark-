@@ -2,7 +2,7 @@ import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url
 import { start, launch } from './serve.mjs';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const srv = await start();
-const BASE = srv.url + 'admin.html';
+const BASE = srv.url + 'ops-portal-7c91e4.html';
 const FAKE = fs.readFileSync(path.join(HERE, 'fakefb.js'), 'utf8');
 const SUPER = 'bhupeshkumar36882@gmail.com';
 let failed = 0; const ok = (c, m) => { if (!c) { failed++; console.log('  ✗ ' + m); } else console.log('  ✓ ' + m); };
