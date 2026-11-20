@@ -1,13 +1,13 @@
-// Admin panel v2 ke "pure" helper + admin.html / worker.js / firestore.rules / index.html ke beech ka mel (bina browser ke)
+// Admin panel v2 ke "pure" helper + ops-portal-7c91e4.html / worker.js / firestore.rules / index.html ke beech ka mel (bina browser ke)
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const R = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
-const admin = R('admin.html'), worker = R('worker.js'), rules = R('firestore.rules'), app = R('index.html');
+const admin = R('ops-portal-7c91e4.html'), worker = R('worker.js'), rules = R('firestore.rules'), app = R('index.html');
 let n = 0; const t = (name, fn) => { try { fn(); n++; console.log('✓', name); } catch (e) { console.log('✗', name, '\n  ', e.stack); process.exitCode = 1; } };
 
 const block = admin.slice(admin.indexOf('// <pure-helpers>'), admin.indexOf('// </pure-helpers>'));
-assert.ok(block.length > 500, 'pure-helpers block not found in admin.html');
+assert.ok(block.length > 500, 'pure-helpers block not found in ops-portal-7c91e4.html');
 const H = new Function(block + '\nreturn { ROLES, SEC_NAMES, TABS, SOON, MENU, canAccess, parseTarget, secOf, itemVisible, secLockState, buildCountBody, fsVal, istDayStart, csvCell, toCsv, validEmail, relTime, auditInfo, logCategory, verNum, SEC_BY_COLL };')();
 
 t('roles: Super Admin sees every tab; teacher/editor/notifier only their own; unknown role nothing', () => {
@@ -28,7 +28,7 @@ t('menu: A..M groups, every item points to a real tab/soon page, placeholders on
   assert.ok(H.itemVisible('super', 'soon:results') && !H.itemVisible('teacher', 'soon:results'));
   assert.strictEqual(H.secOf('soon:finance'), 'finance'); assert.strictEqual(H.secOf('students:blocked'), 'users'); assert.strictEqual(H.secOf('dash'), null);
 });
-t('every tab has its panel in admin.html; every section name matches the Worker secrets list', () => {
+t('every tab has its panel in ops-portal-7c91e4.html; every section name matches the Worker secrets list', () => {
   for (const tab of Object.keys(H.TABS)) assert.ok(admin.includes('id="aTab_' + tab + '"'), 'panel aTab_' + tab);
   const ws = /const SECTIONS = \[([^\]]+)\]/.exec(worker)[1].match(/'([a-z]+)'/g).map(x => x.replace(/'/g, ''));
   assert.deepStrictEqual(Object.keys(H.SEC_NAMES).sort(), ws.slice().sort());
