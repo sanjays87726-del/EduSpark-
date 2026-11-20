@@ -49,7 +49,7 @@ Staff banana: Admin -> User Management -> **Teachers, Staff & Roles** -> Gmail +
 4. Site push (GitHub Pages). `sw.js` cache `eduspark-v22.0` apne-aap naya version dega.
 5. Admin kholo -> **Security & Sessions** me har section ka status dekho.
 
-Purana admin.html + naye rules bhi chalte hain (rules additive). Safe rollout: (1) Cloudflare me existing `ADMIN_PASS` ki current value ko jaisa hai waisa hi rakhein; (2) ek naya, alag `SUPER_ADMIN_PASS` secret add karein; (3) Worker v13 deploy karein; (4) `ADMIN_PASS` se panel-only login aur `SUPER_ADMIN_PASS` se all-sections access test karein; (5) har section ke liye zaroori `PASS_<SECTION>` set karein; (6) site deploy karein. `ADMIN_PASS` ko rename/delete karne ki zaroorat nahi.
+Purana ops-portal-7c91e4.html + naye rules bhi chalte hain (rules additive). Safe rollout: (1) Cloudflare me existing `ADMIN_PASS` ki current value ko jaisa hai waisa hi rakhein; (2) ek naya, alag `SUPER_ADMIN_PASS` secret add karein; (3) Worker v13 deploy karein; (4) `ADMIN_PASS` se panel-only login aur `SUPER_ADMIN_PASS` se all-sections access test karein; (5) har section ke liye zaroori `PASS_<SECTION>` set karein; (6) site deploy karein. `ADMIN_PASS` ko rename/delete karne ki zaroorat nahi.
 
 ## 5. Remote Config — `_config/app` (Settings page se)
 
@@ -79,7 +79,7 @@ App me "account roka gaya" screen (+ Logout), naye doubts rules se band, notific
 ## 8. Roadmap (menu ke "Soon")
 
 - **R1** Data-driven structure: Boards/Subjects/Chapters, Home sections, contact/privacy links `_config` se.
-- **R2** Cloud results + Question Bank + Exam schedule. *Supabase (SQL + Row Level Security) yahan sabse achha rahega* — results/leaderboard/certificate relational hain. Firebase Auth rahega; Supabase me Firebase JWT verify karke RLS (third-party auth) ya Worker ke through likhna. `service_role` key kabhi repo/admin.html me nahi, sirf Worker secret.
+- **R2** Cloud results + Question Bank + Exam schedule. *Supabase (SQL + Row Level Security) yahan sabse achha rahega* — results/leaderboard/certificate relational hain. Firebase Auth rahega; Supabase me Firebase JWT verify karke RLS (third-party auth) ya Worker ke through likhna. `service_role` key kabhi repo/ops-portal-7c91e4.html me nahi, sirf Worker secret.
 - **R3** Payments (Razorpay) + enrollments + coupons.
 - **R4** Email/SMS (provider + verified phone).
 - **R5** Support tickets / feedback / FAQ.
