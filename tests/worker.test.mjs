@@ -163,12 +163,12 @@ const adminTok = async () => token({ uid: 'adm9', claims: { email: 'bhupeshkumar
 await t('admin v2: GET status lists which section/staff passwords are configured', async () => {
   env.PASS_FINANCE = 'fin_pw_000_x'; env.PASS_STAFF = 'staff_pw_789_x';
   const j = await (await worker.fetch(new Request('https://w.example/'), env)).json();
-  assert.strictEqual(j.SUPER_ADMIN_PASS, true); assert.strictEqual(j.PASS_STAFF, true); assert.strictEqual(j.sections.finance, true); assert.strictEqual(j.sections.users, false);
+  assert.strictEqual(j.ADMIN_PASS, true); assert.strictEqual(j.SUPER_ADMIN_PASS, true); assert.strictEqual(j.PASS_STAFF, true); assert.strictEqual(j.sections.finance, true); assert.strictEqual(j.sections.users, false);
   assert.strictEqual(Object.keys(j.sections).length, 12);
   assert.ok(!JSON.stringify(j).includes('fin_pw_000_x') && !JSON.stringify(j).includes(SUPER_ADMIN_PASS));        // password kabhi status me nahi
 });
 await t('admin v2: ADMIN_PASS opens panel only; SUPER_ADMIN_PASS grants master', async () => { const panel = await gate({ password: ADMIN_PASS }); assert.strictEqual(panel.status, 200); assert.strictEqual(panel.j.scope, 'panel'); assert.strictEqual(await verify(panel.j.gate, 'panel'), true); assert.strictEqual(await verify(panel.j.gate, 'master'), false); const fresh = await gate({ password: SUPER_ADMIN_PASS }); assert.strictEqual(fresh.status, 200); assert.strictEqual(fresh.j.scope, 'master'); });
-await t('admin v2: master entry -> scope master, works for image auth; staff entry -> scope staff, image auth refused', async () => {
+await t('admin v2: master entry -> scope master, works for image auth; panel/staff tokens cannot upload', async () => {
   const m = await gate({ password: SUPER_ADMIN_PASS }); assert.strictEqual(m.status, 200); assert.strictEqual(m.j.scope, 'master');
   const ok = await post({ idToken: await adminTok(), gate: m.j.gate }, { path: '/imagekit-auth' }); assert.strictEqual(ok.status, 200);
   const panel = await gate({ password: ADMIN_PASS }); assert.strictEqual(panel.j.scope, 'panel');
