@@ -1362,7 +1362,7 @@ async function editPYQ(id){
     if(!Number.isInteger(year) || year < 1900 || year > 2100){ showToast('❌ सही year डालें (1900–2100)'); return; }
     const desc = prompt('Description बदलें:', p.desc || ''); if(desc === null) return;
     const link = prompt('PDF / Paper link बदलें:', p.link || ''); if(link === null) return;
-    if(link.trim() && !/^https:\\/\\//i.test(link.trim())){ showToast('❌ Link https:// से शुरू होना चाहिए'); return; }
+    if(link.trim() && !/^https:\/\//i.test(link.trim())){ showToast('❌ Link https:// से शुरू होना चाहिए'); return; }
     await ref.update({title:title.trim().slice(0,150), year:year, desc:desc.trim().slice(0,500), link:link.trim()});
     showToast('✅ पुराना paper update हो गया'); renderPYQManage();
   }catch(e){ showToast('❌ Update नहीं हुआ: '+e.message); }
