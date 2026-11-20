@@ -998,7 +998,7 @@ async function unlockGate(){
     const j = await r.json();
     if(!r.ok || !j.gate) throw new Error(j.error || 'Password गलत है');
     GATE = j.gate; sessionStorage.setItem('adm_gate', GATE); inp.value = '';
-    sessionStorage.setItem('adm_scope', j.scope || 'master'); v2SetScope(j.scope || 'master');   // master (Super Admin) ya staff
+    sessionStorage.setItem('adm_scope', j.scope || 'panel'); v2SetScope(j.scope || 'panel');   // panel (ADMIN_PASS), master (SUPER_ADMIN_PASS) ya staff
     if(auth.currentUser) showAdminApp(auth.currentUser); else showGate();
   }catch(e){ showToast('❌ ' + e.message); }
   btn.disabled = false;
@@ -1654,8 +1654,8 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
   }
   async function enterAdmin(user){
     if(!gateValid()){ showGate(); return; }
-    const need = ROLE === 'super' ? 'master' : 'staff';
-    if(GATE_SCOPE !== need){ clearGate(); showGate(); showToast('⚠️ इस account के लिए ' + (need === 'master' ? 'Admin' : 'Staff') + ' password डालें'); return; }
+    const need = ROLE === 'super' ? GATE_SCOPE : 'staff';
+    if((ROLE === 'super' && need !== 'panel' && need !== 'master') || (ROLE !== 'super' && need !== 'staff')){ clearGate(); showGate(); showToast('⚠️ इस account के लिए ' + (ROLE === 'super' ? 'ADMIN_PASS या SUPER_ADMIN_PASS' : 'Staff') + ' password डालें'); return; }
     try{      // server se token jaanch (SUPER_ADMIN_PASS badla ho to purana token bekaar)
       const r = await fetch(IK_WORKER + '/admin-verify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ gate: GATE, scope: need }) });
       if(r.ok){ const j = await r.json(); if(!j.ok){ clearGate(); showGate(); showToast('⚠️ Session खत्म — दोबारा password डालें'); return; } }
@@ -1712,7 +1712,7 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
   }
 
   // ───────────── Section password locks ─────────────
-  function lockStateNow(sec){ return secLockState(SEC_STATUS, SEC_TOK, sec, Date.now()); }
+  function lockStateNow(sec){ if(ROLE === 'super' && GATE_SCOPE === 'master') return 'unlocked'; return secLockState(SEC_STATUS, SEC_TOK, sec, Date.now()); }
   function saveSec(){ try{ sessionStorage.setItem('adm_sec', JSON.stringify(SEC_TOK)); }catch(e){} }
   function lockAll(why){
     if(!Object.keys(SEC_TOK).length) return false;
@@ -1720,6 +1720,7 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
     if(navBuilt) buildNav(); return true;
   }
   async function verifySec(sec){
+    if(ROLE === 'super' && GATE_SCOPE === 'master') return true;
     if(SEC_STATUS === null) return true;                               // Worker purana/unreachable: server verify ka raasta nahi
     if(VERIFIED[sec] && Date.now() - VERIFIED[sec] < 120000) return true;
     try{
@@ -1733,8 +1734,8 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
     return new Promise(function(resolve){
       let done = false;
       const finish = function(ok){ if(done) return; done = true; closeModal(); resolve(ok); };
-      openModal('<h3>🔒 ' + esc(SEC_NAMES[sec] || sec) + '</h3><p>इस section का password डालें। (Super Admin: master password भी चलेगा।)'
-        + (SEC_STATUS === null ? '<br><b>⚠️ Worker से status नहीं मिला — अभी सिर्फ़ master password से unlock होगा।</b>' : '') + '</p>'
+      openModal('<h3>🔒 ' + esc(SEC_NAMES[sec] || sec) + '</h3><p>इस section का password डालें। (सभी sections के लिए SUPER_ADMIN_PASS या सिर्फ़ इसी section का PASS_<SECTION> डालें।)'
+        + (SEC_STATUS === null ? '<br><b>⚠️ Worker से status नहीं मिला — अभी SUPER_ADMIN_PASS से unlock होगा।</b>' : '') + '</p>'
         + '<input type="password" id="secPw" autocomplete="off" placeholder="Password"><div class="err" id="secErr"></div>'
         + '<div class="mrow"><button class="mini" id="secCancel">रद्द करें</button><button class="mini pri" id="secGo">🔓 Unlock</button></div>', function(){ finish(false); });
       const pw = $('secPw'), err = $('secErr'), go2 = $('secGo');
