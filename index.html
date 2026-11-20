@@ -3054,7 +3054,7 @@ function loadSubjectContent(type){
 
   let items=allContent.filter(c=>c.board===curBoard&&(c.subject===curSubject||c.subject==='all'));
   if(type!=='all') items=items.filter(c=>c.type===type);
-  items.sort((x,y)=>{ const xo=Number(x.sortOrder), yo=Number(y.sortOrder); if(Number.isFinite(xo)&&Number.isFinite(yo)&&xo!==yo) return xo-yo; if(Number.isFinite(xo)!==Number.isFinite(yo)) return Number.isFinite(xo)?-1:1; return String(y.date||'').localeCompare(String(x.date||'')); });
+  items.sort((x,y)=>{ const xo=x.sortOrder===null||x.sortOrder===undefined||x.sortOrder===''?NaN:Number(x.sortOrder), yo=y.sortOrder===null||y.sortOrder===undefined||y.sortOrder===''?NaN:Number(y.sortOrder); if(Number.isFinite(xo)&&Number.isFinite(yo)&&xo!==yo) return xo-yo; if(Number.isFinite(xo)!==Number.isFinite(yo)) return Number.isFinite(xo)?-1:1; return String(y.date||'').localeCompare(String(x.date||'')); });
   document.getElementById('subjCount').textContent=items.length+' items';
 
   const labels={all:'🗂 All',pdf:'📄 PDF',note:'🗒️ Notes',video:'🎥 Video',dpp:'📗 DPP',quiz:'🧩 Quiz'};
