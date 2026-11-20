@@ -1298,7 +1298,7 @@ function renderPYQManage(){
               <div class="mgmt-nm">${esc(p.year)} — ${esc(p.title)}</div>
               <div class="mgmt-sb">${esc(p.board)} • ${esc(p.subject)} • ${esc(p.examType||'')}</div>
             </div>
-            <div style="display:flex;gap:4px;"><button class="pub-btn${p.published===false?' off':''}" data-v2="togglePub" data-coll="pyq" data-id="${esc(p.id)}" data-pub="${p.published===false?0:1}">${p.published===false?'Publish':'Unpublish'}</button><button class="del-btn" data-act="delPYQ" data-id="${esc(p.id)}">🗑</button></div>
+            <div style="display:flex;gap:4px;"><button class="pub-btn${p.published===false?' off':''}" data-v2="togglePub" data-coll="pyq" data-id="${esc(p.id)}" data-pub="${p.published===false?0:1}">${p.published===false?'Publish':'Unpublish'}</button><button class="rply-btn" data-act="editPYQ" data-id="${esc(p.id)}">✏️ Edit</button><button class="del-btn" data-act="delPYQ" data-id="${esc(p.id)}">🗑</button></div>
           </div>`).join('')
       : '<div class="empty"><div class="ei">📜</div><p>कोई PYQ नहीं।</p></div>';
   }).catch(()=>{});
@@ -1350,6 +1350,24 @@ function delContent(id){
     .then(()=>{ showToast('🗑 Delete हो गया'); renderAManage(); })
     .catch(e=>showToast('❌ Error: '+e.message));
 }
+async function editPYQ(id){
+  try{
+    const ref = db.collection('pyq').doc(id), snap = await ref.get();
+    if(!snap.exists){ showToast('❌ Paper नहीं मिला'); return; }
+    const p = snap.data() || {};
+    const title = prompt('Paper का title बदलें:', p.title || ''); if(title === null) return;
+    if(!title.trim()){ showToast('❌ Title खाली नहीं हो सकता'); return; }
+    const yearText = prompt('Year बदलें:', String(p.year || new Date().getFullYear())); if(yearText === null) return;
+    const year = Number(yearText);
+    if(!Number.isInteger(year) || year < 1900 || year > 2100){ showToast('❌ सही year डालें (1900–2100)'); return; }
+    const desc = prompt('Description बदलें:', p.desc || ''); if(desc === null) return;
+    const link = prompt('PDF / Paper link बदलें:', p.link || ''); if(link === null) return;
+    if(link.trim() && !/^https:\\/\\//i.test(link.trim())){ showToast('❌ Link https:// से शुरू होना चाहिए'); return; }
+    await ref.update({title:title.trim().slice(0,150), year:year, desc:desc.trim().slice(0,500), link:link.trim()});
+    showToast('✅ पुराना paper update हो गया'); renderPYQManage();
+  }catch(e){ showToast('❌ Update नहीं हुआ: '+e.message); }
+}
+
 function delPYQ(id){
   if(!confirm('क्या आप sure हैं? यह PYQ delete हो जाएगा!')) return;
   db.collection('pyq').doc(id).delete()
@@ -1405,7 +1423,7 @@ function delDoubt(id){
 }
 // ── Safe click handler: doc ID kabhi inline JS/HTML me nahi jaata — data-id attribute se aata hai ──
 (function(){
-  const ACT = { delPYQ, delContent, delQuiz, replyDoubt, delDoubt, editOffer, toggleOffer, delOffer };
+  const ACT = { delPYQ, editPYQ, delContent, delQuiz, replyDoubt, delDoubt, editOffer, toggleOffer, delOffer };
   document.addEventListener('click', function(e){
     const b = e.target && e.target.closest ? e.target.closest('[data-act]') : null;
     if(!b) return;
@@ -2005,10 +2023,26 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
     $('coList').innerHTML = (rows.length ? rows.map(function(c){
       const live = c.published !== false, sb = esc(c.board) + ' • ' + esc(c.subject) + ' • ' + esc(c.type) + (c.type === 'quiz' ? ' • ' + (c.questions || []).length + ' प्रश्न' : '') + (c.chapter ? ' • ' + esc(c.chapter) : '') + (c.heading ? ' • 📁 ' + esc(c.heading) : '') + ((c.sortOrder !== null && c.sortOrder !== undefined && c.sortOrder !== '' && Number.isFinite(Number(c.sortOrder))) ? ' • क्रम ' + Number(c.sortOrder) : '');
       return '<div class="mgmt-item" draggable="true" data-sort-id="' + esc(c.id) + '" style="flex-wrap:wrap;cursor:grab;"><div style="min-width:0;flex:1;"><div class="mgmt-nm">⠿ ' + (live ? '🟢 ' : '⚪ ') + esc(c.title) + '</div><div class="mgmt-sb">' + sb + '</div></div>'
-        + '<div style="display:flex;gap:4px;"><button class="pub-btn' + (live ? '' : ' off') + '" data-v2="togglePub" data-coll="content" data-id="' + esc(c.id) + '" data-pub="' + (live ? 1 : 0) + '">' + (live ? 'Unpublish' : 'Publish') + '</button><button class="rply-btn" data-v2="coEdit" data-id="' + esc(c.id) + '">✏️</button><button class="del-btn" data-v2="coDel" data-id="' + esc(c.id) + '">🗑</button></div></div>';
-    }).join('') : '<div class="empty"><div class="ei">📚</div><p>कोई content नहीं मिला।</p></div>') + '<div class="hint">सबसे नए 200 content तक manage किए जा सकते हैं। ⚪ Draft = students को नहीं दिखता।</div>';
+        + '<div style="display:flex;gap:4px;align-items:center;"><button class="mini" title="ऊपर करें" data-v2="coMove" data-dir="-1" data-id="' + esc(c.id) + '">↑</button><button class="mini" title="नीचे करें" data-v2="coMove" data-dir="1" data-id="' + esc(c.id) + '">↓</button><button class="pub-btn' + (live ? '' : ' off') + '" data-v2="togglePub" data-coll="content" data-id="' + esc(c.id) + '" data-pub="' + (live ? 1 : 0) + '">' + (live ? 'Unpublish' : 'Publish') + '</button><button class="rply-btn" data-v2="coEdit" data-id="' + esc(c.id) + '">✏️</button><button class="del-btn" data-v2="coDel" data-id="' + esc(c.id) + '">🗑</button></div></div>';
+    }).join('') : '<div class="empty"><div class="ei">📚</div><p>कोई content नहीं मिला।</p></div>') + '<div class="hint">क्रम बदलने के लिए किसी item पर drag करें या ↑ ↓ दबाएँ (मोबाइल पर ↑ ↓ इस्तेमाल करें)। क्रम Firestore में save होगा। ⚪ Draft = students को नहीं दिखता। अभी सबसे नए 200 content दिखते हैं।</div>';
     renderHeadingManager(rows); bindCourseDrag();
   }
+  A.coMove = async function(id, el){
+    const ordered = (CO.visible || []).slice();
+    const index = ordered.findIndex(function(x){ return x.id === id; });
+    const delta = Number(el && el.dataset ? el.dataset.dir : 0);
+    const next = index + delta;
+    if(index < 0 || (delta !== -1 && delta !== 1) || next < 0 || next >= ordered.length) return;
+    const moved = ordered.splice(index,1)[0]; ordered.splice(next,0,moved);
+    const batch = db.batch();
+    ordered.forEach(function(c,i){ c.sortOrder = (i+1)*10; batch.update(db.collection('content').doc(c.id),{sortOrder:(i+1)*10}); });
+    try{
+      await batch.commit();
+      ordered.forEach(function(c){ const original=CO.rows.find(function(x){return x.id===c.id;}); if(original) original.sortOrder=c.sortOrder; });
+      showToast('✅ क्रम सेव हो गया'); renderCourses();
+    }catch(err){ showToast('❌ क्रम सेव नहीं हुआ: '+err.message); }
+  };
+
   A.coAssignHeading = async function(){
     const id=$('coHeadingItem').value, heading=$('coNewHeading').value.trim().slice(0,80);
     if(!id){ showToast('पहले content चुनें'); return; }
