@@ -51,6 +51,14 @@ Staff banana: Admin -> User Management -> **Teachers, Staff & Roles** -> Gmail +
 
 Purana ops-portal-7c91e4.html + naye rules bhi chalte hain (rules additive). Safe rollout: (1) Cloudflare me existing `ADMIN_PASS` ki current value ko jaisa hai waisa hi rakhein; (2) ek naya, alag `SUPER_ADMIN_PASS` secret add karein; (3) Worker v13 deploy karein; (4) `ADMIN_PASS` se panel-only login aur `SUPER_ADMIN_PASS` se all-sections access test karein; (5) har section ke liye zaroori `PASS_<SECTION>` set karein; (6) site deploy karein. `ADMIN_PASS` ko rename/delete karne ki zaroorat nahi.
 
+## 4A. Admin URL aur fail-closed security
+
+- Admin page ab `/ops-portal-7c91e4.html` par hai; purana `/admin.html` file hata diya gaya hai (deploy ke baad purana path 404 hona chahiye).
+- Ye random URL sirf discovery kam karta hai, authentication nahi. Static hosting par HTML source kisi ko bhi mil sakta hai; sensitive Firestore data ka asli lock verified Google account + `firestore.rules` hai.
+- Admin entry token aur section tokens ko har baar Cloudflare Worker ke `/admin-verify` se verify karna zaroori hai. Worker unavailable ya invalid response par panel/section band rahega (fail closed).
+- Admin Google account par 2-Step Verification on rakhein; admin URL ko public post/share na karein.
+
+
 ## 5. Remote Config — `_config/app` (Settings page se)
 
 | Field | Student app me asar |
