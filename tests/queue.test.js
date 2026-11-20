@@ -71,5 +71,12 @@ const quiet = async fn => { const l = console.log, w = console.warn, e = console
     sends = 0; mode = 'ok'; const db = mk({ status: 'failed' }); assert.strictEqual(await quiet(() => S.processQueue(db)), false);
     assert.strictEqual(doc(db).status, 'failed'); assert.strictEqual(sends, 0);
   });
+  await t('blocked students (blockedUsers/{uid}) do not get notifications; unreadable block list never stops sending', async () => {
+    sends = 0; mode = 'ok';
+    const db = makeDb({ notificationQueue: { q1: { title: 'T', body: 'B', audience: 'all', status: 'pending' } }, students: students(), blockedUsers: { s1: { reason: 'spam' } } });
+    await quiet(() => S.processQueue(db)); assert.strictEqual(doc(db).status, 'sent'); assert.strictEqual(doc(db).sentCount, 2);   // s0 + s2, s1 blocked
+    const db2 = mk({}); const orig = db2.collection; db2.collection = c => { if (c === 'blockedUsers') throw new Error('permission'); return orig(c); };
+    await quiet(() => S.processQueue(db2)); assert.strictEqual(doc(db2).sentCount, 3);                                           // read fail => sabko (rules/app me asli block)
+  });
   console.log(`\n${n} queue tests passed`);
 })();

@@ -10,7 +10,7 @@ export TF_VAR_cloudflare_api_token=...   TF_VAR_account_id=...   TF_VAR_gemini_k
 cd infra/terraform
 terraform init
 terraform import cloudflare_workers_kv_namespace.rate  <ACCOUNT_ID>/<KV_NAMESPACE_ID>
-terraform import cloudflare_workers_script.ai         <ACCOUNT_ID>/bold-dust-6f37
+terraform import cloudflare_worker_script.ai           <ACCOUNT_ID>/bold-dust-6f37
 terraform plan        # diff dhyan se padho: KV counters ya worker replace na ho
 ```
 Plan me sirf worker code / bindings ka diff dikhe tabhi `terraform apply`.

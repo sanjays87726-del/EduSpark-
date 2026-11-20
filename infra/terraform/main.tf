@@ -6,35 +6,25 @@ resource "cloudflare_workers_kv_namespace" "rate" {
   title      = "eduspark-rate"
 }
 
-# Cloudflare provider v5 renamed cloudflare_worker_script -> cloudflare_workers_script.
-# Keep the existing Terraform state address during the provider migration.
-moved {
-  from = cloudflare_worker_script.ai
-  to   = cloudflare_workers_script.ai
-}
-
-resource "cloudflare_workers_script" "ai" {
+resource "cloudflare_worker_script" "ai" {
   account_id         = var.account_id
-  script_name        = var.worker_name
+  name               = var.worker_name
   content            = file("${path.module}/../../worker.js")
-  main_module        = "worker.js"
+  module             = true
   compatibility_date = "2025-01-01"
 
-  bindings = [
-    {
-      name         = "RATE"
-      type         = "kv_namespace"
-      namespace_id = cloudflare_workers_kv_namespace.rate.id
-    },
-    {
-      name = "GEMINI_KEY"
-      type = "secret_text"
-      text = var.gemini_key
-    },
-    {
-      name = "DAILY_LIMIT"
-      type = "plain_text"
-      text = tostring(var.daily_limit)
-    }
-  ]
+  kv_namespace_binding {
+    name         = "RATE"
+    namespace_id = cloudflare_workers_kv_namespace.rate.id
+  }
+
+  secret_text_binding {
+    name = "GEMINI_KEY"
+    text = var.gemini_key
+  }
+
+  plain_text_binding {
+    name = "DAILY_LIMIT"
+    text = tostring(var.daily_limit)
+  }
 }

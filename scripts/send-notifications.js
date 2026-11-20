@@ -21,10 +21,7 @@
 // Daily reminders band karne ke liye workflow mein DAILY_SLOTS: 'off' kar dein.
 // ══════════════════════════════════════════════════════════════
 
-// Firebase Admin v14 modular APIs.
-const { initializeApp, cert } = require('firebase-admin/app');
-const { getFirestore, FieldValue, Timestamp } = require('firebase-admin/firestore');
-const { getMessaging } = require('firebase-admin/messaging');
+const admin = require('firebase-admin');
 
 const APP_URL = 'https://eduspark.live/';
 // Kitne din inactive rehne par "wapas aao" reminder jaye (workflow me env INACTIVITY_DAYS se badal sakte ho). Default 1 din.
@@ -91,8 +88,8 @@ function init() {
     process.exit(1);
   }
   const serviceAccount = JSON.parse(raw);
-  initializeApp({ credential: cert(serviceAccount) });
-  return getFirestore();
+  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+  return admin.firestore();
 }
 
 // ── Time helpers (IST) ─────────────────────────────────────────
@@ -153,7 +150,7 @@ async function sendMessages(db, messages) {
   const CHUNK = 500;
   for (let i = 0; i < messages.length; i += CHUNK) {
     const chunk = messages.slice(i, i + CHUNK);
-    const res = await getMessaging().sendEach(chunk.map(buildFcmMessage));
+    const res = await admin.messaging().sendEach(chunk.map(buildFcmMessage));
     out.successCount += res.successCount;
     out.failureCount += res.failureCount;
     const cleanup = db.batch();
@@ -164,7 +161,7 @@ async function sendMessages(db, messages) {
       out.errors[code] = (out.errors[code] || 0) + 1;
       if (!out.sample && r.error) out.sample = `${code}: ${r.error.message}`;
       if (DEAD_TOKEN_CODES.includes(code) && chunk[idx].studentId) {
-        cleanup.update(db.collection('students').doc(chunk[idx].studentId), { fcmToken: FieldValue.delete() });
+        cleanup.update(db.collection('students').doc(chunk[idx].studentId), { fcmToken: admin.firestore.FieldValue.delete() });
         cleanupCount++;
       }
     });
@@ -192,13 +189,19 @@ async function claimSlot(db, key, dateKey) {
   });
 }
 async function releaseSlot(db, key) {
-  await slotRef(db).set({ [key]: FieldValue.delete() }, { merge: true });
+  await slotRef(db).set({ [key]: admin.firestore.FieldValue.delete() }, { merge: true });
 }
 
-// Sirf wahi students jinke paas token hai (poora collection nahi)
+// Admin panel se block kiye students (blockedUsers/{uid}) ko notification nahi bhejte.
+// Ye list padhna fail ho to bhejna nahi rokte (block ka asli enforcement app + Firestore rules me hai).
+async function blockedIds(db) {
+  try { const s = await db.collection('blockedUsers').get(); return new Set(s.docs.map(d => d.id)); } catch { return new Set(); }
+}
+
+// Sirf wahi students jinke paas token hai (poora collection nahi) aur jo block nahi hain
 async function studentsWithTokens(db) {
-  const snap = await db.collection('students').where('fcmToken', '!=', null).get();
-  return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(s => typeof s.fcmToken === 'string' && s.fcmToken);
+  const [snap, blocked] = await Promise.all([db.collection('students').where('fcmToken', '!=', null).get(), blockedIds(db)]);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(s => typeof s.fcmToken === 'string' && s.fcmToken && !blocked.has(s.id));
 }
 
 // ── PART 1: Admin ke instant broadcasts ──────────────────────────
@@ -247,7 +250,7 @@ async function processQueue(db) {
     const targets = q.audience && q.audience !== 'all' ? students.filter(s => s.board === q.audience) : students;
     if (!targets.length) {
       console.warn(`⚠️  "${q.title}" — audience "${q.audience || 'all'}" me kisi student ke paas token nahi (shayad kisi ne notification allow nahi ki).`);
-      await doc.ref.update({ status: 'sent', sentCount: 0, note: 'koi token nahi', leaseUntil: FieldValue.delete(), sentAt: FieldValue.serverTimestamp() });
+      await doc.ref.update({ status: 'sent', sentCount: 0, note: 'koi token nahi', leaseUntil: admin.firestore.FieldValue.delete(), sentAt: admin.firestore.FieldValue.serverTimestamp() });
       continue;
     }
     let result;
@@ -264,14 +267,14 @@ async function processQueue(db) {
       if (attempts >= MAX_ATTEMPTS) {
         anyDead = true;
         console.error(`☠️  "${q.title}" ${attempts} kosish ke baad dead (dead-letter).`);
-        await doc.ref.update({ status: 'dead', attempts, sentCount: 0, lastError, leaseUntil: FieldValue.delete(), sentAt: FieldValue.serverTimestamp() });
+        await doc.ref.update({ status: 'dead', attempts, sentCount: 0, lastError, leaseUntil: admin.firestore.FieldValue.delete(), sentAt: admin.firestore.FieldValue.serverTimestamp() });
       } else {
         const wait = RETRY_BASE_MS * Math.pow(2, attempts - 1);
         console.warn(`🔁 "${q.title}" attempt ${attempts}/${MAX_ATTEMPTS} fail — ${Math.round(wait / 60000)} min baad dobara.`);
-        await doc.ref.update({ status: 'pending', attempts, lastError, nextAttemptAt: Date.now() + wait, leaseUntil: FieldValue.delete() });
+        await doc.ref.update({ status: 'pending', attempts, lastError, nextAttemptAt: Date.now() + wait, leaseUntil: admin.firestore.FieldValue.delete() });
       }
     } else {
-      await doc.ref.update({ status: 'sent', sentCount: result.successCount, leaseUntil: FieldValue.delete(), sentAt: FieldValue.serverTimestamp() });
+      await doc.ref.update({ status: 'sent', sentCount: result.successCount, leaseUntil: admin.firestore.FieldValue.delete(), sentAt: admin.firestore.FieldValue.serverTimestamp() });
     }
   }
   return anyDead;                                // sirf permanent fail par workflow laal hota hai
@@ -314,14 +317,14 @@ function needsInactivityReminder(la, ln, now = Date.now()) {
   return (now - la) >= INACTIVITY_DAYS * MS_PER_DAY && (!ln || (now - ln) >= cooldownMs);
 }
 async function sendInactivityReminders(db) {
-  const cutoff = Timestamp.fromMillis(Date.now() - INACTIVITY_DAYS * MS_PER_DAY);
+  const cutoff = admin.firestore.Timestamp.fromMillis(Date.now() - INACTIVITY_DAYS * MS_PER_DAY);
   // Sirf wo jo INACTIVITY_DAYS se inactive hain (poora collection nahi padhte)
-  const snap = await db.collection('students').where('lastActive', '<', cutoff).get();
+  const [snap, blocked] = await Promise.all([db.collection('students').where('lastActive', '<', cutoff).get(), blockedIds(db)]);
   const now = Date.now();
   const messages = [];
   snap.docs.forEach(doc => {
     const s = doc.data();
-    if (!s.fcmToken) return;
+    if (!s.fcmToken || blocked.has(doc.id)) return;
     const la = s.lastActive && s.lastActive.toMillis ? s.lastActive.toMillis() : 0;
     const ln = s.lastNotifiedAt && s.lastNotifiedAt.toMillis ? s.lastNotifiedAt.toMillis() : 0;
     if (needsInactivityReminder(la, ln, now)) {
@@ -337,7 +340,7 @@ async function sendInactivityReminders(db) {
   const sent = messages.filter(m => okSet.has(m.studentId));
   for (let i = 0; i < sent.length; i += 400) {
     const b = db.batch();
-    sent.slice(i, i + 400).forEach(m => b.update(m.ref, { lastNotifiedAt: FieldValue.serverTimestamp() }));
+    sent.slice(i, i + 400).forEach(m => b.update(m.ref, { lastNotifiedAt: admin.firestore.FieldValue.serverTimestamp() }));
     await b.commit().catch(e => console.warn('lastNotifiedAt update fail:', e.message));
   }
   return { ok: result.successCount > 0, result };
@@ -369,7 +372,7 @@ async function runDueSlots(db) {
   // Debug ke liye: pichhli slot-run ka natija (admin Firebase console me notificationState/lastRun me dikhega)
   if (results.length) {
     await db.collection('notificationState').doc('lastRun').set({
-      at: FieldValue.serverTimestamp(), istDate: t.dateKey, istMinutes: t.minutes, results
+      at: admin.firestore.FieldValue.serverTimestamp(), istDate: t.dateKey, istMinutes: t.minutes, results
     }).catch(() => {});
   }
   return anyFailed;

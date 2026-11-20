@@ -38,9 +38,9 @@ const post = (body, { origin = ORIGIN, headers = {}, path = '/' } = {}) => worke
 const Q = 'Newton ka pehla niyam kya hai?';
 let n = 0; const t = async (name, fn) => { try { await fn(); n++; console.log('✓', name); } catch (e) { console.log('✗', name, '\n  ', e.stack); process.exitCode = 1; } };
 
-await t('GET status v10, no-store + nosniff', async () => {
+await t('GET status v11, no-store + nosniff', async () => {
   const r = await worker.fetch(new Request('https://w.example/'), env); const j = await r.json();
-  assert.strictEqual(j.version, 10); assert.deepStrictEqual(j.apiVersions, ['v1']); assert.strictEqual(r.headers.get('X-API-Version'), '1'); assert.strictEqual(r.headers.get('Cache-Control'), 'no-store'); assert.strictEqual(r.headers.get('X-Content-Type-Options'), 'nosniff');
+  assert.strictEqual(j.version, 11); assert.deepStrictEqual(j.apiVersions, ['v1']); assert.strictEqual(r.headers.get('X-API-Version'), '1'); assert.strictEqual(r.headers.get('Cache-Control'), 'no-store'); assert.strictEqual(r.headers.get('X-Content-Type-Options'), 'nosniff');
 });
 await t('OPTIONS preflight: allowed headers unchanged (Content-Type only) + Max-Age', async () => {
   const r = await worker.fetch(new Request('https://w.example/', { method: 'OPTIONS', headers: { Origin: ORIGIN } }), env);
@@ -154,5 +154,51 @@ await t('contract: success response keys are exactly {answer, left, apiVersion};
   for (const [body, code] of [[{ question: Q }, 401], [{ idToken: await token({ uid: 'ct2' }), question: 'hi' }, 400]]) {
     const r = await post(body); const j = await r.json(); assert.strictEqual(r.status, code); assert.deepStrictEqual(Object.keys(j), ['error']);
   }
+});
+
+// ── Admin v2: panel-entry, staff, har section ka alag password, token verify ──────────────
+const gate = async (body, hdr = {}) => { const r = await post(body, { path: '/admin-gate', headers: hdr }); return { status: r.status, j: await r.json() }; };
+const verify = async (g, scope) => (await (await post({ gate: g, scope }, { path: '/admin-verify' })).json()).ok;
+const adminTok = async () => token({ uid: 'adm9', claims: { email: 'bhupeshkumar36882@gmail.com', email_verified: true } });
+await t('admin v2: GET status lists which section/staff passwords are configured', async () => {
+  env.PASS_FINANCE = 'fin_pw_000_x'; env.PASS_STAFF = 'staff_pw_789_x';
+  const j = await (await worker.fetch(new Request('https://w.example/'), env)).json();
+  assert.strictEqual(j.PASS_STAFF, true); assert.strictEqual(j.sections.finance, true); assert.strictEqual(j.sections.users, false);
+  assert.strictEqual(Object.keys(j.sections).length, 12);
+  assert.ok(!JSON.stringify(j).includes('fin_pw_000_x') && !JSON.stringify(j).includes(ADMIN_PASS));        // password kabhi status me nahi
+});
+await t('admin v2: master entry -> scope master, works for image auth; staff entry -> scope staff, image auth refused', async () => {
+  const m = await gate({ password: ADMIN_PASS }); assert.strictEqual(m.status, 200); assert.strictEqual(m.j.scope, 'master');
+  const ok = await post({ idToken: await adminTok(), gate: m.j.gate }, { path: '/imagekit-auth' }); assert.strictEqual(ok.status, 200);
+  const st = await gate({ password: env.PASS_STAFF }); assert.strictEqual(st.status, 200); assert.strictEqual(st.j.scope, 'staff');
+  const no = await post({ idToken: await adminTok(), gate: st.j.gate }, { path: '/imagekit-auth' }); assert.strictEqual(no.status, 401);
+  assert.strictEqual(await verify(st.j.gate, 'staff'), true); assert.strictEqual(await verify(st.j.gate, 'master'), false);
+});
+await t('admin v2: section password opens only that section; master (Super Admin) opens every section; section password cannot enter the panel', async () => {
+  const f = await gate({ password: env.PASS_FINANCE, section: 'finance' }); assert.strictEqual(f.status, 200); assert.strictEqual(f.j.scope, 'finance');
+  assert.strictEqual(await verify(f.j.gate, 'finance'), true);
+  assert.strictEqual(await verify(f.j.gate, 'users'), false); assert.strictEqual(await verify(f.j.gate, 'master'), false);   // token kisi aur scope par nahi chalta
+  const m = await gate({ password: ADMIN_PASS, section: 'finance' }); assert.strictEqual(m.status, 200); assert.strictEqual(m.j.scope, 'finance');
+  const bad = await gate({ password: env.PASS_FINANCE }); assert.strictEqual(bad.status, 401);                              // section password se panel nahi khulta
+  const wrongSec = await gate({ password: env.PASS_FINANCE, section: 'users' }); assert.strictEqual(wrongSec.status, 401);
+});
+await t('admin v2: tampered/garbage token and unknown section/scope are rejected', async () => {
+  const f = await gate({ password: env.PASS_FINANCE, section: 'finance' });
+  const tam = f.j.gate.slice(0, -1) + (f.j.gate.endsWith('0') ? '1' : '0');
+  assert.strictEqual(await verify(tam, 'finance'), false); assert.strictEqual(await verify('', 'finance'), false); assert.strictEqual(await verify('9999999999999.abc', 'finance'), false);
+  assert.strictEqual((await gate({ password: 'x', section: 'hacking' })).status, 400);
+  assert.strictEqual((await post({ gate: 'x', scope: 'root' }, { path: '/admin-verify' })).status, 400);
+});
+await t('admin v2: section with no password configured reports open; wrong passwords are rate-limited per section (5/day) without locking other sections', async () => {
+  const open = await gate({ section: 'reports' }); assert.strictEqual(open.status, 200); assert.strictEqual(open.j.open, true);
+  const ip = { 'CF-Connecting-IP': '9.9.9.9' };
+  for (let i = 0; i < 5; i++) assert.strictEqual((await gate({ password: 'nope' + i, section: 'finance' }, ip)).status, 401);
+  assert.strictEqual((await gate({ password: 'nope', section: 'finance' }, ip)).status, 429);
+  assert.strictEqual((await gate({ password: env.PASS_FINANCE, section: 'finance' }, ip)).status, 429);                      // lock ke baad sahi password bhi nahi
+  assert.strictEqual((await gate({ password: ADMIN_PASS }, ip)).status, 200);                                                // entry gate ka counter alag
+});
+await t('admin v2: rotating ADMIN_PASS invalidates every old token (= logout everywhere)', async () => {
+  const f = await gate({ password: env.PASS_FINANCE, section: 'finance' }); assert.strictEqual(await verify(f.j.gate, 'finance'), true);
+  const old = env.ADMIN_PASS; env.ADMIN_PASS = 'rotated_new_master_pw'; assert.strictEqual(await verify(f.j.gate, 'finance'), false); env.ADMIN_PASS = old;
 });
 console.log(`\n${n} worker tests passed`);

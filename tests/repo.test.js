@@ -1,6 +1,7 @@
 const assert = require('assert'), fs = require('fs'), os = require('os'), path = require('path');
 const { check } = require('../tools/check-repo.js');
 const ROOT = path.join(__dirname, '..');
+const CUR = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).version;   // 1.x.y — bump par test na tootein (NOTES #46)
 
 // 1) Asli repo ka fixture copy: icons/about/contact jaise binary/aur-pages sirf is test ke liye banao
 function fixture() {
@@ -22,10 +23,10 @@ let d = fixture(); let r = check(d);
 assert.deepStrictEqual(r.errors, [], 'clean fixture: ' + r.errors.join(' | '));
 
 d = fixture(); w(d, 'index.html', s => s.replace('function showToast(msg){', 'function showToast(msg){ var = ;')); assert.ok(has(check(d), /inline script/), 'broken inline script pakda jaye');
-d = fixture(); w(d, 'package.json', s => s.replace('"version": "1.6.0"', '"version": "9.9.9"')); r = check(d); assert.ok(has(r, /version mismatch/) && has(r, /CHANGELOG/) && has(r, /Helm Chart appVersion/) && has(r, /deployment\.yaml image tag/), 'version drift');
-d = fixture(); w(d, 'deploy/helm/eduspark/Chart.yaml', s => s.replace('appVersion: "1.6.0"', 'appVersion: "1.4.0"')); r = check(d); assert.ok(has(r, /Helm Chart appVersion \(1\.4\.0\)/) && r.errors.length === 1, 'chart drift only');
+d = fixture(); w(d, 'package.json', s => s.replace('"version": "' + CUR + '"', '"version": "9.9.9"')); r = check(d); assert.ok(has(r, /version mismatch/) && has(r, /CHANGELOG/) && has(r, /Helm Chart appVersion/) && has(r, /deployment\.yaml image tag/), 'version drift');
+d = fixture(); w(d, 'deploy/helm/eduspark/Chart.yaml', s => s.replace('appVersion: "' + CUR + '"', 'appVersion: "1.4.0"')); r = check(d); assert.ok(has(r, /Helm Chart appVersion \(1\.4\.0\)/) && r.errors.length === 1, 'chart drift only');
 d = fixture(); w(d, 'scripts/lib/webhook.js', s => s + '\n}}}'); assert.ok(has(check(d), /webhook\.js: syntax/), 'scripts/lib bhi check hota hai');
-d = fixture(); w(d, 'package.json', s => s.replace('"version": "1.6.0"', '"version": "1.4"')); assert.ok(has(check(d), /semver/));
+d = fixture(); w(d, 'package.json', s => s.replace('"version": "' + CUR + '"', '"version": "1.4"')); assert.ok(has(check(d), /semver/));
 d = fixture(); fs.unlinkSync(path.join(d, 'about.html')); assert.ok(has(check(d), /about\.html/), 'toota link');
 d = fixture(); fs.unlinkSync(path.join(d, 'icon-512.png')); assert.ok(has(check(d), /APP_SHELL/), 'shell file missing');
 d = fixture(); w(d, 'firestore.rules', s => s.replace('bhupeshkumar36882@gmail.com', 'other@x.com')); assert.ok(has(check(d), /admin email mismatch/));

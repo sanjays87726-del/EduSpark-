@@ -8,6 +8,25 @@ service cloud.firestore {
         && request.auth.token.email_verified == true;
     }
 
+    // ── Staff roles (Admin panel → System & Security → Staff & Roles) ──────────────────────────
+    // Super admin upar wala email hai (full access). Baaki staff `staff/{email}` doc se: {role, active}.
+    // get()/exists() sirf tab chalte hain jab isAdmin() false ho (|| short-circuit) — super admin ke liye koi extra read nahi.
+    // Roles: editor (content/quiz/pyq), teacher (editor + doubts reply), notifier (notifications bhejna)
+    function staffDoc() {
+      return get(/databases/$(database)/documents/staff/$(request.auth.token.email.lower())).data;
+    }
+    function isStaff(roles) {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/staff/$(request.auth.token.email.lower()))
+        && staffDoc().get('active', false) == true
+        && staffDoc().get('role', '') in roles;
+    }
+    // Block hua student naye doubts nahi bhej sakta (blockedUsers/{uid} sirf admin likh sakta hai)
+    function notBlocked() {
+      return !exists(/databases/$(database)/documents/blockedUsers/$(request.auth.uid));
+    }
+
     // Helper: field maujood na ho / null ho / ya string ho jiski length n se zyada na ho
     function okStr(d, k, n) {
       return !(k in d) || d[k] == null || (d[k] is string && d[k].size() <= n);
@@ -15,18 +34,19 @@ service cloud.firestore {
 
     // Public read, sirf admin write
     match /_config/{doc}           { allow read: if true; allow write: if isAdmin(); }
-    match /content/{doc}           { allow read: if true; allow write: if isAdmin(); }
-    match /quizzes/{doc}           { allow read: if true; allow write: if isAdmin(); }
-    match /pyq/{doc}               { allow read: if true; allow write: if isAdmin(); }
-    match /notificationQueue/{doc} { allow read: if true; allow write: if isAdmin(); }
+    match /content/{doc}           { allow read: if true; allow write: if isAdmin() || isStaff(['editor','teacher']); }
+    match /quizzes/{doc}           { allow read: if true; allow write: if isAdmin() || isStaff(['editor','teacher']); }
+    match /pyq/{doc}               { allow read: if true; allow write: if isAdmin() || isStaff(['editor','teacher']); }
+    match /notificationQueue/{doc} { allow read: if true; allow write: if isAdmin() || isStaff(['notifier']); }
     match /offers/{doc}            { allow read: if true; allow write: if isAdmin(); }   // offerwall — pehle ye rule nahi tha, isliye students ko offers dikhte hi nahi the
 
     // Doubts: student sirf apne doubts dekh/bhej sakta hai; reply/delete sirf admin.
     // Naya doubt sirf in fields ke saath, status 'pending' aur khali answer ke saath ban sakta hai
     // (taaki koi khud se nakli "answer" na likh sake).
     match /doubts/{doc} {
-      allow read: if isAdmin() || (request.auth != null && resource.data.uid == request.auth.uid);
+      allow read: if isAdmin() || (request.auth != null && resource.data.uid == request.auth.uid) || isStaff(['teacher']);
       allow create: if request.auth != null
+        && notBlocked()
         && doc.matches('[A-Za-z0-9]{20}')   // app .add() se banti hai (auto-ID); apni marzi ki ID se admin panel me XSS ho sakta tha
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly(['board','subject','topic','text','name','date','status','answer','uid','deviceId'])
@@ -42,7 +62,7 @@ service cloud.firestore {
         && okStr(request.resource.data, 'name', 100)
         && okStr(request.resource.data, 'date', 40)
         && okStr(request.resource.data, 'deviceId', 100);
-      allow update: if isAdmin();
+      allow update: if isAdmin() || isStaff(['teacher']);
       // Student apne doubts delete kar sake (account delete ke liye); doosron ke nahi
       allow delete: if isAdmin() || (request.auth != null && resource.data.uid == request.auth.uid);
     }
@@ -50,7 +70,7 @@ service cloud.firestore {
     // Students: list sirf admin; student sirf apna doc likh sakta hai
     // (login wale: doc id == uid, bina-login: "dev_..." device id)
     function studentKeys() {
-      return ['name','username','usernameLower','photo','board','deviceId','lastActive','updatedAt','googleUid','email','fcmToken'];
+      return ['name','username','usernameLower','photo','board','deviceId','lastActive','updatedAt','googleUid','email','fcmToken','createdAt'];
     }
     function photoOk() {
       return request.resource.data.get('photo', null) == null || request.resource.data.photo.size() < 120000;
@@ -64,7 +84,8 @@ service cloud.firestore {
         && okStr(d, 'deviceId', 100)
         && okStr(d, 'googleUid', 128)
         && okStr(d, 'email', 254)
-        && okStr(d, 'fcmToken', 1024);
+        && okStr(d, 'fcmToken', 1024)
+        && okStr(d, 'createdAt', 40);
     }
     function ownsStudentDoc(id) {
       return request.auth != null && request.auth.uid == id;
@@ -85,6 +106,32 @@ service cloud.firestore {
       allow delete: if isAdmin() || (request.auth != null && request.auth.uid == id);
     }
 
+    // Staff list: sirf super admin badal sakta hai; staff apna doc padh sakta hai (admin panel ko role pata chale)
+    match /staff/{email} {
+      allow get: if request.auth != null && request.auth.token.email != null && email == request.auth.token.email.lower();
+      allow list, write: if isAdmin();
+    }
+
+    // Blocked students: sirf admin likhta hai; student sirf apna doc padh sakta hai (app "account block" screen dikhaye).
+    // Student apna block khud hata na sake isliye students/{id} se alag collection hai.
+    match /blockedUsers/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      allow list, write: if isAdmin();
+    }
+
+    // Activity log: har admin/staff action. Likhna: super admin ya koi bhi active staff (apne hi email ke naam se);
+    // padhna: sirf super admin. Koi bhi purana log badal/delete nahi kar sakta (append-only).
+    match /adminLogs/{id} {
+      allow read: if isAdmin();
+      allow create: if (isAdmin() || isStaff(['editor','teacher','notifier']))
+        && request.resource.data.keys().hasOnly(['at','by','role','action','section','target','detail','ua'])
+        && request.resource.data.by == request.auth.token.email.lower()
+        && request.resource.data.action is string && request.resource.data.action.size() <= 80
+        && okStr(request.resource.data, 'detail', 500)
+        && okStr(request.resource.data, 'target', 200);
+      allow update, delete: if false;
+    }
+
     // Unique usernames (index.html ka claimUsername isi collection se check karta hai)
     match /usernames/{name} {
       allow get: if true;
@@ -97,7 +144,9 @@ service cloud.firestore {
       allow delete: if request.auth != null && (resource.data.uid == request.auth.uid || isAdmin());
     }
 
-    // Baaki sab (purane notes/quiz_history/_adminAuth wagairah) — sirf admin
+    // Baaki sab (purane notes/quiz_history/_adminAuth wagairah) — sirf admin.
+    // adminLogs par ye catch-all bhi lagta hai (rules OR hote hain), isliye "append-only" ka matlab: staff ke liye; super admin
+    // ko Firebase Console me hamesha full access rehta hai. Admin panel khud kabhi log edit/delete nahi karta.
     match /{document=**} { allow read, write: if isAdmin(); }
   }
 }

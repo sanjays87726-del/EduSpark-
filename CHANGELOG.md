@@ -5,7 +5,18 @@ MAJOR = data/URL tootne wala badlav, MINOR = naya feature, PATCH = bug fix.
 Naya version: `package.json` + `index.html` ka `ES.version` + yahan naya `## [x.y.z]` section — CI teeno match karta hai.
 
 ## [Unreleased]
+
+## [1.7.0] - 2026-11-19
 ### Added
+- **Admin panel v2** (`admin.html`): sidebar menu A–M (mobile par drawer), Dashboard (students total/aaj ke naye/active 24h-7d-30d, content, queue, daily-weekly-monthly report, 7 din ka chart), Students (search, detail, edit, **Block/Unblock**), Staff & Roles (editor/teacher/notifier), Courses (**Publish/Unpublish**, edit, delete), App Settings (**Remote Config**: maintenance mode, force update, announcement bar, app naam/logo), Notification Health, Activity Logs + Login history, Security & Sessions, Backup info, Reports (CSV / PDF-print). Jo features ka data abhi nahi hai wo menu me "Soon" + wajah (docs/ADMIN.md Roadmap R1–R5).
+- **Har section ka alag password** (Worker secrets `PASS_<SECTION>`, `PASS_STAFF`), Super Admin master `ADMIN_PASS` har section kholta hai; 15 min idle par auto-lock; `/admin-verify` endpoint; token scope-wise (worker v11, tests).
+- **Activity log**: har admin/staff action (`adminLogs`) automatically — sirf field ke naam, student ka data nahi. Rules me append-only (staff ke liye).
+- **Staff roles** Firestore rules me (`staff/{email}`): editor/teacher -> content/quiz/pyq, teacher -> doubts, notifier -> notificationQueue; baaki sab sirf Super Admin.
+- **Student app Remote Config** (`_config/app`): maintenance screen, force-update screen, announcement bar, app naam/logo — bina code deploy kiye; pichhli value `localStorage` me.
+- `blockedUsers/{uid}`: blocked student ko app me "account roka gaya" screen, naye doubts rules se band, notification sender use skip karta hai.
+- Students me `createdAt` (dashboard ke "naye students" ke liye), content/quiz/PYQ me `published:false` (draft) — students ko nahi dikhta.
+- `tests/admin-v2.test.js` (helpers + admin/worker/rules/app consistency), `tests/browser/` (asli Chromium me admin + app smoke tests, nakli Firebase).
+### Added (pehle ka, isi release me)
 - **Search / AdSense pages:** 8 original study guides (CBSE 10/12, BSER 10/12, SSC CGL, SSC CHSL, REET & BSTC, study tips), `disclaimer.html`, `ads-and-cookies.html`; generator `tools/build-pages.py`; JSON-LD, `<noscript>` content and footer links in `index.html`; `tools/seo-audit.py` (Googlebot/Bingbot-style scan).
 - **Notifications:** `cron-trigger/` (alag Cloudflare Worker) GitHub Action ko ThIK samay par chalata hai; tests `slots-release.test.js`, `cron-trigger.test.mjs`; `notificationState/lastRun` debug record.
 - `icon-maskable-512.png` (alag maskable icon), manifest shortcut.
@@ -15,6 +26,11 @@ Naya version: `package.json` + `index.html` ka `ES.version` + yahan naya `## [x.
 - `<meta charset>` sabse upar, pinch-zoom allowed, robots.txt (Mediapartners-Google allow, internal folders disallow), sitemap (16 URL).
 - Daily reminders ki push TTL 24h → 3h (shaam ka reminder raat ko nahi aata).
 ### Fixed
+- **Home ka "Google se Sign In" button aur login wall sign-in ke baad bhi dikhte the** — auth callback ke neeche ka koi call throw karta to button chhupane wali line chalti hi nahi thi (NOTES #43); ab sabse pehle chalta hai, har helper alag try me.
+- **Notification page ka back button kaam nahi karta tha** — bell dobara dabane par "wapas" ka page khud hi ban jaata tha; Profile me bhi wahi (NOTES #44).
+- Home top bar se dark-mode icon hataya (Profile me rahega).
+- **Admin Offers ke Edit / On-Off / Delete buttons ka id galat tha** (`data-id` me literal text) — Delete kuch delete nahi karta tha (NOTES #42).
+- `tests/repo.test.js` fixture me `donate-qr.png` nahi tha + versions hardcoded the (NOTES #46).
 - `send-notifications.js`: bhejte waqt error aane par slot din bhar ke liye "claimed" reh jaata tha (reminder miss) — ab slot release hota hai.
 - In-app privacy modal ka Ads paragraph `privacy.html` se alag tha (NOTES #9).
 - Notification card ab batata hai ki server reminders ke liye Google sign-in zaruri hai; sign-in ke baad token dobara register hota hai.

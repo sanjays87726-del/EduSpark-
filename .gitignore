@@ -14,3 +14,10 @@ crash.log
 # Local extracted ZIP copies
 /repo-files/
 /repo-files-1/
+
+# Browser smoke test screenshots
+tests/browser/out-*.png
+
+# ⚠️ Passwords kabhi repo me nahi — ye file(on) Cloudflare me set karke tijori/offline rakho
+*PASSWORDS*
+*passwords*.txt

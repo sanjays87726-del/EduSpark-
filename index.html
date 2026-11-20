@@ -77,6 +77,8 @@ loadThirdParty();
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin/>
 <script>
+/* Signed-in hint: pichhli baar sign-in tha to Home ka Sign-in button pehle paint se hi chhupa rahe (auth restore hone tak flash nahi) */
+(function(){try{if(localStorage.getItem('es_authed_hint')==='1')document.documentElement.classList.add('es-authed');}catch(e){}})();
 /* Dark mode: saved choice, warna phone ki system setting */
 (function(){try{var t=localStorage.getItem('es_theme');if(t!=='dark'&&t!=='light'){t=(window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();
 </script>
@@ -605,6 +607,7 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
 .notif-item .ni-body{font-size:12px;color:var(--g600);margin-top:3px;line-height:1.45;overflow-wrap:anywhere;}
 .notif-item .ni-time{font-size:10px;color:var(--g400);margin-top:6px;}
 .notif-item .ni-dot{position:absolute;top:12px;right:12px;width:8px;height:8px;border-radius:50%;background:var(--blue);}
+html.es-authed #googleLoginBtn{display:none !important;}
 .tb-theme{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;cursor:pointer;flex-shrink:0;-webkit-tap-highlight-color:transparent;transition:transform .25s ease,background .2s;}
 .tb-theme:active{transform:rotate(25deg) scale(.92);background:rgba(255,255,255,.28);}
 
@@ -1050,7 +1053,6 @@ html[data-theme="dark"] .q-img,html[data-theme="dark"] .ak-img{background:#fff;}
       <div class="board-pill" id="boardPill" onclick="openCategorySel()">
 📚 Select Category
 </div>
-      <div class="tb-theme" id="tbTheme" onclick="onThemeToggle(currentTheme()!=='dark')" role="button" aria-label="Dark mode">🌙</div>
       <div class="tb-bell" id="tbBell" onclick="openNotificationsPage()">🔔<span class="tb-bell-dot" id="tbBellDot" style="display:none;">0</span></div>
       <div class="tb-avatar" id="tbAvatar" onclick="openProfilePage()">🙂</div>
     </div>
@@ -1915,7 +1917,7 @@ Sahmati wapas lene ke liye Profile → Logout karein; agli baar login par checkb
   function debug() { return { health: health(), metrics: report(), firestoreReads: JSON.parse(JSON.stringify(readStats)), logs: logBuf.slice(-30) }; }
 
   /* ── export ───────────────────────────────────────────────────── */
-  ES.version = '1.6.0';                    // semver — package.json se match hona chahiye (CI check karta hai)
+  ES.version = '1.7.0';                    // semver — package.json se match hona chahiye (CI check karta hai)
   ES.bus = bus; ES.checkClockSkew = checkClockSkew;
   ES.rollout = rollout; ES.bucket = bucket; ES.chaos = chaos; ES.countReads = countReads;
   ES.sanitize = sanitize; ES.escAttr = escAttr; ES.safeUrl = safeUrl;
@@ -2353,6 +2355,7 @@ function skipLoginPage(){
 // Login page (pehli baar / logout ke baad): Google button + uske neeche ek hi checkbox
 function showLoginPage(){
   var el = document.getElementById('studentSetup'); if(!el) return;
+  try{ if(auth.currentUser) return; }catch(e){}      // signed-in student ko login wall kabhi nahi (NOTES #43)
   el.style.display = 'flex';
   if(!el._glMounted){ el._glMounted = true; mountGoogleLogin(document.getElementById('ssLoginHost'), 'ss', true); }
 }
@@ -2435,7 +2438,8 @@ async function deleteMyAccount(){
 function openProfilePage(){
   const profile = JSON.parse(localStorage.getItem('es_student')||'null');
   const curActive = document.querySelector('.page.active');
-  profileReturnPageId = curActive ? curActive.id : 'pageHome';
+  if(curActive && curActive.id !== 'pageProfile') profileReturnPageId = curActive.id;
+  else if(!curActive) profileReturnPageId = 'pageHome';
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   const pg = document.getElementById('pageProfile');
   pg.classList.add('active','slide-in-right');
@@ -2460,7 +2464,8 @@ function openProfilePage(){
 
 function closeProfilePage(){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  const back = document.getElementById(profileReturnPageId) || document.getElementById('pageHome');
+  let back = document.getElementById(profileReturnPageId);
+  if(!back || back.id === 'pageProfile' || back.id === 'pageNotifications') back = document.getElementById('pageHome');
   back.classList.add('active');
 }
 
@@ -2734,6 +2739,8 @@ window.addEventListener('popstate', function(e){
 // listeners dobara lagte hain (syncBoardListeners).
 var _unsubContent=null, _unsubQuizzes=null, _unsubPYQ=null, _listenBoard=null;
 function _unsub(f){ if(f){ try{ f(); }catch(e){} } return null; }
+// Admin panel se "Unpublish" kiya hua (published:false) content students ko nahi dikhta; purane docs (field nahi) dikhte rehte hain
+function _isPublished(x){ return !x || x.published !== false; }
 function _byDateDesc(a,b){ return String(b.date||'').localeCompare(String(a.date||'')); }
 function _byYearDesc(a,b){ return (Number(b.year)||0)-(Number(a.year)||0); }
 function _boardVariants(b){ const x=String(b||''); return Array.from(new Set([x,x.toLowerCase(),x.toUpperCase()])).filter(Boolean); }
@@ -2747,7 +2754,7 @@ function listenContent(){
   _unsubContent = _unsub(_unsubContent);
   _unsubContent = db.collection('content').where('board','==',curBoard).onSnapshot(snap=>{
     ES.countReads('content',snap);
-    allContent = snap.docs.map(d=>({id:d.id,...d.data()})).sort(_byDateDesc);
+    allContent = snap.docs.map(d=>({id:d.id,...d.data()})).filter(_isPublished).sort(_byDateDesc);
     renderHome();
     if(curSubject) loadSubjectContent(curType);
   }, ()=>{ renderHome(); });
@@ -2758,7 +2765,7 @@ function listenQuizzes(){
   _unsubQuizzes = _unsub(_unsubQuizzes);
   _unsubQuizzes = db.collection('quizzes').where('board','==',curBoard).onSnapshot(snap=>{
     ES.countReads('quizzes',snap);
-    allQuizzes = snap.docs.map(d=>({id:d.id,...d.data()})).sort(_byDateDesc);
+    allQuizzes = snap.docs.map(d=>({id:d.id,...d.data()})).filter(_isPublished).sort(_byDateDesc);
   }, ()=>{});
 }
 
@@ -2783,7 +2790,7 @@ function listenPYQ(){
   const q = db.collection('pyq').where('board','in',_boardVariants(curBoard));
   const apply = snap=>{
     ES.countReads('pyq',snap);
-    allPYQ = snap.docs.map(d=>({id:d.id,...d.data()})).sort(_byYearDesc);
+    allPYQ = snap.docs.map(d=>({id:d.id,...d.data()})).filter(_isPublished).sort(_byYearDesc);
     refreshPYQUI();
     notifyNewPYQ(allPYQ);
   };
@@ -4282,10 +4289,26 @@ document.addEventListener("DOMContentLoaded", function () {
 // (yahi wo bug tha: pehle sign-in ke baad bhi button dikhta reh jaata tha)
 auth.onAuthStateChanged(function(user){
   const loginBtn = document.getElementById('googleLoginBtn');
+  // ⚠️ SABSE PEHLE (neeche ka koi function throw kare tab bhi): signed-in hai to Home ka Sign-in button aur login wall turant hatao.
+  // Pehle ye kaam neeche ke calls ke BAAD hota tha — unme se ek bhi error deta to button/wall hamesha dikhta rehta (NOTES #43).
+  try{
+    window._esAuthSettled = true;
+    document.documentElement.classList.toggle('es-authed', !!user);
+    try{ if(user) localStorage.setItem('es_authed_hint','1'); else localStorage.removeItem('es_authed_hint'); }catch(e){}
+    if(user){
+      if(loginBtn) loginBtn.style.display = 'none';
+      const _ss = document.getElementById('studentSetup'); if(_ss) _ss.style.display = 'none';
+      closeGoogleSheet();
+      try{ checkBlockedUser(user); }catch(e){}
+    } else if(loginBtn){
+      loginBtn.style.display = 'flex';   // sign-out: Home ka "Google se Sign In" button wapas (markup ka original display)
+    }
+  }catch(e){}
   try{ if(typeof renderNotifPermCard==='function') renderNotifPermCard(); if(user && 'Notification' in window && Notification.permission==='granted' && typeof registerFcmToken==='function') registerFcmToken(); }catch(e){}
-  if (typeof updateUsernameLockUI === "function") updateUsernameLockUI();
-  if (typeof updateDoubtLoginGate === "function") updateDoubtLoginGate();
-  if (typeof listenDoubts === "function") listenDoubts();
+  // Har call alag try me: inme se ek bhi throw kare to neeche ka profile-sync/sign-in flow ruk jaata tha (NOTES #43)
+  try{ if (typeof updateUsernameLockUI === "function") updateUsernameLockUI(); }catch(e){}
+  try{ if (typeof updateDoubtLoginGate === "function") updateDoubtLoginGate(); }catch(e){}
+  try{ if (typeof listenDoubts === "function") listenDoubts(); }catch(e){}
 
   if(user){
     closeGoogleSheet();
@@ -4306,6 +4329,9 @@ auth.onAuthStateChanged(function(user){
       if(cloud && cloud.username) merged.username = cloud.username; // account ka asli username hamesha priority
       if(cloud && cloud.photo) merged.photo = cloud.photo;
       if(!merged.photo && user.photoURL) merged.photo = user.photoURL;
+      // Pehli baar kab join kiya (Admin dashboard ke "naye students" report ke liye): cloud ki date sabse pehle, warna is device ki profile date
+      const _jd = (cloud && cloud.createdAt) || merged.createdAt || merged.date;
+      merged.createdAt = (_jd && !isNaN(Date.parse(_jd))) ? new Date(Date.parse(_jd)).toISOString() : new Date().toISOString();
 
       localStorage.setItem('es_student', JSON.stringify(merged));
       if(merged.username && localStorage.getItem('es_un_claim')!==merged.username){ claimUsername(merged.username,user.uid).then(function(){ localStorage.setItem('es_un_claim',merged.username); }).catch(function(){}); }
@@ -4331,14 +4357,106 @@ auth.onAuthStateChanged(function(user){
       if (typeof syncStudentToCloud === "function") syncStudentToCloud();
       if (typeof initPushNotifications === "function") initPushNotifications();
     });
-  } else {
-    // Sign out hai — agar profile bhi manually set nahi hai to button dikhaओ
-    const existingProfile = JSON.parse(localStorage.getItem('es_student')||'null');
-    if(!existingProfile){
-      if(loginBtn) loginBtn.style.display = '';
-    }
   }
+  // (sign-out par button upar ke top-block me dikhaya jaata hai — pehle profile hone par wo chhupa rehta tha)
 });
+
+// ══════════════════════════════════════════
+// REMOTE CONFIG — Admin panel (Settings) se app badlo, bina code deploy kiye
+// Firestore `_config/app`:  maintenance{on,message}, minVersion/updateMessage, announcement{on,text,link,id}, appName, logoUrl
+// Pichhli value localStorage (`es_rc`) me rehti hai — app khulte hi turant lagti hai, taza value snapshot se aati hai.
+// ══════════════════════════════════════════
+function _verNum(v){ var p = String(v||'0').split('.').map(function(x){ return parseInt(x,10)||0; }); return (p[0]||0)*1e6 + (p[1]||0)*1e3 + (p[2]||0); }
+function _httpsUrl(u){ return (typeof u==='string' && /^https:\/\/\S+$/.test(u.trim())) ? u.trim() : ''; }
+function _rcScreen(id, icon, title, msg, btns){
+  var el = document.getElementById(id);
+  if(!el){
+    el = document.createElement('div'); el.id = id;
+    el.style.cssText = 'position:fixed;inset:0;z-index:100000;background:linear-gradient(160deg,#0F1B35,#1a3a6b);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:28px;font-family:Poppins,sans-serif;';
+    document.body.appendChild(el);
+  }
+  el.textContent = '';
+  var i = document.createElement('div'); i.style.cssText = 'font-size:56px;margin-bottom:14px;'; i.textContent = icon;
+  var t = document.createElement('div'); t.style.cssText = 'font-size:20px;font-weight:800;margin-bottom:8px;'; t.textContent = title;
+  var m = document.createElement('div'); m.style.cssText = 'font-size:13.5px;line-height:1.6;opacity:.85;max-width:340px;white-space:pre-line;'; m.textContent = msg;
+  el.appendChild(i); el.appendChild(t); el.appendChild(m);
+  (btns||[]).forEach(function(b){
+    var x = document.createElement('button'); x.type='button'; x.textContent = b[0]; x.onclick = b[1];
+    x.style.cssText = 'margin-top:18px;background:#fff;color:#0F1B35;border:0;border-radius:99px;padding:12px 26px;font:700 14px Poppins,sans-serif;cursor:pointer;';
+    el.appendChild(x);
+  });
+  el.style.display = 'flex';
+  return el;
+}
+function _rcHide(id){ var el = document.getElementById(id); if(el) el.style.display = 'none'; }
+function esForceUpdate(){
+  // Purana cached version hatao aur taza app kholo
+  try{ if(navigator.serviceWorker) navigator.serviceWorker.getRegistrations().then(function(rs){ rs.forEach(function(r){ r.unregister(); }); }); }catch(e){}
+  try{ if(window.caches) caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return caches.delete(k); })); }).then(function(){ location.reload(); }, function(){ location.reload(); }); else location.reload(); }catch(e){ location.reload(); }
+  setTimeout(function(){ location.reload(); }, 2500);
+}
+function applyRemoteConfig(c){
+  c = c || {};
+  try{ window.ES_REMOTE = c; }catch(e){}
+  // 1) Maintenance mode
+  var mt = c.maintenance;
+  if(mt && mt.on === true) _rcScreen('rcMaint', '🛠️', 'थोड़ा सा Maintenance चल रहा है', String(mt.message || 'हम EduSpark को बेहतर बना रहे हैं। थोड़ी देर बाद दोबारा खोलें।').slice(0,400), [['🔄 दोबारा जाँचें', function(){ location.reload(); }]]);
+  else _rcHide('rcMaint');
+  // 2) Force update: app ka version admin ke minVersion se purana ho to naya version load karwao
+  var ver = (window.ES && ES.version) || '0.0.0';
+  if(c.minVersion && _verNum(ver) < _verNum(c.minVersion)) _rcScreen('rcUpdate', '⬆️', 'नया version आ गया है', String(c.updateMessage || 'बेहतर अनुभव के लिए app update करें।').slice(0,400), [['अभी Update करें', esForceUpdate]]);
+  else _rcHide('rcUpdate');
+  // 3) Announcement bar (ek baar dismiss करने पर उसी id की दोबारा नहीं)
+  var an = c.announcement, bar = document.getElementById('rcAnn');
+  var dismissed = ''; try{ dismissed = localStorage.getItem('es_ann_dismissed') || ''; }catch(e){}
+  if(an && an.on === true && an.text && String(an.id||'1') !== dismissed){
+    if(!bar){
+      bar = document.createElement('div'); bar.id = 'rcAnn';
+      bar.style.cssText = 'position:sticky;top:0;z-index:99;background:#FEF3C7;color:#78350F;font:600 12.5px Poppins,sans-serif;padding:9px 40px 9px 14px;text-align:center;';
+      var tx = document.createElement('span'); tx.id = 'rcAnnTx'; bar.appendChild(tx);
+      var cl = document.createElement('button'); cl.type='button'; cl.setAttribute('aria-label','बंद करें'); cl.textContent = '✕';
+      cl.style.cssText = 'position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:0;font-size:15px;color:#78350F;cursor:pointer;padding:6px;';
+      cl.onclick = function(){ try{ localStorage.setItem('es_ann_dismissed', String((window.ES_REMOTE&&ES_REMOTE.announcement&&ES_REMOTE.announcement.id)||'1')); }catch(e){} bar.style.display='none'; };
+      bar.appendChild(cl);
+      var app = document.getElementById('app'); if(app) app.insertBefore(bar, app.firstChild);
+    }
+    var link = _httpsUrl(an.link), tx2 = document.getElementById('rcAnnTx');
+    if(tx2){ tx2.textContent = String(an.text).slice(0,200); tx2.style.cursor = link ? 'pointer' : ''; tx2.onclick = link ? function(){ window.open(link, '_blank', 'noopener'); } : null; }
+    bar.style.display = 'block';
+  } else if(bar){ bar.style.display = 'none'; }
+  // 4) Brand: app ka naam / logo
+  var nm = typeof c.appName === 'string' ? c.appName.trim().slice(0,30) : '';
+  var tb = document.querySelector('.tb-brand');
+  if(tb){
+    if(nm && nm !== 'EduSpark'){ if(!tb._orig) tb._orig = tb.innerHTML; tb.textContent = nm; }
+    else if(tb._orig){ tb.innerHTML = tb._orig; tb._orig = null; }
+  }
+  var lg = _httpsUrl(c.logoUrl), tl = document.querySelector('.tb-logo');
+  if(tl){
+    if(lg){ if(!tl._orig) tl._orig = tl.textContent; tl.textContent = ''; var im = tl.querySelector('img') || tl.appendChild(document.createElement('img')); im.src = lg; im.alt = ''; im.style.cssText = 'width:26px;height:26px;border-radius:7px;object-fit:cover;vertical-align:middle;'; }
+    else if(tl._orig){ tl.textContent = tl._orig; tl._orig = null; }
+  }
+}
+function startRemoteConfig(){
+  try{ var raw = localStorage.getItem('es_rc'); if(raw) applyRemoteConfig(JSON.parse(raw)); }catch(e){}
+  try{
+    db.collection('_config').doc('app').onSnapshot(function(d){
+      var c = d.exists ? d.data() : {};
+      try{ localStorage.setItem('es_rc', JSON.stringify(c)); }catch(e){}
+      applyRemoteConfig(c);
+    }, function(){});
+  }catch(e){}
+}
+// Admin ne account block kiya ho (blockedUsers/{uid}) to student ko saaf screen — Doubts bhejna rules se bhi band hai
+function checkBlockedUser(user){
+  if(!user) return;
+  db.collection('blockedUsers').doc(user.uid).get().then(function(d){
+    if(d.exists){
+      var r = (d.data() && d.data().reason) ? String(d.data().reason).slice(0,200) : '';
+      _rcScreen('rcBlocked', '🚫', 'आपका account रोक दिया गया है', (r ? r + '\n\n' : '') + 'यह गलती से हुआ लगे तो Contact Us से संपर्क करें।', [['🚪 Logout', function(){ _rcHide('rcBlocked'); logoutUser(); }]]);
+    } else { _rcHide('rcBlocked'); }
+  }).catch(function(){});
+}
 
 // ══════════════════════════════════════════
 // PUSH NOTIFICATIONS
@@ -4367,10 +4485,11 @@ function syncStudentToCloud(fcmToken){
   if(auth.currentUser){
     data.googleUid = auth.currentUser.uid;
     data.email = auth.currentUser.email || null;
+    if(profile.createdAt) data.createdAt = profile.createdAt;
   }
   if(fcmToken){ data.fcmToken = fcmToken; try{ localStorage.setItem('es_fcm_tok', fcmToken); }catch(e){} }
   // Same data par 6 ghante tak dobara write nahi — 20,000 students par writes/cost bachte hain
-  const sig = [getStudentDocId(), data.name, data.username, data.board, data.googleUid||'', (data.photo||'').length, fcmToken||localStorage.getItem('es_fcm_tok')||''].join('|');
+  const sig = [getStudentDocId(), data.name, data.username, data.board, data.googleUid||'', data.createdAt||'', (data.photo||'').length, fcmToken||localStorage.getItem('es_fcm_tok')||''].join('|');
   let st = null; try{ st = JSON.parse(localStorage.getItem('es_sync_state')||'null'); }catch(e){}
   if(st && st.sig===sig && Date.now()-st.t < 6*3600*1000) return;
   try{ localStorage.setItem('es_sync_state', JSON.stringify({sig:sig,t:Date.now()})); }catch(e){}
@@ -4592,7 +4711,9 @@ function onNotifToggleChange(){
 let notifReturnPageId = 'pageHome';
 function openNotificationsPage(){
   const curActive = document.querySelector('.page.active');
-  notifReturnPageId = curActive ? curActive.id : 'pageHome';
+  // Notifications page par hi dobara bell dabaane par "wapas" ka page khud ban jaata tha -> back button kaam nahi karta tha (NOTES #44)
+  if(curActive && curActive.id !== 'pageNotifications') notifReturnPageId = curActive.id;
+  else if(!curActive) notifReturnPageId = 'pageHome';
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   const pg = document.getElementById('pageNotifications');
   pg.classList.add('active','slide-in-right');
@@ -4607,7 +4728,8 @@ function openNotificationsPage(){
 }
 function closeNotificationsPage(){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  const back = document.getElementById(notifReturnPageId) || document.getElementById('pageHome');
+  let back = document.getElementById(notifReturnPageId);
+  if(!back || back.id === 'pageNotifications' || back.id === 'pageProfile') back = document.getElementById('pageHome');
   back.classList.add('active');
 }
 
@@ -4977,6 +5099,7 @@ if (typeof listenPYQ === "function") listenPYQ();
 if (typeof listenLiveClass === "function") listenLiveClass();
 if (typeof listenCommunity === "function") listenCommunity();
 if (window.ES && ES.startFlags) ES.startFlags(db);
+try{ startRemoteConfig(); }catch(e){}
 if (window.ES && ES.bus) {
   // Phone ka samay galat ho to streak/daily reminders gadbad hote hain — ek baar chhota warning
   ES.bus.once('clock:skew', function(e){ showToast('⏰ फ़ोन का समय गलत है ('+Math.round(Math.abs(e.ms)/60000)+' min '+(e.ms>0?'आगे':'पीछे')+')'); });

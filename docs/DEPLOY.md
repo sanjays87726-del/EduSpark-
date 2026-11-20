@@ -18,10 +18,10 @@ EduSpark ke 4 hisse hain; har ek ka apna deploy/rollback tareeka:
 ## Blue-green (Kubernetes) — step by step
 ```bash
 helm upgrade --install eduspark deploy/helm/eduspark                       # blue chal raha hai
-helm upgrade eduspark deploy/helm/eduspark --set colors.green.enabled=true --set colors.green.tag=1.6.0
+helm upgrade eduspark deploy/helm/eduspark --set colors.green.enabled=true --set colors.green.tag=1.7.0
 kubectl rollout status deploy/eduspark-green                              # green ready? (smoke test karo)
-helm upgrade eduspark deploy/helm/eduspark --set colors.green.enabled=true --set colors.green.tag=1.6.0 --set service.activeColor=green   # switch
-helm upgrade eduspark deploy/helm/eduspark --set service.activeColor=green --set colors.blue.enabled=false --set colors.green.enabled=true --set colors.green.tag=1.6.0   # purana hatao
+helm upgrade eduspark deploy/helm/eduspark --set colors.green.enabled=true --set colors.green.tag=1.7.0 --set service.activeColor=green   # switch
+helm upgrade eduspark deploy/helm/eduspark --set service.activeColor=green --set colors.blue.enabled=false --set colors.green.enabled=true --set colors.green.tag=1.7.0   # purana hatao
 ```
 Switch ke baad gadbad ho to `service.activeColor=blue` wapas (blue abhi bhi chal raha ho tab) — turant rollback.
 
