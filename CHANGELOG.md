@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- Super Admin ke liye alag `SUPER_ADMIN_PASS` secret; purana shared `ADMIN_PASS` ab master access nahi deta. Staff `PASS_STAFF` aur section passwords se hi limited access lete hain. Worker v12.
+
 Format: [Keep a Changelog](https://keepachangelog.com), versions: [Semantic Versioning](https://semver.org).
 MAJOR = data/URL tootne wala badlav, MINOR = naya feature, PATCH = bug fix.
 Naya version: `package.json` + `index.html` ka `ES.version` + yahan naya `## [x.y.z]` section — CI teeno match karta hai.
