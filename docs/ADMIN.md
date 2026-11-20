@@ -24,8 +24,8 @@ Isliye: (1) student app ab `_config/app` live padhta hai, (2) admin panel se con
 ## 2. Suraksha ke 4 taale (aur unki sachchi seema)
 
 1. **Google email** — Super Admin = `ADMIN_EMAIL` (code me wahi, rules me wahi). Staff = `staff/{email}` doc me `active:true` + role. *Asli data-lock yahi + `firestore.rules` hai.*
-2. **Panel password** — Worker secret `SUPER_ADMIN_PASS` (sirf Super Admin) ya `PASS_STAFF` (staff). Purana shared `ADMIN_PASS` ab accept nahi hota. 12 ghante ka signed token; `SUPER_ADMIN_PASS` badalte hi sab sessions bekaar.
-3. **Section password** — `PASS_USERS`, `PASS_FINANCE`, ... (12 section). Sirf `SUPER_ADMIN_PASS` har section khol deta hai; `PASS_STAFF` kabhi master access nahi deta. Secret set nahi to wo section khula rehta hai. 15 min idle / app 5 min background / 🔒 button -> sab dobara lock.
+2. **Panel password** — Worker secret `ADMIN_PASS` sirf Admin Panel kholta hai; ye kisi section ko unlock nahi karta. `SUPER_ADMIN_PASS` se login karne par Super Admin ko sabhi sections ka access milta hai. Staff ke liye `PASS_STAFF`. 12 ghante ke signed tokens; dono admin secrets apne-apne tokens invalidate karte hain.
+3. **Section password** — `PASS_USERS`, `PASS_FINANCE`, ... (12 section). `SUPER_ADMIN_PASS` sabhi sections kholta hai; `PASS_<SECTION>` sirf apna section kholta hai; `ADMIN_PASS` aur `PASS_STAFF` sections unlock nahi karte. Secret set nahi to wo section khula rehta hai. 15 min idle / app 5 min background / 🔒 button -> sab dobara lock.
 4. **Activity log** — har create/update/delete (collection + doc id + field ke *naam*, value nahi) + login/logout/unlock/export `adminLogs` me; staff use badal/delete nahi sakta; sirf Super Admin padhta hai.
 
 ⚠️ Section password ek **extra taala** hai (khula phone, kandhe ke upar se nazar). Koi tech-savvy aadmi Google login ke saath browser JS badalkar UI-taala langh sakta hai — isliye Google account par **2-Step Verification** zaroori (NOTES #48).
@@ -45,11 +45,11 @@ Staff banana: Admin -> User Management -> **Teachers, Staff & Roles** -> Gmail +
 
 1. `firestore.rules` publish — GitHub -> Actions -> **deploy-rules**.
 2. `worker.js` deploy (v11) — Actions -> **deploy-worker** (`upload`, phir gradual `deploy`).
-3. Cloudflare Worker `bold-dust-6f37` me `SUPER_ADMIN_PASS` (naya, alag aur private), `PASS_STAFF`, aur zaroori `PASS_<SECTION>` secrets set karein. Purana `ADMIN_PASS` secret delete karein; ab code use nahi karta. Dashboard -> Settings -> Variables and Secrets -> Secret. Password GitHub/chat me kabhi na bhejein.
+3. Cloudflare Worker `bold-dust-6f37` me `ADMIN_PASS` (panel-only), naya alag `SUPER_ADMIN_PASS` (master), `PASS_STAFF`, aur zaroori `PASS_<SECTION>` secrets set karein. `ADMIN_PASS` ko delete na karein—ab wahi panel-only password hai. Dashboard -> Settings -> Variables and Secrets -> Secret. Password GitHub/chat me kabhi na bhejein.
 4. Site push (GitHub Pages). `sw.js` cache `eduspark-v22.0` apne-aap naya version dega.
 5. Admin kholo -> **Security & Sessions** me har section ka status dekho.
 
-Purana admin.html + naye rules bhi chalte hain (rules additive). Safe rollout: (1) Worker v12 deploy karne se pehle Cloudflare me naya `SUPER_ADMIN_PASS` secret add karein (purana Worker ise ignore karega), (2) Worker v12 deploy karein, (3) Super Admin aur Staff login test karein, (4) purana `ADMIN_PASS` secret delete karein, (5) site deploy karein. Is order se login downtime nahi hoga.
+Purana admin.html + naye rules bhi chalte hain (rules additive). Safe rollout: (1) Cloudflare me existing `ADMIN_PASS` ki current value ko jaisa hai waisa hi rakhein; (2) ek naya, alag `SUPER_ADMIN_PASS` secret add karein; (3) Worker v13 deploy karein; (4) `ADMIN_PASS` se panel-only login aur `SUPER_ADMIN_PASS` se all-sections access test karein; (5) har section ke liye zaroori `PASS_<SECTION>` set karein; (6) site deploy karein. `ADMIN_PASS` ko rename/delete karne ki zaroorat nahi.
 
 ## 5. Remote Config — `_config/app` (Settings page se)
 
