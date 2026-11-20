@@ -49,7 +49,7 @@ Staff banana: Admin -> User Management -> **Teachers, Staff & Roles** -> Gmail +
 4. Site push (GitHub Pages). `sw.js` cache `eduspark-v22.0` apne-aap naya version dega.
 5. Admin kholo -> **Security & Sessions** me har section ka status dekho.
 
-Purana admin.html + naye rules bhi chalte hain (rules additive). Naya admin + purana worker: update se pehle Super Admin ka naya secret kaam nahi karega; pehle Worker v12 deploy karein, phir naya `SUPER_ADMIN_PASS` set karein.
+Purana admin.html + naye rules bhi chalte hain (rules additive). Safe rollout: (1) Worker v12 deploy karne se pehle Cloudflare me naya `SUPER_ADMIN_PASS` secret add karein (purana Worker ise ignore karega), (2) Worker v12 deploy karein, (3) Super Admin aur Staff login test karein, (4) purana `ADMIN_PASS` secret delete karein, (5) site deploy karein. Is order se login downtime nahi hoga.
 
 ## 5. Remote Config — `_config/app` (Settings page se)
 
