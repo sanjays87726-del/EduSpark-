@@ -582,6 +582,13 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
       <select id="coState"><option value="">Live + Draft</option><option value="live">🟢 सिर्फ़ Live</option><option value="draft">⚪ सिर्फ़ Draft</option></select>
       <input id="coQ" placeholder="title खोजें" autocomplete="off">
     </div>
+    <div class="hint">↕️ किसी भी content को पकड़कर ऊपर/नीचे छोड़ें। नया क्रम अपने-आप सेव होगा।</div>
+    <div class="toolbar" style="margin-top:10px;">
+      <select id="coHeadingItem"><option value="">Heading के लिए content चुनें</option></select>
+      <input id="coNewHeading" maxlength="80" placeholder="नई heading का नाम">
+      <button class="mini pri" data-v2="coAssignHeading">＋ Heading बनाएँ</button>
+    </div>
+    <div id="coHeadingList" style="margin:8px 0 12px;"></div>
     <div id="coList"></div>
   </div></div>
 
@@ -1935,15 +1942,109 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
     try{ const s = await db.collection('content').orderBy('date', 'desc').limit(200).get(); CO.rows = s.docs.map(function(d){ return Object.assign({ id: d.id }, d.data()); }); renderCourses(); }
     catch(e){ $('coList').innerHTML = '<div class="hint bad">❌ ' + esc(e.message) + '</div>'; }
   }
-  function renderCourses(){
+  function visibleCourseRows(){
     const b = $('coBoard').value, t = $('coType').value, st = $('coState').value, q = $('coQ').value.trim().toLowerCase();
-    const rows = CO.rows.filter(function(c){ return (!b || c.board === b) && (!t || c.type === t) && (!st || (st === 'live') === (c.published !== false)) && (!q || String(c.title || '').toLowerCase().indexOf(q) >= 0); }).sort(function(x,y){ const xo=x.sortOrder===null||x.sortOrder===undefined||x.sortOrder===''?NaN:Number(x.sortOrder), yo=y.sortOrder===null||y.sortOrder===undefined||y.sortOrder===''?NaN:Number(y.sortOrder); if(Number.isFinite(xo)&&Number.isFinite(yo)&&xo!==yo) return xo-yo; if(Number.isFinite(xo)!==Number.isFinite(yo)) return Number.isFinite(xo)?-1:1; return String(y.date||'').localeCompare(String(x.date||'')); });
+    return CO.rows.filter(function(c){ return (!b || c.board === b) && (!t || c.type === t) && (!st || (st === 'live') === (c.published !== false)) && (!q || String(c.title || '').toLowerCase().indexOf(q) >= 0); }).sort(function(x,y){ const xo=x.sortOrder===null||x.sortOrder===undefined||x.sortOrder===''?NaN:Number(x.sortOrder), yo=y.sortOrder===null||y.sortOrder===undefined||y.sortOrder===''?NaN:Number(y.sortOrder); if(Number.isFinite(xo)&&Number.isFinite(yo)&&xo!==yo) return xo-yo; if(Number.isFinite(xo)!==Number.isFinite(yo)) return Number.isFinite(xo)?-1:1; return String(y.date||'').localeCompare(String(x.date||'')); });
+  }
+  function renderHeadingManager(rows){
+    const sel = $('coHeadingItem');
+    if(sel){
+      const previous = sel.value;
+      sel.innerHTML = '<option value="">Heading के लिए content चुनें</option>' + rows.map(function(c){ return '<option value="' + esc(c.id) + '">' + esc(c.title || 'Untitled') + ' • ' + esc(c.subject || '') + '</option>'; }).join('');
+      if(rows.some(function(c){ return c.id === previous; })) sel.value = previous;
+    }
+    const headings = Array.from(new Set(CO.rows.map(function(c){ return String(c.heading || '').trim(); }).filter(Boolean))).sort(function(a,b){ return a.localeCompare(b); });
+    $('coHeadingList').innerHTML = headings.length ? '<div class="mgmt-sb" style="margin-bottom:6px;">📁 मौजूदा headings — rename या delete करने पर जुड़े सभी content भी बदलेंगे</div>' + headings.map(function(h){
+      const count = CO.rows.filter(function(c){ return String(c.heading || '').trim() === h; }).length;
+      return '<div class="mgmt-item"><div style="min-width:0;flex:1;"><div class="mgmt-nm">📁 ' + esc(h) + '</div><div class="mgmt-sb">' + count + ' loaded items</div></div><div style="display:flex;gap:5px;"><button class="rply-btn" data-v2="coRenameHeading" data-id="' + encodeURIComponent(h) + '">Rename</button><button class="del-btn" data-v2="coDeleteHeading" data-id="' + encodeURIComponent(h) + '">Delete</button></div></div>';
+    }).join('') : '<div class="hint">अभी कोई heading नहीं है। ऊपर content चुनकर नई heading बनाएँ।</div>';
+  }
+  function bindCourseDrag(){
+    const box = $('coList'); if(!box || box.dataset.dragBound === '1') return;
+    box.dataset.dragBound = '1';
+    box.addEventListener('dragstart', function(e){
+      const item = e.target.closest('[data-sort-id]'); if(!item) return;
+      CO.dragId = item.getAttribute('data-sort-id');
+      item.style.opacity = '.45';
+      if(e.dataTransfer){ e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', CO.dragId); }
+    });
+    box.addEventListener('dragend', function(e){
+      const item = e.target.closest('[data-sort-id]'); if(item) item.style.opacity = '';
+      box.querySelectorAll('[data-sort-id]').forEach(function(x){ x.style.outline=''; });
+    });
+    box.addEventListener('dragover', function(e){
+      const item = e.target.closest('[data-sort-id]'); if(!item) return;
+      e.preventDefault(); if(e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+      item.style.outline = '2px dashed var(--blue)';
+    });
+    box.addEventListener('dragleave', function(e){
+      const item = e.target.closest('[data-sort-id]'); if(item && !item.contains(e.relatedTarget)) item.style.outline='';
+    });
+    box.addEventListener('drop', async function(e){
+      const target = e.target.closest('[data-sort-id]'); if(!target) return;
+      e.preventDefault();
+      const from = CO.dragId || (e.dataTransfer && e.dataTransfer.getData('text/plain'));
+      const to = target.getAttribute('data-sort-id'); CO.dragId = null;
+      if(!from || from === to) return;
+      const ordered = (CO.visible || []).slice();
+      const fi = ordered.findIndex(function(x){ return x.id === from; }), ti = ordered.findIndex(function(x){ return x.id === to; });
+      if(fi < 0 || ti < 0) return;
+      const moved = ordered.splice(fi,1)[0]; ordered.splice(ti,0,moved);
+      const batch = db.batch();
+      ordered.forEach(function(c,i){ c.sortOrder = (i+1)*10; batch.update(db.collection('content').doc(c.id),{sortOrder:(i+1)*10}); });
+      try{
+        await batch.commit();
+        CO.visible = ordered;
+        ordered.forEach(function(c){ const original=CO.rows.find(function(x){return x.id===c.id;}); if(original) original.sortOrder=c.sortOrder; });
+        showToast('✅ नया क्रम सेव हो गया'); renderCourses();
+      }catch(err){ showToast('❌ क्रम सेव नहीं हुआ: '+err.message); }
+    });
+  }
+  function renderCourses(){
+    const rows = visibleCourseRows(); CO.visible = rows;
     $('coList').innerHTML = (rows.length ? rows.map(function(c){
       const live = c.published !== false, sb = esc(c.board) + ' • ' + esc(c.subject) + ' • ' + esc(c.type) + (c.type === 'quiz' ? ' • ' + (c.questions || []).length + ' प्रश्न' : '') + (c.chapter ? ' • ' + esc(c.chapter) : '') + (c.heading ? ' • 📁 ' + esc(c.heading) : '') + ((c.sortOrder !== null && c.sortOrder !== undefined && c.sortOrder !== '' && Number.isFinite(Number(c.sortOrder))) ? ' • क्रम ' + Number(c.sortOrder) : '');
-      return '<div class="mgmt-item" style="flex-wrap:wrap;"><div style="min-width:0;flex:1;"><div class="mgmt-nm">' + (live ? '🟢 ' : '⚪ ') + esc(c.title) + '</div><div class="mgmt-sb">' + sb + '</div></div>'
+      return '<div class="mgmt-item" draggable="true" data-sort-id="' + esc(c.id) + '" style="flex-wrap:wrap;cursor:grab;"><div style="min-width:0;flex:1;"><div class="mgmt-nm">⠿ ' + (live ? '🟢 ' : '⚪ ') + esc(c.title) + '</div><div class="mgmt-sb">' + sb + '</div></div>'
         + '<div style="display:flex;gap:4px;"><button class="pub-btn' + (live ? '' : ' off') + '" data-v2="togglePub" data-coll="content" data-id="' + esc(c.id) + '" data-pub="' + (live ? 1 : 0) + '">' + (live ? 'Unpublish' : 'Publish') + '</button><button class="rply-btn" data-v2="coEdit" data-id="' + esc(c.id) + '">✏️</button><button class="del-btn" data-v2="coDel" data-id="' + esc(c.id) + '">🗑</button></div></div>';
-    }).join('') : '<div class="empty"><div class="ei">📚</div><p>कोई content नहीं मिला।</p></div>') + '<div class="hint">सबसे नए 200 दिखते हैं। ⚪ Draft = students को नहीं दिखता।</div>';
+    }).join('') : '<div class="empty"><div class="ei">📚</div><p>कोई content नहीं मिला।</p></div>') + '<div class="hint">सबसे नए 200 content तक manage किए जा सकते हैं। ⚪ Draft = students को नहीं दिखता।</div>';
+    renderHeadingManager(rows); bindCourseDrag();
   }
+  A.coAssignHeading = async function(){
+    const id=$('coHeadingItem').value, heading=$('coNewHeading').value.trim().slice(0,80);
+    if(!id){ showToast('पहले content चुनें'); return; }
+    if(!heading){ showToast('Heading का नाम लिखें'); return; }
+    try{
+      await db.collection('content').doc(id).update({heading:heading});
+      const c=CO.rows.find(function(x){return x.id===id;}); if(c) c.heading=heading;
+      $('coNewHeading').value=''; showToast('✅ Heading बनाई और content से जोड़ दी'); renderCourses();
+    }catch(e){ showToast('❌ '+e.message); }
+  };
+  A.coRenameHeading = async function(encoded){
+    const oldName=decodeURIComponent(encoded||''); if(!oldName) return;
+    const next=prompt('नई heading का नाम लिखें:',oldName); if(next===null) return;
+    const name=next.trim().slice(0,80); if(!name){ showToast('Heading खाली नहीं हो सकती'); return; }
+    if(name===oldName) return;
+    try{
+      const snap=await db.collection('content').where('heading','==',oldName).get();
+      for(let i=0;i<snap.docs.length;i+=450){
+        const batch=db.batch(); snap.docs.slice(i,i+450).forEach(function(d){batch.update(d.ref,{heading:name});}); await batch.commit();
+      }
+      CO.rows.forEach(function(c){if(String(c.heading||'').trim()===oldName)c.heading=name;});
+      showToast('✅ Heading rename हो गई'); renderCourses();
+    }catch(e){ showToast('❌ Rename नहीं हुआ: '+e.message); }
+  };
+  A.coDeleteHeading = async function(encoded){
+    const name=decodeURIComponent(encoded||''); if(!name) return;
+    if(!confirm('"' + name + '" heading हटाएँ? इसके content delete नहीं होंगे, सिर्फ़ heading हटेगी।')) return;
+    try{
+      const snap=await db.collection('content').where('heading','==',name).get();
+      for(let i=0;i<snap.docs.length;i+=450){
+        const batch=db.batch(); snap.docs.slice(i,i+450).forEach(function(d){batch.update(d.ref,{heading:firebase.firestore.FieldValue.delete()});}); await batch.commit();
+      }
+      CO.rows.forEach(function(c){if(String(c.heading||'').trim()===name)delete c.heading;});
+      showToast('🗑 Heading हट गई; content सुरक्षित है'); renderCourses();
+    }catch(e){ showToast('❌ Heading delete नहीं हुई: '+e.message); }
+  };
   A.coReload = function(){ loadCourses(); };
   A.togglePub = async function(id, el){
     const coll = el.dataset.coll; if(['content', 'quizzes', 'pyq'].indexOf(coll) < 0) return;
