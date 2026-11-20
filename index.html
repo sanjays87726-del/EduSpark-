@@ -1243,7 +1243,6 @@ html.es-authed #googleLoginBtn{display:none !important;}
         <label>Subject</label><select id="dSubj"></select>
         <label>Topic / Chapter</label><input type="text" id="dTopic" maxlength="200" placeholder="Chapter 5 – Light" data-clarity-mask="True"/>
         <label>Doubt लिखें</label><textarea id="dText" maxlength="2000" placeholder="अपना doubt विस्तार से लिखें..." data-clarity-mask="True"></textarea>
-        <label>आपका नाम</label><input type="text" id="dName" maxlength="100" placeholder="आपका नाम" data-clarity-mask="True"/>
         <button class="sub-btn" onclick="submitDoubt()">📤 Submit Doubt</button>
         <button class="sub-btn" id="aiBtn" onclick="askAI()" style="margin-top:8px;background:linear-gradient(90deg,#0EA5E9,#2563EB);">🤖 AI से तुरंत जवाब</button>
         <div id="aiAnswer" data-clarity-mask="True" style="display:none;margin-top:10px;background:#F1F5F9;border:1.5px solid #BFDBFE;border-radius:var(--rsm);padding:12px 14px;font-size:13px;line-height:1.6;"></div>
@@ -3357,7 +3356,7 @@ function submitDoubt(){
   const d = {
     board:curBoard,subject:document.getElementById('dSubj').value,
     topic:document.getElementById('dTopic').value.trim(),text,
-    name:document.getElementById('dName').value.trim()||auth.currentUser.displayName||'Anonymous',
+    name:(auth.currentUser.displayName||'Student').trim(),
     date:new Date().toISOString(),status:'pending',answer:'',
     uid:auth.currentUser.uid, deviceId:DEVICE_ID,
   };
@@ -3369,7 +3368,6 @@ function submitDoubt(){
   }).then(()=>{
     document.getElementById('dTopic').value='';
     document.getElementById('dText').value='';
-    document.getElementById('dName').value='';
     showToast('✅ Doubt submit हो गया!');
   }).catch(function(e){
     if(e && e.code==='duplicate'){ showToast('ℹ️ यह doubt पहले ही भेजा जा चुका है'); return; }
