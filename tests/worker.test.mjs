@@ -3,6 +3,7 @@ import fs from 'fs'; import os from 'os'; import path from 'path'; import { file
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const tmp = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'es-worker-')), 'worker.mjs');
 fs.copyFileSync(path.join(root, 'worker.js'), tmp);                 // worker.js ESM hai par package CJS — isliye .mjs copy
+fs.copyFileSync(path.join(root, 'telegram.js'), path.join(path.dirname(tmp), 'telegram.js')); // worker.js ka relative ESM import resolve ho
 const worker = (await import(pathToFileURL(tmp).href)).default;
 const { subtle } = globalThis.crypto;
 const b64u = b => Buffer.from(b).toString('base64url');
