@@ -6,37 +6,60 @@ fs.copyFileSync(new URL('../telegram.js', import.meta.url), modulePath);
 const { handleTelegramWebhook } = await import(pathToFileURL(modulePath).href);
 const env = { TELEGRAM_BOT_TOKEN: 'bot-test', TELEGRAM_WEBHOOK_SECRET: 'hook-secret', GEMINI_KEY: 'gem-test', TELEGRAM_CHAT_ID: 'admin-chat' };
 const headers = { 'X-Telegram-Bot-Api-Secret-Token': 'hook-secret', 'Content-Type': 'application/json' };
-let sent = [], geminiCalls = 0;
+let sent = [], geminiCalls = 0, geminiUrl = '';
 const hostnameOf = value => { try { return new URL(String(value)).hostname; } catch { return ''; } };
 globalThis.fetch = async (url, opts = {}) => {
   if (hostnameOf(url) === 'api.telegram.org') {
-    sent.push(JSON.parse(opts.body));
+    sent.push({ method: String(url).split('/').at(-1), ...JSON.parse(opts.body) });
     return { ok: true, json: async () => ({ ok: true, result: {} }) };
   }
   if (hostnameOf(url) === 'generativelanguage.googleapis.com') {
-    geminiCalls++;
-    return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: 'पढ़ाई में मैं आपकी मदद कर सकता हूँ।' }] } }] }) };
+    geminiCalls++; geminiUrl = String(url);
+    return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: 'प्रकाश संश्लेषण में पौधे सूर्य के प्रकाश से भोजन बनाते हैं।' }] } }] }) };
   }
   throw new Error('Unexpected URL: ' + url);
 };
 const request = (body, secret = 'hook-secret') => new Request('https://worker.example/telegram/webhook', {
   method: 'POST', headers: { ...headers, 'X-Telegram-Bot-Api-Secret-Token': secret }, body: JSON.stringify(body)
 });
+const message = (id, text, type = 'private') => ({ message: { chat: { id, type }, text } });
+const lastMessage = () => sent.filter(x => x.method === 'sendMessage').at(-1);
 const run = async () => {
-  let r = await handleTelegramWebhook(request({ message: { chat: { id: 11, type: 'private' }, text: '/start' } }), env);
-  assert.equal(r.status, 200); assert.match(sent.at(-1).text, /EduSpark Student Support/); assert.match(sent.at(-1).text, /https:\/\/eduspark\.live/); assert.match(sent.at(-1).text, /t\.me\/EduSparkAlerts_bot/);
-  r = await handleTelegramWebhook(request({ message: { chat: { id: 111, type: 'private' }, text: 'Hello' } }), env);
-  assert.equal(r.status, 200); assert.match(sent.at(-1).text, /नमस्ते/); assert.match(sent.at(-1).text, /eduspark\.live/); assert.equal(geminiCalls, 0);
-  r = await handleTelegramWebhook(request({ message: { chat: { id: 12, type: 'private' }, text: 'Photosynthesis kya hai?' } }), env);
-  assert.equal(r.status, 200); assert.equal(geminiCalls, 1); assert.equal(sent.at(-1).chat_id, 12); assert.match(sent.at(-1).text, /eduspark\.live/);
-  r = await handleTelegramWebhook(request({ message: { chat: { id: 13, type: 'private' }, text: '/admin login issue' } }), env);
-  assert.equal(r.status, 200); assert.equal(sent.at(-2).chat_id, 'admin-chat'); assert.equal(sent.at(-1).chat_id, 13);
-  r = await handleTelegramWebhook(request({ message: { chat: { id: 14, type: 'private' }, text: 'Hi' } }, 'wrong'), env);
+  let r = await handleTelegramWebhook(request(message(11, '/start')), env);
+  assert.equal(r.status, 200); assert.match(lastMessage().text, /EduSpark Student Support/);
+  assert.match(lastMessage().text, /https:\/\/eduspark\.live/); assert.match(lastMessage().text, /t\.me\/EduSparkAlerts_bot/);
+
+  r = await handleTelegramWebhook(request(message(111, '/help')), env);
+  assert.equal(r.status, 200); assert.match(lastMessage().text, /Commands|App खोलने/);
+  assert.doesNotMatch(lastMessage().text, /नमस्ते! 👋 EduSpark Student Support में आपका स्वागत है/);
+
+  r = await handleTelegramWebhook(request(message(112, 'App link bhejo')), env);
+  assert.equal(r.status, 200); assert.match(lastMessage().text, /https:\/\/eduspark\.live/); assert.equal(geminiCalls, 0);
+
+  r = await handleTelegramWebhook(request(message(113, 'PYQ mil jayega kya App me')), env);
+  assert.equal(r.status, 200); assert.match(lastMessage().text, /PYQ section/); assert.match(lastMessage().text, /eduspark\.live/);
+  assert.equal(geminiCalls, 0);
+
+  r = await handleTelegramWebhook(request(message(111, 'Hello')), env);
+  assert.equal(r.status, 200); assert.match(lastMessage().text, /नमस्ते/); assert.match(lastMessage().text, /eduspark\.live/); assert.equal(geminiCalls, 0);
+
+  const beforeAi = sent.length;
+  r = await handleTelegramWebhook(request(message(12, 'Photosynthesis kya hai?')), env);
+  assert.equal(r.status, 200); assert.equal(geminiCalls, 1); assert.equal(lastMessage().chat_id, 12);
+  assert.match(lastMessage().text, /eduspark\.live/); assert.match(geminiUrl, /gemini-2\.5-flash/);
+  assert.ok(sent.slice(beforeAi).some(x => x.method === 'sendChatAction' && x.action === 'typing' && x.chat_id === 12));
+
+  r = await handleTelegramWebhook(request(message(13, '/admin login issue')), env);
+  assert.equal(r.status, 200);
+  const adminMessages = sent.filter(x => x.method === 'sendMessage' && x.chat_id === 'admin-chat');
+  assert.match(adminMessages.at(-1).text, /login issue/); assert.equal(lastMessage().chat_id, 13);
+
+  r = await handleTelegramWebhook(request(message(14, 'Hi'), 'wrong'), env);
   assert.equal(r.status, 403);
-  r = await handleTelegramWebhook(request({ message: { chat: { id: 15, type: 'group' }, text: 'Hi' } }), env);
+  r = await handleTelegramWebhook(request(message(15, 'Hi', 'group')), env);
   assert.equal(r.status, 200); assert.equal(geminiCalls, 1);
   const incomplete = { ...env }; delete incomplete.TELEGRAM_WEBHOOK_SECRET;
-  r = await handleTelegramWebhook(request({ message: { chat: { id: 16, type: 'private' }, text: 'Hi' } }), incomplete);
+  r = await handleTelegramWebhook(request(message(16, 'Hi')), incomplete);
   assert.equal(r.status, 503);
 };
 await run();
