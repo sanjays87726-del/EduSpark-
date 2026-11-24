@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict';
-import { handleTelegramWebhook } from '../telegram.js';
+import fs from 'node:fs'; import os from 'node:os'; import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+const modulePath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'es-telegram-')), 'telegram.mjs');
+fs.copyFileSync(new URL('../telegram.js', import.meta.url), modulePath);
+const { handleTelegramWebhook } = await import(pathToFileURL(modulePath).href);
 const env = { TELEGRAM_BOT_TOKEN: 'bot-test', TELEGRAM_WEBHOOK_SECRET: 'hook-secret', GEMINI_KEY: 'gem-test', TELEGRAM_CHAT_ID: 'admin-chat' };
 const headers = { 'X-Telegram-Bot-Api-Secret-Token': 'hook-secret', 'Content-Type': 'application/json' };
 let sent = [], geminiCalls = 0;
