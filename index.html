@@ -1795,7 +1795,7 @@ Sahmati wapas lene ke liye Profile → Logout karein; agli baar login par checkb
 
   /* ── 9) AI request: flag → breaker → rate limit → timeout → retry ── */
   var aiBreaker = new Breaker('ai', { threshold: 3, cooldownMs: 30000 });
-  var aiBucket = new Bucket(5, 1 / 6);          // burst 5, phir har 6 sec me 1 (server par alag se 5/din ki limit hai)
+  // No student-facing AI request cap; server still authenticates users and serializes each user's in-flight request.
   var doubtBucket = new Bucket(3, 1 / 10);
   // Sirf network error retry hota hai (request server tak pahunchi hi nahi). Worker ke 502 (Gemini fail)
   // aur 503 (KV daily quota) retry nahi hote: har attempt Worker ke KV me 2 writes lagata hai (free: 1000/din).
@@ -1805,21 +1805,20 @@ Sahmati wapas lene ke liye Profile → Logout karein; agli baar login par checkb
     if (!flag('ai')) throw coded('ai_disabled', 'AI अभी बंद है — थोड़ी देर बाद कोशिश करें');
     if (!online()) throw coded('offline', 'Internet बंद है — चालू करके दोबारा कोशिश करें');
     if (!aiBreaker.canPass()) throw coded('circuit_open', 'AI अभी जवाब नहीं दे रहा — ' + aiBreaker.retryInSec() + ' सेकंड बाद कोशिश करें');
-    if (!aiBucket.take()) { aiBreaker.release(); throw coded('rate_limited', 'थोड़ा रुकें — ' + aiBucket.waitSec() + ' सेकंड बाद दोबारा कोशिश करें'); }
     var t0 = now();
     try {
       var out = await retry(function () {
         var cm = chaosMode();
-        if (cm) return chaosFetch(cm, o.timeoutMs || 30000);
+        if (cm) return chaosFetch(cm, o.timeoutMs || 60000);
         return fetchJSON(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }, o.timeoutMs || 30000);
-      }, { op: 'ai', retries: o.retries == null ? 2 : o.retries, baseMs: o.baseMs || 600, capMs: 5000, shouldRetry: transient });
+      }, { op: 'ai', retries: o.retries == null ? 0 : o.retries, baseMs: o.baseMs || 600, capMs: 5000, shouldRetry: transient });
       var ms = now() - t0;
-      // 503 = Worker ka "aaj ka AI quota khatam" (outage nahi) — 4xx ki tarah: server zinda hai, message student ko dikhao
+      // 503 = upstream AI service unavailable; Worker has already tried its configured model fallback
       if (out.res.status >= 500 && out.res.status !== 503) {         // server kharab — breaker ko batao
         aiBreaker.failure(); record('ai', false, ms); log('error', 'ai', { status: out.res.status, ms: Math.round(ms), rid: (out.data && out.data.rid) || '' });   // rid = Worker log wala request ID
         throw coded('http_' + out.res.status, (out.data && out.data.error) || 'AI जवाब नहीं दे पाया');
       }
-      aiBreaker.success(); record('ai', true, ms);                   // 2xx/4xx/503(quota): server zinda hai
+      aiBreaker.success(); record('ai', true, ms);                   // 2xx/4xx/503(upstream unavailable): Worker zinda hai
       log('info', 'ai', { status: out.res.status, ms: Math.round(ms) });
       if (!out.res.ok) { var e4 = coded('http_' + out.res.status, (out.data && out.data.error) || 'AI जवाब नहीं दे पाया'); e4.status = out.res.status; throw e4; }
       return out.data;
