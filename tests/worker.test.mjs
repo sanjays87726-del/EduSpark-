@@ -39,9 +39,9 @@ const post = (body, { origin = ORIGIN, headers = {}, path = '/' } = {}) => worke
 const Q = 'Newton ka pehla niyam kya hai?';
 let n = 0; const t = async (name, fn) => { try { await fn(); n++; console.log('✓', name); } catch (e) { console.log('✗', name, '\n  ', e.stack); process.exitCode = 1; } };
 
-await t('GET status v14 includes Telegram configuration flags, no-store + nosniff', async () => {
+await t('GET status v15 includes Telegram configuration flags, no-store + nosniff', async () => {
   const r = await worker.fetch(new Request('https://w.example/'), env); const j = await r.json();
-  assert.strictEqual(j.version, 14); assert.strictEqual(j.TELEGRAM_BOT_TOKEN, false); assert.strictEqual(j.TELEGRAM_WEBHOOK_SECRET, false); assert.strictEqual(j.TELEGRAM_CHAT_ID, false); assert.deepStrictEqual(j.apiVersions, ['v1']); assert.strictEqual(r.headers.get('X-API-Version'), '1'); assert.strictEqual(r.headers.get('Cache-Control'), 'no-store'); assert.strictEqual(r.headers.get('X-Content-Type-Options'), 'nosniff');
+  assert.strictEqual(j.version, 15); assert.strictEqual(j.TELEGRAM_BOT_TOKEN, false); assert.strictEqual(j.TELEGRAM_WEBHOOK_SECRET, false); assert.strictEqual(j.TELEGRAM_CHAT_ID, false); assert.deepStrictEqual(j.apiVersions, ['v1']); assert.strictEqual(r.headers.get('X-API-Version'), '1'); assert.strictEqual(r.headers.get('Cache-Control'), 'no-store'); assert.strictEqual(r.headers.get('X-Content-Type-Options'), 'nosniff');
 });
 await t('OPTIONS preflight: allowed headers unchanged (Content-Type only) + Max-Age', async () => {
   const r = await worker.fetch(new Request('https://w.example/', { method: 'OPTIONS', headers: { Origin: ORIGIN } }), env);
@@ -61,21 +61,34 @@ await t('missing / garbage / expired / wrong-aud / tampered token -> 401', async
   for (const idToken of [undefined, 'a.b.c', await token({ exp: Math.floor(Date.now()/1000) - 10 }), await token({ aud: 'other' }), await token({ tamper: true })])
     assert.strictEqual((await post({ idToken, question: Q })).status, 401);
 });
-await t('valid token -> 200, KV counts, left=4', async () => {
+await t('valid token -> 200 with unlimited quota metadata and no KV counter write', async () => {
+  const before = kv.size;
   const r = await post({ idToken: await token(), question: Q, board: 'CBSE-10' }); const j = await r.json();
-  assert.strictEqual(r.status, 200); assert.strictEqual(j.answer, 'जवाब'); assert.strictEqual(j.left, 4);
+  assert.strictEqual(r.status, 200); assert.strictEqual(j.answer, 'जवाब'); assert.strictEqual(j.left, null); assert.strictEqual(j.unlimited, true);
+  assert.strictEqual(kv.size, before);
 });
-await t('Gemini failure -> 502 + rid, quota refunded', async () => {
-  const before = [...kv.entries()].find(([k]) => k.startsWith('rl:u1:'))[1];
+await t('Gemini failure -> 502 + rid without consuming a daily counter', async () => {
+  const before = kv.size;
   geminiMode = 'fail';
-  const r = await post({ idToken: await token(), question: Q }); const j = await r.json();
+  const r = await post({ idToken: await token({ uid: 'u-fail' }), question: Q }); const j = await r.json();
   geminiMode = 'ok';
-  assert.strictEqual(r.status, 502); assert.ok(/^[0-9a-f]{8}$/.test(j.rid), 'rid'); assert.strictEqual([...kv.entries()].find(([k]) => k.startsWith('rl:u1:'))[1], before);
+  assert.strictEqual(r.status, 502); assert.ok(/^[0-9a-f]{8}$/.test(j.rid), 'rid'); assert.strictEqual(kv.size, before);
 });
-await t('limit: 5th ok, 6th -> 429 (no rid on 4xx)', async () => {
-  for (let i = 0; i < 4; i++) assert.strictEqual((await post({ idToken: await token(), question: Q })).status, 200);
-  const r = await post({ idToken: await token(), question: Q }); const j = await r.json();
-  assert.strictEqual(r.status, 429); assert.ok(!('rid' in j));
+await t('daily AI cap removed: repeated questions remain allowed beyond DAILY_LIMIT', async () => {
+  env.DAILY_LIMIT = '1';
+  const tok = await token({ uid: 'no-daily-cap' });
+  for (let i = 0; i < 7; i++) {
+    const r = await post({ idToken: tok, question: Q });
+    assert.strictEqual(r.status, 200, 'request ' + (i + 1));
+    const j = await r.json(); assert.strictEqual(j.unlimited, true);
+  }
+  env.DAILY_LIMIT = '5';
+});
+await t('AI endpoint no longer requires RATE KV binding', async () => {
+  const saved = env.RATE; delete env.RATE;
+  const r = await post({ idToken: await token({ uid: 'no-kv-ai' }), question: Q });
+  env.RATE = saved;
+  assert.strictEqual(r.status, 200);
 });
 await t('key rotation: unknown kid -> one fresh JWKS fetch -> 200', async () => {
   const before = jwksFresh;
