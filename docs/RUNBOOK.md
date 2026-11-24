@@ -59,3 +59,18 @@ Hamla chal raha ho to: `{ai:false}` → Cloudflare "Under Attack" → Firebase C
 
 ## 7. Post-mortem
 SEV1/SEV2 ke baad 48 ghante me, **blameless**: `docs/postmortems/TEMPLATE.md` copy karo → `docs/postmortems/YYYY-MM-DD-short-name.md`. Action items GitHub issues (label `action-item`) — har ek ka owner + tareekh. Mahine me ek baar purane action items dekho; `NOTES-mistakes.md` update karo.
+
+## 1A. Telegram Student Support Bot (webhook)
+The monitoring bot becomes an inbound student-support bot at `/telegram/webhook`. It accepts private-chat messages only. Configure these **Cloudflare Worker secrets** (never commit them):
+- `TELEGRAM_BOT_TOKEN`: same BotFather token used for monitoring.
+- `TELEGRAM_WEBHOOK_SECRET`: a new random secret (letters/numbers/underscore/hyphen, 32+ chars).
+- `TELEGRAM_CHAT_ID`: admin's private Telegram chat ID (already used by watchdog alerts).
+- Existing `GEMINI_KEY` is used for AI replies.
+
+After deploying the Worker, register the webhook once from a trusted terminal (replace placeholders; do not paste the token into GitHub files):
+```sh
+curl -X POST "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \\
+  -d "url=https://bold-dust-6f37.<your-workers-domain>/telegram/webhook" \\
+  -d "secret_token=$TELEGRAM_WEBHOOK_SECRET"
+```
+Use the actual deployed Worker URL from Cloudflare. Test with `/start`, a normal study question, and `/admin`. AI replies are informational; account-specific/uncertain queries can be escalated to the admin. The bot never asks for passwords or OTPs. Do not share the bot token or webhook secret in chat.
