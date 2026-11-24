@@ -132,14 +132,37 @@ module.exports = { runChecks, summarize, notify, defaults };
 
 if (require.main === module) {
   (async () => {
+    const telegram = { token: process.env.TELEGRAM_BOT_TOKEN, chatId: process.env.TELEGRAM_CHAT_ID };
+    const webhookOptions = {
+      telegram,
+      webhookUrl: process.env.ALERT_WEBHOOK_URL,
+      webhookStyle: process.env.ALERT_WEBHOOK_STYLE,
+      webhookSecret: process.env.ALERT_WEBHOOK_SECRET
+    };
+
+    // Manually dispatched test mode: send a real test message without waiting for a monitoring failure.
+    if (process.env.ALERT_TEST_MODE === 'true') {
+      const testText = '🧪 EduSpark TEST ALERT\\nTelegram/admin alert delivery test successful.\\nTime: ' + new Date().toISOString();
+      const configured = Boolean(telegram.token && telegram.chatId) || Boolean(webhookOptions.webhookUrl);
+      if (!configured) {
+        console.error('❌ Test alert ke liye Telegram secrets ya ALERT_WEBHOOK_URL configure nahi hai.');
+        process.exit(1);
+      }
+      const sent = await notify({ errors: [{ name: 'test' }], warnings: [], text: testText }, webhookOptions);
+      sent.forEach(s => console.log(`📣 ${s.channel}: ${s.ok ? 'bheja' : 'FAIL'}`));
+      if (!sent.length || sent.some(s => !s.ok)) {
+        console.error('❌ Test alert delivery fail hua.');
+        process.exit(1);
+      }
+      console.log('✅ Test alert sabhi configured channels par bhej diya gaya.');
+      return;
+    }
+
     const cfg = {}; if (process.env.SITE_URL) cfg.siteUrl = process.env.SITE_URL; if (process.env.WORKER_URL) cfg.workerUrl = process.env.WORKER_URL;
     const results = await runChecks(realDeps(), cfg);
     const summary = summarize(results);
     console.log(summary.text);
-    const sent = await notify(summary, {
-      telegram: { token: process.env.TELEGRAM_BOT_TOKEN, chatId: process.env.TELEGRAM_CHAT_ID },
-      webhookUrl: process.env.ALERT_WEBHOOK_URL, webhookStyle: process.env.ALERT_WEBHOOK_STYLE, webhookSecret: process.env.ALERT_WEBHOOK_SECRET
-    });
+    const sent = await notify(summary, webhookOptions);
     sent.forEach(s => console.log(`📣 ${s.channel}: ${s.ok ? 'bheja' : 'FAIL'}`));
     const alertChannelConfigured = Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) || Boolean(process.env.ALERT_WEBHOOK_URL);
     if (!alertChannelConfigured) console.warn('⚠️ Admin alert channel configured nahi: TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID ya ALERT_WEBHOOK_URL GitHub Actions secrets me set karein.');
