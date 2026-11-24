@@ -14,7 +14,7 @@ globalThis.fetch = async (url, opts = {}) => {
     return { ok: true, json: async () => ({ ok: true, result: {} }) };
   }
   if (hostnameOf(url) === 'generativelanguage.googleapis.com') {
-    geminiCalls++; geminiUrl = String(url);
+    geminiCalls++; geminiUrl = String(url);\n    assert.equal(JSON.parse(opts.body).generationConfig.temperature, undefined);
     return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: 'प्रकाश संश्लेषण में पौधे सूर्य के प्रकाश से भोजन बनाते हैं।' }] } }] }) };
   }
   throw new Error('Unexpected URL: ' + url);
@@ -46,7 +46,7 @@ const run = async () => {
   const beforeAi = sent.length;
   r = await handleTelegramWebhook(request(message(12, 'Photosynthesis kya hai?')), env);
   assert.equal(r.status, 200); assert.equal(geminiCalls, 1); assert.equal(lastMessage().chat_id, 12);
-  assert.match(lastMessage().text, /eduspark\.live/); assert.match(geminiUrl, /gemini-2\.5-flash/);
+  assert.match(lastMessage().text, /eduspark\.live/); assert.match(geminiUrl, /gemini-3\.8-flash/);
   assert.ok(sent.slice(beforeAi).some(x => x.method === 'sendChatAction' && x.action === 'typing' && x.chat_id === 12));
 
   r = await handleTelegramWebhook(request(message(13, '/admin login issue')), env);
