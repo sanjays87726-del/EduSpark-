@@ -111,7 +111,8 @@ export async function handleTelegramWebhook(request, env) {
     if (!r.ok) {
       const detail = (await r.text()).slice(0, 700);
       console.error('Gemini API error', r.status, detail);
-      throw new Error('Gemini API HTTP ' + r.status);\n    }
+      throw new Error('Gemini API HTTP ' + r.status);
+    }
     const data = await r.json();
     let answer = (((data.candidates || [])[0] || {}).content?.parts || [])
       .filter(p => !p.thought).map(p => p.text || '').join('').trim();
