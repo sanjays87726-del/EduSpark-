@@ -39,9 +39,9 @@ const post = (body, { origin = ORIGIN, headers = {}, path = '/' } = {}) => worke
 const Q = 'Newton ka pehla niyam kya hai?';
 let n = 0; const t = async (name, fn) => { try { await fn(); n++; console.log('✓', name); } catch (e) { console.log('✗', name, '\n  ', e.stack); process.exitCode = 1; } };
 
-await t('GET status v13, no-store + nosniff', async () => {
+await t('GET status v14 includes Telegram configuration flags, no-store + nosniff', async () => {
   const r = await worker.fetch(new Request('https://w.example/'), env); const j = await r.json();
-  assert.strictEqual(j.version, 13); assert.deepStrictEqual(j.apiVersions, ['v1']); assert.strictEqual(r.headers.get('X-API-Version'), '1'); assert.strictEqual(r.headers.get('Cache-Control'), 'no-store'); assert.strictEqual(r.headers.get('X-Content-Type-Options'), 'nosniff');
+  assert.strictEqual(j.version, 14); assert.strictEqual(j.TELEGRAM_BOT_TOKEN, false); assert.strictEqual(j.TELEGRAM_WEBHOOK_SECRET, false); assert.strictEqual(j.TELEGRAM_CHAT_ID, false); assert.deepStrictEqual(j.apiVersions, ['v1']); assert.strictEqual(r.headers.get('X-API-Version'), '1'); assert.strictEqual(r.headers.get('Cache-Control'), 'no-store'); assert.strictEqual(r.headers.get('X-Content-Type-Options'), 'nosniff');
 });
 await t('OPTIONS preflight: allowed headers unchanged (Content-Type only) + Max-Age', async () => {
   const r = await worker.fetch(new Request('https://w.example/', { method: 'OPTIONS', headers: { Origin: ORIGIN } }), env);
