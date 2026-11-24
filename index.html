@@ -1793,12 +1793,11 @@ Sahmati wapas lene ke liye Profile → Logout karein; agli baar login par checkb
     return new Promise(function (_, rej) { setTimeout(function () { rej(coded('timeout', 'timeout')); }, ms); });    // ai-slow
   }
 
-  /* ── 9) AI request: flag → breaker → rate limit → timeout → retry ── */
+  /* ── 9) AI request: flag → breaker → timeout → retry ── */
   var aiBreaker = new Breaker('ai', { threshold: 3, cooldownMs: 30000 });
   // No student-facing AI request cap; server still authenticates users and serializes each user's in-flight request.
   var doubtBucket = new Bucket(3, 1 / 10);
-  // Sirf network error retry hota hai (request server tak pahunchi hi nahi). Worker ke 502 (Gemini fail)
-  // aur 503 (KV daily quota) retry nahi hote: har attempt Worker ke KV me 2 writes lagata hai (free: 1000/din).
+  // Worker already performs Gemini model retry/fallback; client retries only network failures.
   function transient(e) { return !!(online() && e && e.code === 'network'); }
   async function aiRequest(url, body, o) {
     o = o || {};
@@ -1810,7 +1809,7 @@ Sahmati wapas lene ke liye Profile → Logout karein; agli baar login par checkb
       var out = await retry(function () {
         var cm = chaosMode();
         if (cm) return chaosFetch(cm, o.timeoutMs || 60000);
-        return fetchJSON(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }, o.timeoutMs || 30000);
+        return fetchJSON(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }, o.timeoutMs || 60000);
       }, { op: 'ai', retries: o.retries == null ? 0 : o.retries, baseMs: o.baseMs || 600, capMs: 5000, shouldRetry: transient });
       var ms = now() - t0;
       // 503 = upstream AI service unavailable; Worker has already tried its configured model fallback
