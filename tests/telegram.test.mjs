@@ -6,7 +6,7 @@ fs.copyFileSync(new URL('../telegram.js', import.meta.url), modulePath);
 const { handleTelegramWebhook } = await import(pathToFileURL(modulePath).href);
 const env = { TELEGRAM_BOT_TOKEN: 'bot-test', TELEGRAM_WEBHOOK_SECRET: 'hook-secret', GEMINI_KEY: 'gem-test', TELEGRAM_CHAT_ID: 'admin-chat' };
 const headers = { 'X-Telegram-Bot-Api-Secret-Token': 'hook-secret', 'Content-Type': 'application/json' };
-let sent = [], geminiCalls = 0, geminiUrl = '';
+let sent = [], geminiCalls = 0, geminiUrl = '', primaryCalls = 0, fallbackCalls = 0;
 const hostnameOf = value => { try { return new URL(String(value)).hostname; } catch { return ''; } };
 globalThis.fetch = async (url, opts = {}) => {
   if (hostnameOf(url) === 'api.telegram.org') {
@@ -16,6 +16,11 @@ globalThis.fetch = async (url, opts = {}) => {
   if (hostnameOf(url) === 'generativelanguage.googleapis.com') {
     geminiCalls++; geminiUrl = String(url);
     assert.equal(JSON.parse(opts.body).generationConfig.temperature, undefined);
+    if (String(url).includes('/models/gemini-3.5-flash-lite:generateContent')) {
+      primaryCalls++;
+      return { ok: false, status: 503, text: async () => '{"error":{"status":"UNAVAILABLE"}}' };
+    }
+    if (String(url).includes('/models/gemini-3.8-flash:generateContent')) fallbackCalls++;
     return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: 'प्रकाश संश्लेषण में पौधे सूर्य के प्रकाश से भोजन बनाते हैं।' }] } }] }) };
   }
   throw new Error('Unexpected URL: ' + url);
@@ -46,7 +51,7 @@ const run = async () => {
 
   const beforeAi = sent.length;
   r = await handleTelegramWebhook(request(message(12, 'Photosynthesis kya hai?')), env);
-  assert.equal(r.status, 200); assert.equal(geminiCalls, 1); assert.equal(lastMessage().chat_id, 12);
+  assert.equal(r.status, 200); assert.equal(geminiCalls, 3); assert.equal(primaryCalls, 2); assert.equal(fallbackCalls, 1); assert.equal(lastMessage().chat_id, 12);
   assert.match(lastMessage().text, /eduspark\.live/); assert.match(geminiUrl, /gemini-3\.8-flash/);
   assert.ok(sent.slice(beforeAi).some(x => x.method === 'sendChatAction' && x.action === 'typing' && x.chat_id === 12));
 
@@ -58,7 +63,7 @@ const run = async () => {
   r = await handleTelegramWebhook(request(message(14, 'Hi'), 'wrong'), env);
   assert.equal(r.status, 403);
   r = await handleTelegramWebhook(request(message(15, 'Hi', 'group')), env);
-  assert.equal(r.status, 200); assert.equal(geminiCalls, 1);
+  assert.equal(r.status, 200); assert.equal(geminiCalls, 3);
   const incomplete = { ...env }; delete incomplete.TELEGRAM_WEBHOOK_SECRET;
   r = await handleTelegramWebhook(request(message(16, 'Hi')), incomplete);
   assert.equal(r.status, 503);
