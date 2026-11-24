@@ -101,6 +101,11 @@ await t('fake kid within 60s does NOT trigger another fresh fetch', async () => 
   assert.strictEqual(r.status, 401); assert.strictEqual(jwksFresh, before);
 });
 await t('short question -> 400', async () => { assert.strictEqual((await post({ idToken: await token({ uid: 'u4' }), question: 'hi' })).status, 400); });
+await t('long student question up to 8,000 characters is accepted', async () => {
+  const longQuestion = 'Explain this concept: ' + 'detail '.repeat(300);
+  const r = await post({ idToken: await token({ uid: 'long-question' }), question: longQuestion });
+  assert.strictEqual(r.status, 200);
+});
 await t('parallel requests from same uid: only 1 passes, others 429; lock released after', async () => {
   const tok = await token({ uid: 'par1' }); geminiDelay = 80;
   const rs = await Promise.all([1,2,3,4].map(() => post({ idToken: tok, question: Q }))); geminiDelay = 0;
