@@ -40,7 +40,7 @@ async function runChecks(deps, cfgIn = {}) {
     const r = await deps.fetch(cfg.workerUrl); const j = r.ok ? await r.json() : {};
     if (!r.ok) return add('ai-worker', false, `HTTP ${r.status}`);
     if (!j.RATE || !j.GEMINI_KEY) return add('ai-worker', false, `binding missing (RATE=${!!j.RATE}, GEMINI_KEY=${!!j.GEMINI_KEY})`);
-    add('ai-worker', true, `v${j.version}, limit ${j.DAILY_LIMIT}/din`);
+    add('ai-worker', true, `v${j.version}, student AI daily cap removed`);
   });
   await guard('dns', async () => {
     const ips = await deps.resolve4(host);
