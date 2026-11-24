@@ -5,7 +5,6 @@ import { handleTelegramWebhook } from './telegram.js';
 // Setup (Cloudflare dashboard):
 //   Secret   GEMINI_KEY  -> Google AI Studio ki API key
 //   KV bind  RATE        -> ek KV namespace (naam kuch bhi, binding name RATE)
-//   Variable DAILY_LIMIT -> (optional) har student ke liye roz kitne AI jawab, default 5
 //   Admin panel (v2) ke secrets — docs/ADMIN.md me poori list:
 //     ADMIN_PASS            -> Admin panel-entry password (sirf panel kholta hai)
 //     SUPER_ADMIN_PASS      -> Super Admin master password (har section unlock karta hai)
