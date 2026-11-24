@@ -1,3 +1,5 @@
+import { handleTelegramWebhook } from './telegram.js';
+
 // EduSpark — AI Doubt Worker (Cloudflare Workers, free tier)
 //
 // Setup (Cloudflare dashboard):
@@ -62,6 +64,11 @@ async function verifyToken(idToken, full) {
 
 export default {
   async fetch(request, env) {
+    const path = new URL(request.url).pathname.replace(/\/+$/, '') || '/';
+    if (path === '/telegram/webhook') {
+      if (request.method !== 'POST') return new Response('POST only', { status: 405 });
+      return handleTelegramWebhook(request, env);
+    }
     const origin = request.headers.get('Origin') || '';
     const okOrigin = ALLOWED_ORIGINS.includes(origin);
     const headers = {
