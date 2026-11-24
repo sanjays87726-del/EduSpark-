@@ -1,0 +1,36 @@
+import assert from 'node:assert/strict';
+import { handleTelegramWebhook } from '../telegram.js';
+const env = { TELEGRAM_BOT_TOKEN: 'bot-test', TELEGRAM_WEBHOOK_SECRET: 'hook-secret', GEMINI_KEY: 'gem-test', TELEGRAM_CHAT_ID: 'admin-chat' };
+const headers = { 'X-Telegram-Bot-Api-Secret-Token': 'hook-secret', 'Content-Type': 'application/json' };
+let sent = [], geminiCalls = 0;
+globalThis.fetch = async (url, opts = {}) => {
+  if (String(url).includes('api.telegram.org')) {
+    sent.push(JSON.parse(opts.body));
+    return { ok: true, json: async () => ({ ok: true, result: {} }) };
+  }
+  if (String(url).includes('generativelanguage.googleapis.com')) {
+    geminiCalls++;
+    return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: 'पढ़ाई में मैं आपकी मदद कर सकता हूँ।' }] } }] }) };
+  }
+  throw new Error('Unexpected URL: ' + url);
+};
+const request = (body, secret = 'hook-secret') => new Request('https://worker.example/telegram/webhook', {
+  method: 'POST', headers: { ...headers, 'X-Telegram-Bot-Api-Secret-Token': secret }, body: JSON.stringify(body)
+});
+const run = async () => {
+  let r = await handleTelegramWebhook(request({ message: { chat: { id: 11, type: 'private' }, text: '/start' } }), env);
+  assert.equal(r.status, 200); assert.match(sent.at(-1).text, /EduSpark Student Support/);
+  r = await handleTelegramWebhook(request({ message: { chat: { id: 12, type: 'private' }, text: 'Photosynthesis kya hai?' } }), env);
+  assert.equal(r.status, 200); assert.equal(geminiCalls, 1); assert.equal(sent.at(-1).chat_id, 12);
+  r = await handleTelegramWebhook(request({ message: { chat: { id: 13, type: 'private' }, text: '/admin login issue' } }), env);
+  assert.equal(r.status, 200); assert.equal(sent.at(-2).chat_id, 'admin-chat'); assert.equal(sent.at(-1).chat_id, 13);
+  r = await handleTelegramWebhook(request({ message: { chat: { id: 14, type: 'private' }, text: 'Hi' } }, 'wrong'), env);
+  assert.equal(r.status, 403);
+  r = await handleTelegramWebhook(request({ message: { chat: { id: 15, type: 'group' }, text: 'Hi' } }), env);
+  assert.equal(r.status, 200); assert.equal(geminiCalls, 1);
+  const incomplete = { ...env }; delete incomplete.TELEGRAM_WEBHOOK_SECRET;
+  r = await handleTelegramWebhook(request({ message: { chat: { id: 16, type: 'private' }, text: 'Hi' } }), incomplete);
+  assert.equal(r.status, 503);
+};
+await run();
+console.log('Telegram webhook tests passed');
