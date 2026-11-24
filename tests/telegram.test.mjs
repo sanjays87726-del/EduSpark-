@@ -14,7 +14,8 @@ globalThis.fetch = async (url, opts = {}) => {
     return { ok: true, json: async () => ({ ok: true, result: {} }) };
   }
   if (hostnameOf(url) === 'generativelanguage.googleapis.com') {
-    geminiCalls++; geminiUrl = String(url);\n    assert.equal(JSON.parse(opts.body).generationConfig.temperature, undefined);
+    geminiCalls++; geminiUrl = String(url);
+    assert.equal(JSON.parse(opts.body).generationConfig.temperature, undefined);
     return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: 'प्रकाश संश्लेषण में पौधे सूर्य के प्रकाश से भोजन बनाते हैं।' }] } }] }) };
   }
   throw new Error('Unexpected URL: ' + url);
