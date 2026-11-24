@@ -4,7 +4,7 @@ main = "worker.js"
 compatibility_date = "2025-01-01"
 workers_dev = true
 
-# Dashboard me set ki hui vars (jaise DAILY_LIMIT) deploy par mitni nahi chahiye
+# Dashboard me set ki hui vars (jaise app settings) deploy par mitni nahi chahiye
 keep_vars = true
 
 [[kv_namespaces]]
