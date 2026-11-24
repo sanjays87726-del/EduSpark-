@@ -55,6 +55,15 @@ const run = async () => {
   assert.match(lastMessage().text, /eduspark\.live/); assert.match(geminiUrl, /gemini-3\.8-flash/);
   assert.ok(sent.slice(beforeAi).some(x => x.method === 'sendChatAction' && x.action === 'typing' && x.chat_id === 12));
 
+  // A long model response must refresh Telegram's short-lived typing action.
+  geminiDelay = 4200;
+  const beforeTypingRefresh = sent.filter(x => x.method === 'sendChatAction' && x.chat_id === 19).length;
+  r = await handleTelegramWebhook(request(message(19, 'Explain photosynthesis in detail')), env);
+  geminiDelay = 0;
+  assert.equal(r.status, 200);
+  const afterTypingRefresh = sent.filter(x => x.method === 'sendChatAction' && x.chat_id === 19).length;
+  assert.ok(afterTypingRefresh - beforeTypingRefresh >= 2, 'typing action should refresh while AI is generating');
+
   r = await handleTelegramWebhook(request(message(13, '/admin login issue')), env);
   assert.equal(r.status, 200);
   const adminMessages = sent.filter(x => x.method === 'sendMessage' && x.chat_id === 'admin-chat');
