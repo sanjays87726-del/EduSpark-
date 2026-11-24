@@ -7,7 +7,7 @@ const NOW = Date.parse('2026-10-18T00:00:00Z'), DAY = 86400e3;
 const res = (status, body) => ({ ok: status >= 200 && status < 300, status, text: async () => body, json: async () => JSON.parse(body) });
 function deps(over = {}) {
   const routes = { 'https://eduspark.live/': res(200, '<title>EduSpark</title>'), 'https://eduspark.live/sw.js': res(200, 'const CACHE_NAME = "eduspark-v19";'),
-    'https://bold-dust-6f37.sanjays87726.workers.dev/': res(200, JSON.stringify({ version: 8, RATE: true, GEMINI_KEY: true, DAILY_LIMIT: 5 })), ...(over.routes || {}) };
+    'https://bold-dust-6f37.sanjays87726.workers.dev/': res(200, JSON.stringify({ version: 8, RATE: true, GEMINI_KEY: true })), ...(over.routes || {}) };
   return { now: () => NOW, fetch: async (u) => { const r = routes[u]; if (r instanceof Error) throw r; if (!r) throw new Error('unexpected ' + u); return r; },
     resolve4: async () => ['185.199.108.153'], tlsDaysLeft: async () => 60, ...over };
 }
