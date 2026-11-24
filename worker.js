@@ -21,7 +21,7 @@ const ADMIN_EMAIL = 'bhupeshkumar36882@gmail.com';   // firestore.rules aur admi
 const PRIMARY_MODEL = 'gemini-3.5-flash-lite';
 const FALLBACK_MODEL = 'gemini-3.8-flash';
 const JWKS_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';
-const MAX_BODY = 16 * 1024;            // idToken (~1.5KB) + 1000-char question ke liye bahut; isse bada = 413
+const MAX_BODY = 32 * 1024;            // idToken + up to 8,000-character question; oversized requests rejected
 const JWKS_REFRESH_GAP_MS = 60 * 1000;
 // Ek student ki ek waqt me ek hi AI request (isolate ke andar). KV me get→put atomic nahi hota, isliye parallel requests
 // roz ki limit cross kar sakti thin. Poori guarantee ke liye Durable Object chahiye; ye uska sasta, safe pehla kadam hai.
@@ -211,7 +211,7 @@ async function handle(request, env, reply, held) {
     if (busyUids.has(uid)) return reply(429, { error: 'पिछला सवाल अभी चल रहा है — थोड़ा रुककर दोबारा पूछें' });
     busyUids.add(uid); held.push(uid);
 
-    const question = String(body.question || '').replace(/"""/g, '"').trim().slice(0, 2000);
+    const question = String(body.question || '').replace(/"""/g, '"').trim().slice(0, 8000);
     if (question.length < 5) return reply(400, { error: 'Doubt बहुत छोटा है' });
     const board = String(body.board || '').slice(0, 40);
     const subject = String(body.subject || '').slice(0, 60);
