@@ -64,8 +64,8 @@ async function verifyToken(idToken, full) {
 
 export default {
   async fetch(request, env) {
-    const path = new URL(request.url).pathname.replace(/\/+$/, '') || '/';
-    if (path === '/telegram/webhook') {
+    const routePath = new URL(request.url).pathname.replace(/\/+$/, '') || '/';
+    if (routePath === '/telegram/webhook') {
       if (request.method !== 'POST') return new Response('POST only', { status: 405 });
       return handleTelegramWebhook(request, env);
     }
