@@ -141,6 +141,10 @@ if (require.main === module) {
       webhookUrl: process.env.ALERT_WEBHOOK_URL, webhookStyle: process.env.ALERT_WEBHOOK_STYLE, webhookSecret: process.env.ALERT_WEBHOOK_SECRET
     });
     sent.forEach(s => console.log(`📣 ${s.channel}: ${s.ok ? 'bheja' : 'FAIL'}`));
-    process.exit(summary.errors.length ? 1 : 0);          // error par workflow laal => GitHub email
+    const alertChannelConfigured = Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) || Boolean(process.env.ALERT_WEBHOOK_URL);
+    if (!alertChannelConfigured) console.warn('⚠️ Admin alert channel configured nahi: TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID ya ALERT_WEBHOOK_URL GitHub Actions secrets me set karein.');
+    const alertDeliveryFailed = sent.some(s => !s.ok);
+    if (alertDeliveryFailed) console.error('❌ Monitoring alert bana, lekin kam-se-kam ek configured alert channel par deliver nahi hua.');
+    process.exit(summary.errors.length || alertDeliveryFailed ? 1 : 0); // monitoring error ya alert delivery fail par run laal
   })().catch(e => { console.error('❌ watchdog crash:', e); process.exit(1); });
 }
