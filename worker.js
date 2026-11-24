@@ -65,6 +65,8 @@ async function verifyToken(idToken, full) {
 export default {
   async fetch(request, env) {
     const routePath = new URL(request.url).pathname.replace(/\/+$/, '') || '/';
+    // Telegram server-to-server requests have no browser Origin header. Keep this route
+    // before the browser CORS/origin check below, and authenticate it with Telegram's secret header.
     if (routePath === '/telegram/webhook') {
       if (request.method !== 'POST') return new Response('POST only', { status: 405 });
       return handleTelegramWebhook(request, env);
@@ -88,7 +90,7 @@ export default {
 
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
     // Browser me Worker ka URL kholo -> status dikhega (version + binding jude hain ya nahi)
-    if (request.method === 'GET') return reply(200, { worker: 'eduspark-ai', version: 13, apiVersions: ['v1'], RATE: !!env.RATE, GEMINI_KEY: !!env.GEMINI_KEY, IMAGEKIT_PRIVATE_KEY: !!env.IMAGEKIT_PRIVATE_KEY, ADMIN_PASS: !!env.ADMIN_PASS, SUPER_ADMIN_PASS: !!env.SUPER_ADMIN_PASS, PASS_STAFF: !!env.PASS_STAFF, sections: sectionStatus(env), DAILY_LIMIT: parseInt(env.DAILY_LIMIT) || 5 });
+    if (request.method === 'GET') return reply(200, { worker: 'eduspark-ai', version: 14, apiVersions: ['v1'], TELEGRAM_BOT_TOKEN: !!env.TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET: !!env.TELEGRAM_WEBHOOK_SECRET, TELEGRAM_CHAT_ID: !!env.TELEGRAM_CHAT_ID, RATE: !!env.RATE, GEMINI_KEY: !!env.GEMINI_KEY, IMAGEKIT_PRIVATE_KEY: !!env.IMAGEKIT_PRIVATE_KEY, ADMIN_PASS: !!env.ADMIN_PASS, SUPER_ADMIN_PASS: !!env.SUPER_ADMIN_PASS, PASS_STAFF: !!env.PASS_STAFF, sections: sectionStatus(env), DAILY_LIMIT: parseInt(env.DAILY_LIMIT) || 5 });
     if (request.method !== 'POST') return reply(405, { error: 'POST only' });
     if (!okOrigin) return reply(403, { error: 'Not allowed' });
     // API versioning: /v1/ask canonical hai; "/" purana (legacy) alias — purane students ke cached app ke liye hamesha chalta rahega (docs/API.md)
