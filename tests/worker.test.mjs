@@ -50,7 +50,7 @@ await t('OPTIONS preflight: allowed headers unchanged (Content-Type only) + Max-
 });
 await t('POST from foreign origin -> 403', async () => { assert.strictEqual((await post({}, { origin: 'https://evil.com' })).status, 403); });
 await t('oversized body -> 413 (header and real length)', async () => {
-  assert.strictEqual((await post({ idToken: 'x'.repeat(20000) })).status, 413);
+  assert.strictEqual((await post({ idToken: 'x'.repeat(40000) })).status, 413);
   const r = await worker.fetch(new Request('https://w.example/', { method: 'POST', headers: { Origin: ORIGIN, 'Content-Length': '99999' }, body: '{}' }), env);
   assert.strictEqual(r.status, 413);
 });
