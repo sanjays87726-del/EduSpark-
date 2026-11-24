@@ -23,7 +23,7 @@ Content-Type: application/json         (koi custom header nahi — warna CORS pr
 | 401 | token missing / invalid / expired | dobara Sign In |
 | 403 | origin allowed nahi | — |
 | 404 | path `/` ya `/v1/ask` nahi | — |
-| 413 | body 16 KB se bada | — |
+| 413 | body 32 KB se bada | — |
 | 429 | isi student ka pichhla sawal abhi chal raha hai | message dikhao; parallel request ko retry kar sakte hain |
 | 500 | Worker setup/exception | breaker failure; `rid` log karo |
 | 502 | Gemini primary + fallback dono fail | Worker apne aap retry/fallback karta hai; breaker failure |
