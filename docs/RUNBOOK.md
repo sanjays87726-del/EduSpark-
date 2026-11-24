@@ -31,7 +31,7 @@ Alert fatigue se bacho: **error** = abhi dekho, **warning** = hafte me ek baar.
 | Symptom | Jaanch | Ilaaj |
 |---|---|---|
 | "AI अभी जवाब नहीं दे रहा" (breaker) | Worker URL kholo: `RATE` & `GEMINI_KEY` true? Gemini key/quota? `ES.debug().logs` me `rid` → Worker logs | key/binding theek karo; zaroorat ho to `{ai:false}`; Worker rollback |
-| "आज का AI quota पूरा" (503) | KV writes 1,000/din limit (dashboard → KV) | `DAILY_LIMIT` ghatao ya plan upgrade; jawab 1 write lagta hai |
+| Gemini AI unavailable (502/503) | Cloudflare Worker → Observability → Real-time Logs; Gemini model status/quota | Worker retry + fallback karta hai; Google AI Studio quota/billing aur Cloudflare usage check karo |
 | "आज के N AI जवाब पूरे" (429) | normal — student ki daily limit | kuch nahi |
 | Notifications nahi pahunch rahe | watchdog "dead-letter"; Actions run log; admin Notify history ka status | FCM/service-account error theek karo → Firestore console me doc `status:'pending'`, `attempts:0` (dobara try) |
 | `resource-exhausted` / reads khatam | `ES.debug().firestoreReads`; Firestore → Usage | `ENABLED_SLOTS` kam karo; Blaze + budget alert |
@@ -44,7 +44,7 @@ Alert fatigue se bacho: **error** = abhi dekho, **warning** = hafte me ek baar.
 ## 5. Abuse, WAF aur DDoS
 Layers (andar se bahar):
 1. 🟡 **Host/CDN** (GitHub Pages / Cloudflare) volumetric DDoS khud absorb karta hai.
-2. ✅ **Worker (application-level "WAF")**: origin allow-list, body ≤ 16 KB, Firebase ID token zaroori (bina login koi quota nahi), per-student ek request, 5 jawab/din, fixed outbound URLs (SSRF nahi).
+2. ✅ **Worker (application-level "WAF")**: origin allow-list, body ≤ 32 KB (question ≤ 8,000 characters), Firebase ID token zaroori, per-student ek active request, no EduSpark daily AI cap; Google/Cloudflare account quotas still apply, fixed outbound URLs (SSRF nahi).
 3. ✅ **Firestore rules**: har write par auth + field/size limits; admin-only collections.
 4. 🟡 **Cloudflare WAF** (sirf tab jab domain ka zone Cloudflare par ho — `workers.dev` URL par zone-WAF nahi lagta): Bot Fight Mode ON; rate-limit rule — `(http.request.method eq "POST" and http.host eq "<worker-custom-domain>")` → 20 req/min/IP, action Block 10 min; emergency: **"Under Attack"**.
 5. ➖→**Recommended: Firebase App Check** (reCAPTCHA v3). Firestore ka `apiKey` public hai (design se), isliye script se seedha Firestore hit ho sakta hai. App Check pehle *monitor mode*, phir enforce. (Keys chahiye — abhi enable nahi.)
@@ -54,7 +54,7 @@ Hamla chal raha ho to: `{ai:false}` → Cloudflare "Under Attack" → Firebase C
 ## 6. On-call (akela developer)
 - **Hours**: roz ek fixed slot me alerts dekho (jaise subah + shaam); raat ko sirf SEV1 (Telegram sound ON).
 - **Backup person**: ek bharose ka dost — GitHub *Read* + Firebase *Viewer* + ye runbook. Kisi ko admin password/secret mat do.
-- **Chhutti/exam**: pehle `watchdog` Telegram test (`Run workflow`), phir `ENABLED_SLOTS` aur AI limit sochi-samajhi rakho.
+- **Chhutti/exam**: pehle `watchdog` Telegram test (`Run workflow`), phir `ENABLED_SLOTS` aur provider billing/usage alerts check karo.
 - **Handoff checklist**: open incidents, pending dead broadcasts, aakhri backup tareekh, expiring cert/domain.
 
 ## 7. Post-mortem
