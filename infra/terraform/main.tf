@@ -23,8 +23,4 @@ resource "cloudflare_worker_script" "ai" {
     text = var.gemini_key
   }
 
-  plain_text_binding {
-    name = "DAILY_LIMIT"
-    text = tostring(var.daily_limit)
-  }
 }
