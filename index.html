@@ -1244,9 +1244,20 @@ html.es-authed #googleLoginBtn{display:none !important;}
         </div>
         <label>Subject</label><select id="dSubj"></select>
         <label>Topic / Chapter</label><input type="text" id="dTopic" maxlength="200" placeholder="Chapter 5 – Light" data-clarity-mask="True"/>
-        <label>Doubt लिखें</label><textarea id="dText" maxlength="2000" placeholder="अपना doubt विस्तार से लिखें..." data-clarity-mask="True"></textarea>
+        <label>Doubt लिखें</label><textarea id="dText" maxlength="8000" placeholder="अपना doubt विस्तार से लिखें..." data-clarity-mask="True"></textarea>
         <button class="sub-btn" onclick="submitDoubt()">📤 Submit Doubt</button>
         <button class="sub-btn" id="aiBtn" onclick="askAI()" style="margin-top:8px;background:linear-gradient(90deg,#0EA5E9,#2563EB);">🤖 AI से तुरंत जवाब</button>
+        <style id="es-ai-thinking-style">
+.es-ai-thinking{display:flex;align-items:center;gap:12px;padding:10px 4px;color:#1e40af}
+.es-ai-spinner{width:24px;height:24px;flex:0 0 24px;border:3px solid #bfdbfe;border-top-color:#2563eb;border-radius:50%;animation:esAiSpin .8s linear infinite}
+.es-ai-thinking b{display:inline-block;font-size:13px}
+.es-ai-thinking small{display:block;margin-top:4px;color:#64748b;font-size:11px}
+.es-ai-dots{display:inline-flex;gap:3px;margin-left:5px;vertical-align:middle}
+.es-ai-dots i{width:4px;height:4px;border-radius:50%;background:#2563eb;animation:esAiDot 1s infinite ease-in-out}
+.es-ai-dots i:nth-child(2){animation-delay:.15s}.es-ai-dots i:nth-child(3){animation-delay:.3s}
+@keyframes esAiSpin{to{transform:rotate(360deg)}}@keyframes esAiDot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+@media(prefers-reduced-motion:reduce){.es-ai-spinner,.es-ai-dots i{animation:none}}
+</style>
         <div id="aiAnswer" data-clarity-mask="True" style="display:none;margin-top:10px;background:#F1F5F9;border:1.5px solid #BFDBFE;border-radius:var(--rsm);padding:12px 14px;font-size:13px;line-height:1.6;"></div>
       </div>
       <div class="sec-t"><span>💬</span> सभी Doubts</div>
@@ -3395,8 +3406,9 @@ async function askAI(){
   if(_aiBusy) return;
   _aiBusy = true;
   const box = document.getElementById('aiAnswer'), btn = document.getElementById('aiBtn');
-  btn.disabled = true; btn.textContent = '⏳ सोच रहा हूँ...';
-  box.style.display = 'block'; box.textContent = '';
+  btn.disabled = true; btn.textContent = '⏳ जवाब तैयार हो रहा है...';
+  box.style.display = 'block';
+  box.innerHTML = '<div class="es-ai-thinking" role="status" aria-live="polite"><span class="es-ai-spinner" aria-hidden="true"></span><span><b>EduSpark AI जवाब तैयार कर रहा है</b><span class="es-ai-dots" aria-hidden="true"><i></i><i></i><i></i></span><small>आपका सवाल समझकर सही जवाब बनाया जा रहा है...</small></span></div>';
   try{
     const sel = document.getElementById('dSubj');
     const idToken = await auth.currentUser.getIdToken();
