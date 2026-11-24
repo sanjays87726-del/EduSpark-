@@ -24,9 +24,11 @@ const request = (body, secret = 'hook-secret') => new Request('https://worker.ex
 });
 const run = async () => {
   let r = await handleTelegramWebhook(request({ message: { chat: { id: 11, type: 'private' }, text: '/start' } }), env);
-  assert.equal(r.status, 200); assert.match(sent.at(-1).text, /EduSpark Student Support/);
+  assert.equal(r.status, 200); assert.match(sent.at(-1).text, /EduSpark Student Support/); assert.match(sent.at(-1).text, /https:\/\/eduspark\.live/); assert.match(sent.at(-1).text, /t\.me\/EduSparkAlerts_bot/);
+  r = await handleTelegramWebhook(request({ message: { chat: { id: 111, type: 'private' }, text: 'Hello' } }), env);
+  assert.equal(r.status, 200); assert.match(sent.at(-1).text, /नमस्ते/); assert.match(sent.at(-1).text, /eduspark\.live/); assert.equal(geminiCalls, 0);
   r = await handleTelegramWebhook(request({ message: { chat: { id: 12, type: 'private' }, text: 'Photosynthesis kya hai?' } }), env);
-  assert.equal(r.status, 200); assert.equal(geminiCalls, 1); assert.equal(sent.at(-1).chat_id, 12);
+  assert.equal(r.status, 200); assert.equal(geminiCalls, 1); assert.equal(sent.at(-1).chat_id, 12); assert.match(sent.at(-1).text, /eduspark\.live/);
   r = await handleTelegramWebhook(request({ message: { chat: { id: 13, type: 'private' }, text: '/admin login issue' } }), env);
   assert.equal(r.status, 200); assert.equal(sent.at(-2).chat_id, 'admin-chat'); assert.equal(sent.at(-1).chat_id, 13);
   r = await handleTelegramWebhook(request({ message: { chat: { id: 14, type: 'private' }, text: 'Hi' } }, 'wrong'), env);
