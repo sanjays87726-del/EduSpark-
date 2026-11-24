@@ -7,12 +7,13 @@ const { handleTelegramWebhook } = await import(pathToFileURL(modulePath).href);
 const env = { TELEGRAM_BOT_TOKEN: 'bot-test', TELEGRAM_WEBHOOK_SECRET: 'hook-secret', GEMINI_KEY: 'gem-test', TELEGRAM_CHAT_ID: 'admin-chat' };
 const headers = { 'X-Telegram-Bot-Api-Secret-Token': 'hook-secret', 'Content-Type': 'application/json' };
 let sent = [], geminiCalls = 0;
+const hostnameOf = value => { try { return new URL(String(value)).hostname; } catch { return ''; } };
 globalThis.fetch = async (url, opts = {}) => {
-  if (String(url).includes('api.telegram.org')) {
+  if (hostnameOf(url) === 'api.telegram.org') {
     sent.push(JSON.parse(opts.body));
     return { ok: true, json: async () => ({ ok: true, result: {} }) };
   }
-  if (String(url).includes('generativelanguage.googleapis.com')) {
+  if (hostnameOf(url) === 'generativelanguage.googleapis.com') {
     geminiCalls++;
     return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: 'पढ़ाई में मैं आपकी मदद कर सकता हूँ।' }] } }] }) };
   }
