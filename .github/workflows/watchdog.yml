@@ -6,7 +6,13 @@ name: Watchdog (alerts)
 on:
   schedule:
     - cron: '17 */3 * * *'
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      test_alert:
+        description: 'Telegram/webhook par test alert bhejein (monitoring checks skip honge)'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -40,5 +46,6 @@ jobs:
           ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
           ALERT_WEBHOOK_STYLE: ${{ secrets.ALERT_WEBHOOK_STYLE }}
           ALERT_WEBHOOK_SECRET: ${{ secrets.ALERT_WEBHOOK_SECRET }}
+          ALERT_TEST_MODE: ${{ inputs.test_alert && 'true' || 'false' }}
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/watchdog.js
