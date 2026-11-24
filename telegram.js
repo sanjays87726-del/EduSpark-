@@ -50,9 +50,9 @@ export async function handleTelegramWebhook(request, env) {
         'कृपया अपना password, OTP या निजी जानकारी न भेजें।');
       return new Response('OK', { status: 200 });
     }
-    if (/^(hi|hello|hey|hii|good morning|good afternoon|good evening)[!.\\s]*$/i.test(text)) {
+    if (/^(hi|hello|hey|hii|good morning|good afternoon|good evening)[!.\s]*$/i.test(text)) {
       await send(token, chatId,
-        'नमस्ते! 👋 EduSpark में आपका स्वागत है। बताइए, पढ़ाई या app में किस चीज़ में मदद चाहिए?\\n\\n' +
+        'नमस्ते! 👋 EduSpark में आपका स्वागत है। बताइए, पढ़ाई या app में किस चीज़ में मदद चाहिए?\n\n' +
         '📱 EduSpark App: https://eduspark.live');
       return new Response('OK', { status: 200 });
     }
