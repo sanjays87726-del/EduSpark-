@@ -111,7 +111,7 @@ await t('parallel requests from same uid: only 1 passes, others 429; lock releas
   const rs = await Promise.all([1,2,3,4].map(() => post({ idToken: tok, question: Q }))); geminiDelay = 0;
   const codes = rs.map(r => r.status).sort();
   assert.deepStrictEqual(codes, [200, 429, 429, 429]);
-  const used = parseInt([...kv.entries()].find(([k]) => k.startsWith('rl:par1:'))[1]); assert.strictEqual(used, 1);
+  assert.strictEqual(kv.size, 0, 'unlimited AI requests must not write daily quota counters');
   assert.strictEqual((await post({ idToken: tok, question: Q })).status, 200);       // lock chhoot gaya
 });
 await t('lock released even when Gemini throws / returns fail', async () => {
@@ -129,10 +129,9 @@ await t('API versioning: / (legacy) and /v1/ask behave identically; apiVersion i
     const r = await post({ idToken: tok, question: Q }, { path }); const j = await r.json();
     assert.strictEqual(r.status, 200, path); assert.strictEqual(j.apiVersion, 1); assert.strictEqual(j.answer, 'जवाब'); assert.strictEqual(r.headers.get('X-API-Version'), '1');
   }
-  const used = () => parseInt([...kv.entries()].find(([k]) => k.startsWith('rl:ver1:'))[1]);
-  const before = used();
+  const before = kv.size;
   for (const path of ['/v2/ask', '/imagekit-auth/x', '/v1/ask/extra']) { const r = await post({ idToken: tok, question: Q }, { path }); assert.strictEqual(r.status, 404, path); }
-  assert.strictEqual(used(), before);                                                                 // 404 par quota kharch nahi
+  assert.strictEqual(kv.size, before);                                                               // 404 par koi quota write nahi
 });
 await t('imagekit-auth: admin gets {token, expire, signature}; signature = HMAC-SHA1(privateKey, token+expire) hex', async () => {
   const { createHmac } = await import('crypto');
@@ -169,7 +168,7 @@ await t('imagekit-auth: non-admin / unverified / no-email -> 403; bad token -> 4
 });
 await t('contract: success response keys are exactly {answer, left, apiVersion}; errors always {error}', async () => {
   const ok = await (await post({ idToken: await token({ uid: 'ct1' }), question: Q })).json();
-  assert.deepStrictEqual(Object.keys(ok).sort(), ['answer', 'apiVersion', 'left']);
+  assert.deepStrictEqual(Object.keys(ok).sort(), ['answer', 'apiVersion', 'left', 'unlimited']);
   for (const [body, code] of [[{ question: Q }, 401], [{ idToken: await token({ uid: 'ct2' }), question: 'hi' }, 400]]) {
     const r = await post(body); const j = await r.json(); assert.strictEqual(r.status, code); assert.deepStrictEqual(Object.keys(j), ['error']);
   }
