@@ -63,6 +63,7 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
 .g-msg{color:var(--g400);font-size:12px;margin-top:14px;}
 .g-input{width:100%;border:1.5px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;border-radius:10px;padding:12px 14px;font-size:15px;font-family:inherit;margin-bottom:12px;outline:none;letter-spacing:1px;text-align:center;}
 .g-input::placeholder{color:var(--g400);letter-spacing:normal;}
+.g-pass-wrap{position:relative;width:100%;margin-bottom:10px;}.g-pass-wrap .g-input,#gatePass{width:100%;padding:12px 48px 12px 14px;border:1.5px solid var(--g200);border-radius:10px;box-sizing:border-box;font-size:15px;font-family:inherit;}.g-pass-eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:8px;background:transparent;color:var(--g600);font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center;}.g-pass-eye:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
 .g-label{display:block;text-align:left;font-size:12px;font-weight:600;color:var(--g400);margin-bottom:6px;}
 .g-resend{margin-top:12px;font-size:12px;color:var(--g400);}
 .g-resend a{color:var(--blue);font-weight:700;text-decoration:none;}
@@ -228,7 +229,7 @@ button,input,select,textarea{max-width:100%}
   <div class="g-title">EduSpark Admin</div>
   <div class="g-sub">Sirf authorised Google account hi access kar sakta hai</div>
   <div class="g-card">
-    <div id="gPassBox"><input type="password" id="gatePass" placeholder="ADMIN_PASS / SUPER_ADMIN_PASS / Staff password" autocomplete="current-password" style="width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--g200);margin-bottom:10px;box-sizing:border-box;"/>
+    <div id="gPassBox"><div class="g-pass-wrap"><input type="password" id="gatePass" placeholder="ADMIN_PASS / SUPER_ADMIN_PASS / Staff password" autocomplete="current-password" aria-label="Admin password"/><button type="button" class="g-pass-eye" id="gatePassEye" onclick="toggleGatePassword()" aria-label="Password दिखाएँ" aria-pressed="false" title="Password दिखाएँ">👁️</button></div>
       <button class="g-btn" id="gateUnlockBtn" onclick="unlockGate()">🔓 Unlock</button></div>
     <button class="g-btn" id="gateGoogleBtn" style="display:none;">
       <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" height="20" alt="Google">
@@ -2326,6 +2327,19 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
 
   Object.assign(window, { resolveAndEnter: resolveAndEnter, enterAdmin: enterAdmin, go: go, openNav: openNav, closeNav: closeNav, v2Logout: v2Logout, lockAllNow: function(){ A.lockNow(); }, v2ClearGate: clearGate, v2SetScope: function(s){ GATE_SCOPE = s; } });
 })();
+</script>
+<script>
+function toggleGatePassword(){
+  const input=document.getElementById("gatePass");
+  const eye=document.getElementById("gatePassEye");
+  if(!input||!eye)return;
+  const show=input.type==="password";
+  input.type=show?"text":"password";
+  eye.textContent=show?"🙈":"👁️";
+  eye.setAttribute("aria-label",show?"Password छिपाएँ":"Password दिखाएँ");
+  eye.setAttribute("title",show?"Password छिपाएँ":"Password दिखाएँ");
+  eye.setAttribute("aria-pressed",String(show));
+}
 </script>
 </body>
 </html>
