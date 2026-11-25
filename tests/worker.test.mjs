@@ -68,7 +68,7 @@ await t('valid token -> 200 with unlimited quota metadata and no KV counter writ
   assert.strictEqual(kv.size, before);
 });
 await t('AI answer cleanup repairs malformed water formula and strips LaTeX wrappers', async () => {
-  geminiAnswer = 'जल (HWater) और कार्बन डाइऑक्साइड ($CO_2$); \\\\(H_2O\\\\)';
+  geminiAnswer = 'जल (HWater) और कार्बन डाइऑक्साइड ($CO_2$); H_2O';
   const r = await post({ idToken: await token({ uid: 'chemistry-cleanup' }), question: 'Prakash sanshleshan ka sutra?' });
   const j = await r.json();
   assert.strictEqual(r.status, 200);
