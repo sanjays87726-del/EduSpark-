@@ -16,6 +16,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 
 <script>
 const FB_CFG = {
@@ -813,18 +814,51 @@ const authPersistenceReady = auth.setPersistence(firebase.auth.Auth.Persistence.
 // ══════════════════════════════════════════
 // GOOGLE SIGN-IN GATE — sirf ADMIN_EMAIL allow
 // ══════════════════════════════════════════
-const provider = new firebase.auth.GoogleAuthProvider();
+const GOOGLE_OAUTH_CLIENT_ID = "455546882437-qmguv5dd2uut17cc36lukeom3jr0mmfi.apps.googleusercontent.com";
+let googleTokenClient = null;
+let googleLoginPending = false;
+
+function setGoogleLoginBusy(busy){
+  googleLoginPending = busy;
+  const btn = document.getElementById('gateGoogleBtn');
+  if(btn) btn.disabled = busy;
+}
 
 document.getElementById('gateGoogleBtn').addEventListener('click', async function(){
+  if(googleLoginPending) return;
   const btn = document.getElementById('gateGoogleBtn');
-  btn.disabled = true;
+  setGoogleLoginBusy(true);
   try{
     await authPersistenceReady;
-    // Auth state listener neeche ek hi jagah resolveAndEnter chalata hai.
-    // Popup callback se dobara entry chalane par /admin-verify parallel hit hota tha.
-    await auth.signInWithPopup(provider);
+    if(!window.google || !google.accounts || !google.accounts.oauth2){
+      throw new Error('Google Sign-In library load नहीं हुई। पेज refresh करके फिर कोशिश करें।');
+    }
+    if(!googleTokenClient){
+      googleTokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_OAUTH_CLIENT_ID,
+        scope: 'openid email profile',
+        callback: async function(response){
+          try{
+            if(response && response.error) throw new Error(response.error_description || response.error);
+            if(!response || !response.access_token) throw new Error('Google access token नहीं मिला');
+            const credential = firebase.auth.GoogleAuthProvider.credential(null, response.access_token);
+            await auth.signInWithCredential(credential);
+          }catch(error){
+            setGoogleLoginBusy(false);
+            showToast('❌ '+(error.message || 'Google login failed'));
+          }
+        },
+        error_callback: function(error){
+          setGoogleLoginBusy(false);
+          showToast('❌ '+((error && error.message) || 'Google login popup नहीं खुला'));
+        }
+      });
+    }
+    // GIS OAuth popup issues a Google access token directly; Firebase consumes it
+    // with signInWithCredential, avoiding Firebase redirect state/sessionStorage.
+    googleTokenClient.requestAccessToken({prompt: 'select_account'});
   }catch(error){
-    btn.disabled = false;
+    setGoogleLoginBusy(false);
     if(error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request'){
       showToast('❌ '+(error.message || 'Google login failed'));
     }
@@ -1635,7 +1669,7 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
   const SEC_IDLE_MS = 15 * 60 * 1000;
   let ROLE = '', SEC_STATUS = null, STAFF_PW = false, WORKER_VER = 0, AUDIT_ON = false;
   let SEC_TOK = {}; try{ SEC_TOK = JSON.parse(sessionStorage.getItem('adm_sec') || '{}') || {}; }catch(e){}
-  let GATE_SCOPE = sessionStorage.getItem('adm_scope') || (sessionStorage.getItem('adm_gate') ? 'master' : '');
+  let GATE_SCOPE = sessionStorage.getItem('adm_scope') || '';
   let MASTER_UNLOCKED = false;
   let CUR_KEY = '', LAST_ACT = Date.now(), HIDDEN_AT = 0, VERIFIED = {}, idleTimer = null, navBuilt = false;
   const A = {};                                                      // data-v2 actions
