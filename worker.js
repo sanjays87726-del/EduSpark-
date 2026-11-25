@@ -123,7 +123,7 @@ export default {
 
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
     // Browser me Worker ka URL kholo -> status dikhega (version + binding jude hain ya nahi)
-    if (request.method === 'GET') return reply(200, { worker: 'eduspark-ai', version: 16, apiVersions: ['v1'], TELEGRAM_BOT_TOKEN: !!env.TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET: !!env.TELEGRAM_WEBHOOK_SECRET, TELEGRAM_CHAT_ID: !!env.TELEGRAM_CHAT_ID, RATE: !!env.RATE, GEMINI_KEY: !!env.GEMINI_KEY, IMAGEKIT_PRIVATE_KEY: !!env.IMAGEKIT_PRIVATE_KEY, ADMIN_PASS: !!env.ADMIN_PASS, SUPER_ADMIN_PASS: !!env.SUPER_ADMIN_PASS, PASS_STAFF: !!env.PASS_STAFF, sections: sectionStatus(env) });
+    if (request.method === 'GET') return reply(200, { worker: 'eduspark-ai', version: 17, apiVersions: ['v1'], TELEGRAM_BOT_TOKEN: !!env.TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET: !!env.TELEGRAM_WEBHOOK_SECRET, TELEGRAM_CHAT_ID: !!env.TELEGRAM_CHAT_ID, RATE: !!env.RATE, GEMINI_KEY: !!env.GEMINI_KEY, IMAGEKIT_PRIVATE_KEY: !!env.IMAGEKIT_PRIVATE_KEY, ADMIN_PASS: !!env.ADMIN_PASS, SUPER_ADMIN_PASS: !!env.SUPER_ADMIN_PASS, PASS_STAFF: !!env.PASS_STAFF, sections: sectionStatus(env) });
     if (request.method !== 'POST') return reply(405, { error: 'POST only' });
     if (!okOrigin) return reply(403, { error: 'Not allowed' });
     // API versioning: /v1/ask canonical hai; "/" purana (legacy) alias — purane students ke cached app ke liye hamesha chalta rahega (docs/API.md)
@@ -153,13 +153,17 @@ async function hmacHex(secret, msg) {
 const gateMsg = (scope, exp) => 'gate:' + scope + ':' + exp;
 const scopeSecret = (env, scope) => scope === 'master' ? env.SUPER_ADMIN_PASS : scope === 'panel' ? env.ADMIN_PASS : scope === 'staff' ? env.PASS_STAFF : sectionSecret(env, scope);
 async function signGate(env, scope, exp, secret) { return exp + '.' + await hmacHex(secret || scopeSecret(env, scope), gateMsg(scope, exp)); }
-async function gateOk(env, gate, scope = 'master') {
+// gateWhy: '' = token theek; warna wajah — 'format' | 'expired' | 'not_configured' (Worker me secret hi nahi) | 'bad_signature' (password/secret badla ya scope mismatch)
+async function gateWhy(env, gate, scope = 'master') {
   const [exp, sig] = String(gate || '').split('.');
-  if (!sig || !(+exp > Date.now())) return false;
+  if (!sig || !exp || !Number.isFinite(+exp)) return 'format';
+  if (!(+exp > Date.now())) return 'expired';
   const keys = scope === 'master' ? [env.SUPER_ADMIN_PASS] : scope === 'panel' ? [env.ADMIN_PASS] : scope === 'staff' ? [env.PASS_STAFF] : SECTIONS.includes(scope) ? [sectionSecret(env, scope), env.SUPER_ADMIN_PASS] : [];
-  for (const key of keys) if (key && (await hmacHex(key, gateMsg(scope, exp))) === sig) return true;
-  return false;
+  if (!keys.some(Boolean)) return 'not_configured';
+  for (const key of keys) if (key && (await hmacHex(key, gateMsg(scope, exp))) === sig) return '';
+  return 'bad_signature';
 }
+const gateOk = async (env, gate, scope = 'master') => !(await gateWhy(env, gate, scope));
 async function sameSecret(a, b) { return typeof a === 'string' && typeof b === 'string' && b.length > 0 && (await hmacHex('cmp', a)) === (await hmacHex('cmp', b)); }
 async function adminGate(request, env, reply) {
   if (!env.ADMIN_PASS && !env.SUPER_ADMIN_PASS && !env.PASS_STAFF) return reply(500, { error: 'Setup अधूरा: Secret "ADMIN_PASS" नहीं जुड़ा' });
@@ -194,7 +198,10 @@ async function adminVerify(request, env, reply) {
   catch { return reply(400, { error: 'Bad request' }); }
   const scope = body && typeof body.scope === 'string' ? body.scope : 'master';
   if (scope !== 'master' && scope !== 'panel' && scope !== 'staff' && !SECTIONS.includes(scope)) return reply(400, { error: 'Unknown scope' });
-  return reply(200, { ok: await gateOk(env, body && body.gate, scope) });
+  const why = await gateWhy(env, body && body.gate, scope);
+  // reason sirf diagnosis ke liye (ops-portal toast me dikhta hai); secret/signature kuch leak nahi hota
+  if (why) console.warn('admin-verify rejected', scope, why);
+  return reply(200, why ? { ok: false, reason: why } : { ok: true });
 }
 
 // Admin panel ke Image tab ke liye ImageKit upload signature (private key sirf Worker me, browser tak nahi jaati).

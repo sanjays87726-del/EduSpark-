@@ -41,7 +41,7 @@ let n = 0; const t = async (name, fn) => { try { await fn(); n++; console.log('â
 
 await t('GET status v15 includes Telegram configuration flags, no-store + nosniff', async () => {
   const r = await worker.fetch(new Request('https://w.example/'), env); const j = await r.json();
-  assert.strictEqual(j.version, 16); assert.strictEqual(j.TELEGRAM_BOT_TOKEN, false); assert.strictEqual(j.TELEGRAM_WEBHOOK_SECRET, false); assert.strictEqual(j.TELEGRAM_CHAT_ID, false); assert.deepStrictEqual(j.apiVersions, ['v1']); assert.strictEqual(r.headers.get('X-API-Version'), '1'); assert.strictEqual(r.headers.get('Cache-Control'), 'no-store'); assert.strictEqual(r.headers.get('X-Content-Type-Options'), 'nosniff');
+  assert.strictEqual(j.version, 17); assert.strictEqual(j.TELEGRAM_BOT_TOKEN, false); assert.strictEqual(j.TELEGRAM_WEBHOOK_SECRET, false); assert.strictEqual(j.TELEGRAM_CHAT_ID, false); assert.deepStrictEqual(j.apiVersions, ['v1']); assert.strictEqual(r.headers.get('X-API-Version'), '1'); assert.strictEqual(r.headers.get('Cache-Control'), 'no-store'); assert.strictEqual(r.headers.get('X-Content-Type-Options'), 'nosniff');
 });
 await t('OPTIONS preflight: allowed headers unchanged (Content-Type only) + Max-Age', async () => {
   const r = await worker.fetch(new Request('https://w.example/', { method: 'OPTIONS', headers: { Origin: ORIGIN } }), env);
@@ -219,6 +219,17 @@ await t('admin v2: tampered/garbage token and unknown section/scope are rejected
   assert.strictEqual(await verify(tam, 'finance'), false); assert.strictEqual(await verify('', 'finance'), false); assert.strictEqual(await verify('9999999999999.abc', 'finance'), false);
   assert.strictEqual((await gate({ password: 'x', section: 'hacking' })).status, 400);
   assert.strictEqual((await post({ gate: 'x', scope: 'root' }, { path: '/admin-verify' })).status, 400);
+});
+await t('admin v2: /admin-verify tells WHY a token is rejected (expired / bad_signature / not_configured / format), never leaks secrets', async () => {
+  const vj = async (g, scope) => (await post({ gate: g, scope }, { path: '/admin-verify' })).json();
+  const p = await gate({ password: ADMIN_PASS }); assert.deepStrictEqual(await vj(p.j.gate, 'panel'), { ok: true });
+  const expired = await vj('1000.' + 'a'.repeat(64), 'panel'); assert.strictEqual(expired.ok, false); assert.strictEqual(expired.reason, 'expired');
+  const wrongScope = await vj(p.j.gate, 'master'); assert.strictEqual(wrongScope.reason, 'bad_signature');
+  const tam = p.j.gate.slice(0, -1) + (p.j.gate.endsWith('0') ? '1' : '0'); assert.strictEqual((await vj(tam, 'panel')).reason, 'bad_signature');
+  assert.strictEqual((await vj('', 'panel')).reason, 'format'); assert.strictEqual((await vj('abc', 'panel')).reason, 'format');
+  const saved = env.PASS_STAFF; const st = await gate({ password: saved }); delete env.PASS_STAFF;
+  assert.strictEqual((await vj(st.j.gate, 'staff')).reason, 'not_configured'); env.PASS_STAFF = saved;
+  assert.ok(!JSON.stringify([expired, wrongScope]).includes(ADMIN_PASS));
 });
 await t('admin v2: section with no password configured reports open; wrong passwords are rate-limited per section (5/day) without locking other sections', async () => {
   const open = await gate({ section: 'reports' }); assert.strictEqual(open.status, 200); assert.strictEqual(open.j.open, true);

@@ -33,6 +33,8 @@ if (window.top !== window.self) { try { window.top.location = window.self.locati
 if (!firebase.apps.length) { firebase.initializeApp(FB_CFG); }
 const auth = firebase.auth();
 const db   = firebase.firestore();
+// Kuch mobile networks par Firestore WebChannel atak jaata hai ("client is offline" / timeout) — auto long-polling fallback
+try{ db.settings({ experimentalAutoDetectLongPolling: true, merge: true }); }catch(e){ console.warn('Firestore settings', e); }
 
 // 🔒 Sirf ye email hi Admin Panel access kar sakta hai
 const ADMIN_EMAIL = "bhupeshkumar36882@gmail.com";
@@ -1690,13 +1692,27 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
     const need = ROLE === 'super' ? GATE_SCOPE : 'staff';
     if((ROLE === 'super' && need !== 'panel' && need !== 'master') || (ROLE !== 'super' && need !== 'staff')){ clearGate(); showGate(); showToast('⚠️ इस account के लिए ' + (ROLE === 'super' ? 'ADMIN_PASS या SUPER_ADMIN_PASS' : 'Staff') + ' password डालें'); return; }
     try{      // Server verification अनिवार्य है; Worker unreachable/invalid हो तो fail closed.
-      const r = await fetch(IK_WORKER + '/admin-verify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ gate: GATE, scope: need }), cache:'no-store' });
-      const j = await r.json().catch(function(){ return {}; });
+      // Mobile network / Worker cold-start की temporary गड़बड़ी पर एक बार अपने-आप retry (5xx या network error)
+      let r, j;
+      for(let attempt = 0; attempt < 2; attempt++){
+        try{
+          r = await fetch(IK_WORKER + '/admin-verify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ gate: GATE, scope: need }), cache:'no-store' });
+          j = await r.json().catch(function(){ return {}; });
+          if(r.status < 500) break;
+        }catch(err){ if(attempt === 1) throw err; }
+        await new Promise(function(done){ setTimeout(done, 700); });
+      }
       // केवल स्पष्ट invalid/expired token पर ही credentials मिटाएँ. Network, CORS,
       // Worker 5xx या temporary outage में valid gate को बचाकर रखें ताकि retry हो सके.
       if(r.status === 401 || (r.ok && j.ok === false)){
         clearGate(); showGate();
-        showToast('⚠️ Admin session expired/invalid है — password दोबारा डालें');
+        const why = j && j.reason;   // Worker v17+: wajah batata hai
+        const msg = why === 'expired' ? 'Admin session (12 घंटे) expire हो गया'
+          : why === 'not_configured' ? 'Worker में ADMIN_PASS / SUPER_ADMIN_PASS secret नहीं मिला'
+          : why === 'bad_signature' ? 'Password/secret बदल गया है या scope mismatch (' + need + ')'
+          : 'Admin session expired/invalid है';
+        console.warn('EduSpark admin session rejected', { status:r.status, reason:why || '', scope:need });
+        showToast('⚠️ ' + msg + ' — password दोबारा डालें');
         return;
       }
       if(!r.ok || j.ok !== true){

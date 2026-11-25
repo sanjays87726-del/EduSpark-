@@ -1,4 +1,4 @@
-const CACHE_NAME = "eduspark-v22.3";
+const CACHE_NAME = "eduspark-v22.4";
 
 const APP_SHELL = ["/", "/index.html", "/manifest.json", "/icon-192.png", "/icon-512.png", "/badge-96.png", "/donate-qr.png"];
 
@@ -13,6 +13,10 @@ const CDN_ASSETS = [
   "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"
 ];
 const CDN_HOSTS = ["www.gstatic.com", "fonts.gstatic.com", "fonts.googleapis.com"];
+
+// Admin portal kabhi cache se nahi: stale-while-revalidate se purana ops-portal JS naye Worker/rules ke saath
+// mismatch karke "Session verify nahi hua / expired" dikhata tha. Ye pages hamesha network se (no-cache revalidate).
+const NO_CACHE_PATH = /^\/(ops-portal[^/]*|admin[^/]*)\.html$/;
 
 const API_HOSTS = [
   "firestore.googleapis.com", "identitytoolkit.googleapis.com", "securetoken.googleapis.com",
@@ -33,6 +37,8 @@ self.addEventListener("install", event => {
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
+      .then(() => caches.open(CACHE_NAME))
+      .then(cache => cache.keys().then(reqs => Promise.all(reqs.filter(r => NO_CACHE_PATH.test(new URL(r.url).pathname)).map(r => cache.delete(r)))))   // purani cached admin copy hatao
       .then(() => self.clients.claim())
   );
 });
@@ -43,6 +49,10 @@ self.addEventListener("fetch", event => {
   const url = new URL(req.url);
   if (url.searchParams.has("__probe")) return;                       // online-check hamesha asli network se
   if (API_HOSTS.some(h => url.hostname === h || url.hostname.endsWith("." + h))) return;
+  if (url.origin === location.origin && NO_CACHE_PATH.test(url.pathname)) {
+    event.respondWith(fetch(req, { cache: "no-cache" }).catch(() => new Response("Admin portal ke liye internet chahiye", { status: 503, headers: { "Content-Type": "text/plain; charset=utf-8" } })));
+    return;
+  }
   const isCdn = CDN_HOSTS.includes(url.hostname);
   if (url.origin !== location.origin && !isCdn) return;              // baaki cross-origin (video/images) cache nahi
 
