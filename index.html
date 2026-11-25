@@ -1274,9 +1274,24 @@ html.es-authed #googleLoginBtn{display:none !important;}
 .es-ai-answer-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;border-top:1px solid #e2e8f0;color:#64748b;font-size:10px}
 .es-ai-copy{border:1px solid #bfdbfe;border-radius:9px;background:#fff;color:#1d4ed8;padding:7px 11px;font:inherit;font-size:11px;font-weight:700;cursor:pointer}
 .es-ai-error{padding:13px 15px;color:#991b1b;background:#fff7f7}
-@media(prefers-color-scheme:dark){.es-ai-answer{background:#111d32;color:#e5edff;border-color:#29466f}.es-ai-answer-body h2,.es-ai-answer-body h3,.es-ai-answer-body strong{color:#93c5fd}.es-ai-answer-foot{border-color:#29466f;color:#a8b8d1}.es-ai-copy{background:#182a45;color:#bfdbfe;border-color:#34577f}}
+html[data-theme="dark"] .es-ai-answer{background:#111d32;color:#e5edff;border-color:#29466f}
+html[data-theme="dark"] .es-ai-answer-body h2,html[data-theme="dark"] .es-ai-answer-body h3,html[data-theme="dark"] .es-ai-answer-body strong{color:#93c5fd}
+html[data-theme="dark"] .es-ai-answer-foot{border-color:#29466f;color:#a8b8d1}
+html[data-theme="dark"] .es-ai-copy{background:#182a45;color:#bfdbfe;border-color:#34577f}
+html[data-theme="light"] .es-ai-answer{background:linear-gradient(160deg,#fff 0%,#f4f8ff 100%);color:#172554;border-color:#dbeafe}
+html[data-theme="light"] .es-ai-answer-body h2,html[data-theme="light"] .es-ai-answer-body h3,html[data-theme="light"] .es-ai-answer-body strong{color:#12366b}
+html[data-theme="light"] .es-ai-answer-foot{border-color:#e2e8f0;color:#64748b}
+html[data-theme="light"] .es-ai-copy{background:#fff;color:#1d4ed8;border-color:#bfdbfe}
+.es-ai-history{margin-top:14px;padding:13px;border:1px solid var(--cardline);border-radius:14px;background:var(--white);color:var(--g800)}
+.es-ai-history h3{font-size:13px;color:var(--ink);margin-bottom:9px}
+.es-ai-history-item{padding:10px 0;border-top:1px solid var(--cardline)}
+.es-ai-history-item:first-of-type{border-top:0}
+.es-ai-history-item summary{font-size:12px;font-weight:700;color:var(--ink);cursor:pointer;overflow-wrap:anywhere}
+.es-ai-history-item p{font-size:12px;line-height:1.65;color:var(--g600);margin-top:8px;white-space:pre-wrap;overflow-wrap:anywhere}
+.es-ai-history-meta{font-size:10px;color:var(--g600);margin-top:4px}
 </style>
         <div id="aiAnswer" class="es-ai-answer" data-clarity-mask="True" style="display:none;" aria-live="polite"></div>
+        <div id="aiDoubtHistory" class="es-ai-history" aria-live="polite"><h3>🗂️ आपके पुराने AI Doubts</h3><div class="es-ai-history-list">सवाल पूछने के बाद यहाँ सेव हुए जवाब दिखेंगे।</div></div>
       </div>
       <div class="sec-t"><span>💬</span> सभी Doubts</div>
       <div style="padding:0 18px 18px;" id="doubtsList"></div>
@@ -3434,6 +3449,16 @@ async function askAI(){
         topic: document.getElementById('dTopic').value.trim()
     });
     renderAIAnswer(box,data.answer);
+    try{
+      await saveAIDoubt(text,data.answer,
+        sel && sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '',
+        document.getElementById('dTopic').value.trim());
+      showToast('✅ AI जवाब आपके Doubts में सेव हो गया');
+      await loadAIDoubtHistory();
+    }catch(saveErr){
+      console.warn('AI answer could not be saved',saveErr);
+      showToast('⚠️ जवाब मिल गया, लेकिन save नहीं हुआ।');
+    }
   }catch(e){
     box.textContent = '❌ ' + ES.errMsg(e, true);
   }finally{
@@ -3979,6 +4004,33 @@ function formatAIAnswer(value){
 function renderAIAnswer(box,answer){
   box.innerHTML='<div class="es-ai-answer-head"><span class="es-ai-answer-avatar">🤖</span><span><span class="es-ai-answer-title">EduSpark AI का जवाब</span><span class="es-ai-answer-sub">आपके सवाल का आसान और विस्तृत समाधान</span></span></div><div class="es-ai-answer-body">'+formatAIAnswer(answer)+'</div><div class="es-ai-answer-foot"><span>⚠️ महत्वपूर्ण जानकारी को किताब/आधिकारिक स्रोत से जाँचें</span><button class="es-ai-copy" type="button" onclick="copyAIAnswer()">जवाब कॉपी करें</button></div>';
   box.dataset.answer=cleanAI(answer);
+}
+async function saveAIDoubt(question,answer,subject,topic){
+  const user=auth.currentUser;if(!user) throw new Error('login_required');
+  const ref=await db.collection('aiDoubts').add({
+    uid:user.uid,board:String(curBoard||'').slice(0,40),
+    subject:String(subject||'').slice(0,100),topic:String(topic||'').slice(0,200),
+    question:String(question||'').slice(0,8000),answer:String(answer||'').slice(0,20000),
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+  return ref.id;
+}
+async function loadAIDoubtHistory(){
+  const root=document.getElementById('aiDoubtHistory');if(!root)return;
+  const list=root.querySelector('.es-ai-history-list');if(!list)return;
+  const user=auth.currentUser;if(!user){list.textContent='AI Doubts देखने के लिए Google से Sign In करें।';return;}
+  try{
+    const snap=await db.collection('aiDoubts').where('uid','==',user.uid).limit(25).get();
+    const docs=snap.docs.map(doc=>({id:doc.id,...doc.data()})).sort((a,b)=>{
+      const at=a.createdAt&&a.createdAt.toMillis?a.createdAt.toMillis():0;
+      const bt=b.createdAt&&b.createdAt.toMillis?b.createdAt.toMillis():0;return bt-at;
+    });
+    if(!docs.length){list.textContent='अभी कोई saved AI doubt नहीं है।';return;}
+    list.innerHTML=docs.map((d,i)=>{
+      const date=d.createdAt&&d.createdAt.toDate?d.createdAt.toDate().toLocaleString('hi-IN'):'अभी-अभी';
+      return '<details class="es-ai-history-item"><summary>'+escHTML(d.question||'पुराना सवाल')+'</summary><div class="es-ai-history-meta">'+escHTML([d.subject,d.topic,date].filter(Boolean).join(' • '))+'</div><p>'+escHTML(d.answer||'')+'</p></details>';
+    }).join('');
+  }catch(e){list.textContent='Saved doubts अभी load नहीं हो पाए।';console.warn('AI doubt history load failed',e);}
 }
 function copyAIAnswer(){
   const box=document.getElementById('aiAnswer');if(!box||!box.dataset.answer)return;
