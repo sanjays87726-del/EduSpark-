@@ -74,7 +74,7 @@ await t('AI answer cleanup repairs malformed water formula and strips LaTeX wrap
   assert.strictEqual(r.status, 200);
   assert.match(j.answer, /H₂O/);
   assert.match(j.answer, /CO₂/);
-  assert.doesNotMatch(j.answer, /HWater|\\\\text|\\\\\(|\\$|_2/);
+  assert.doesNotMatch(j.answer, /HWater|\\text|\$|_2/);
   geminiAnswer = 'जवाब';
 });
 await t('Gemini failure -> 502 + rid without consuming a daily counter', async () => {
