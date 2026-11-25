@@ -30,10 +30,10 @@ const busyUids = new Set(); // unknown key par JWKS dobara kheenchne ke beech ka
 function normalizeAIAnswer(value) {
   let s = String(value == null ? '' : value).trim();
   // Drop entire opening paragraphs that reprimand the student for a subject mismatch.
-  s = s.split(/\\n\\s*\\n/).filter(part =>
+  s = s.split(/\n\s*\n/).filter(part =>
     !(/आपने जो प्रश्न पूछा|selected subject|wrong subject/i.test(part) &&
       /विषय|subject|चुना|selected/i.test(part))
-  ).join('\\n\\n');
+  ).join('\n\n');
   s = s.replace(/\\\\xrightarrow(?:\\[([^\\]]*)\\])?\\{([^{}]*)\\}/g,
     (_, below, above) => ' —(' + [above, below].filter(Boolean).join('; ') + ')→ ');
   s = s.replace(/\\\\(?:text|mathrm|mathbf|mathit|operatorname)\\{([^{}]*)\\}/g, '$1');
