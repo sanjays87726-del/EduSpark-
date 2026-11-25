@@ -34,10 +34,10 @@ function normalizeAIAnswer(value) {
     !(/आपने जो प्रश्न पूछा|selected subject|wrong subject/i.test(part) &&
       /विषय|subject|चुना|selected/i.test(part))
   ).join('\n\n');
-  // Convert labelled reaction arrows before removing \text wrappers.
+  // Strip text wrappers first so labels inside reaction-arrow braces become simple text.
+  s = s.replace(/\\(?:text|mathrm|mathbf|mathit|operatorname)\{([^{}]*)\}/g, '$1');
   s = s.replace(/\\xrightarrow(?:\[([^\]]*)\])?\{([^{}]*)\}/g,
     (_, below, above) => ' —(' + [above, below].filter(Boolean).join('; ') + ')→ ');
-  s = s.replace(/\\(?:text|mathrm|mathbf|mathit|operatorname)\{([^{}]*)\}/g, '$1');
   s = s.replace(/\\(?:left|right)\b/g, '');
   s = s.replace(/\\(?:cdot|times)\b/g, ' × ')
        .replace(/\\(?:rightarrow|to)\b/g, ' → ')
