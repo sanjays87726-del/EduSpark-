@@ -3984,7 +3984,7 @@ function cleanAI(t){ return String(t==null?'':t).trim(); }
 function normalizeAIMath(value){
   let s=cleanAI(value);
   // Remove common AI disclaimers when it says the selected subject differs from the question.
-  s=s.split(/\\r?\\n/).filter(line=>!(/आपने जो प्रश्न पूछा|selected subject|wrong subject/i.test(line) && /विषय|subject|चुना|selected/i.test(line))).join('\\n');
+  s=s.split(/\r?\n/).filter(line=>!(/आपने जो प्रश्न पूछा|selected subject|wrong subject/i.test(line) && /विषय|subject|चुना|selected/i.test(line))).join('\n');
   // Strip common LaTeX wrappers and convert formula notation to readable Unicode.
   s=s.replace(/\\(?:text|mathrm|mathbf|mathit|operatorname)\{([^{}]*)\}/g,'$1');
   s=s.replace(/\\(?:left|right)\b/g,'');
