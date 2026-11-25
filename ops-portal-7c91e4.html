@@ -814,8 +814,10 @@ const authPersistenceReady = auth.setPersistence(firebase.auth.Auth.Persistence.
 // ══════════════════════════════════════════
 // GOOGLE SIGN-IN GATE — sirf ADMIN_EMAIL allow
 // ══════════════════════════════════════════
-const GOOGLE_OAUTH_CLIENT_ID = "455546882437-qmguv5dd2uut17cc36lukeom3jr0mmfi.apps.googleusercontent.com";
-let googleTokenClient = null;
+// Firebase-managed Google provider: uses the OAuth Web Client configured
+// in Firebase Authentication, avoiding a separately configured GIS client mismatch.
+const googleProvider = new firebase.auth.GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 let googleLoginPending = false;
 
 function setGoogleLoginBusy(busy){
@@ -826,49 +828,28 @@ function setGoogleLoginBusy(busy){
 
 document.getElementById('gateGoogleBtn').addEventListener('click', async function(){
   if(googleLoginPending) return;
-  const btn = document.getElementById('gateGoogleBtn');
   setGoogleLoginBusy(true);
   try{
     await authPersistenceReady;
-    if(!window.google || !google.accounts || !google.accounts.oauth2){
-      throw new Error('Google Sign-In library load नहीं हुई। पेज refresh करके फिर कोशिश करें।');
-    }
-    if(!googleTokenClient){
-      googleTokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: GOOGLE_OAUTH_CLIENT_ID,
-        scope: 'openid email profile',
-        callback: async function(response){
-          try{
-            if(response && response.error) throw new Error(response.error_description || response.error);
-            if(!response || !response.access_token) throw new Error('Google access token नहीं मिला');
-            const credential = firebase.auth.GoogleAuthProvider.credential(null, response.access_token);
-            await auth.signInWithCredential(credential);
-          }catch(error){
-            setGoogleLoginBusy(false);
-            showToast('❌ '+(error.message || 'Google login failed'));
-          }
-        },
-        error_callback: function(error){
-          setGoogleLoginBusy(false);
-          showToast('❌ '+((error && error.message) || 'Google login popup नहीं खुला'));
-        }
-      });
-    }
-    // GIS OAuth popup issues a Google access token directly; Firebase consumes it
-    // with signInWithCredential, avoiding Firebase redirect state/sessionStorage.
-    googleTokenClient.requestAccessToken({prompt: 'select_account'});
+    // Use Firebase Auth popup (not redirect) so Firebase handles the configured
+    // Google OAuth client and the credential exchange in one supported flow.
+    const result = await auth.signInWithPopup(googleProvider);
+    if(!result || !result.user) throw new Error('Firebase ने Google user वापस नहीं किया');
+    setGoogleLoginBusy(false);
   }catch(error){
     setGoogleLoginBusy(false);
-    if(error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request'){
-      showToast('❌ '+(error.message || 'Google login failed'));
-    }
+    const code = error && error.code ? ' [' + error.code + ']' : '';
+    showToast('❌ Google login failed' + code + ': ' + ((error && error.message) || 'Unknown error'));
+    console.error('EduSpark Firebase Google sign-in failed', error);
   }
 });
 
 function showAdminApp(user){ resolveAndEnter(user); }   // v2: role (Super Admin / staff) + gate jaanch + menu — neeche ADMIN v2 script me
 
-function showDenied(){
-  document.getElementById('gDenied').classList.add('show');
+function showDenied(user){
+  const denied = document.getElementById('gDenied');
+  denied.textContent = '❌ यह Google account authorised नहीं है: ' + ((user && user.email) || 'email unavailable');
+  denied.classList.add('show');
   auth.signOut().catch(()=>{});
 }
 
@@ -1695,7 +1676,7 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
         try{ const d = await db.collection('staff').doc(email).get(); const s = d.exists ? d.data() : null; if(s && s.active === true && s.role && s.role !== 'super' && ROLES[s.role]) role = s.role; }
         catch(e){ showToast('❌ Staff access check failed: ' + (e.message || e)); return; }
       }
-      if(!role){ showDenied(); return; }
+      if(!role){ showDenied(user); return; }
       ROLE = role;
       await enterAdmin(user);
     })();
