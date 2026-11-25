@@ -5,12 +5,13 @@ const path = require('path');
 const R = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
 const admin = R('ops-portal-7c91e4.html'), worker = R('worker.js'), rules = R('firestore.rules'), app = R('index.html');
 let n = 0; const t = (name, fn) => { try { fn(); n++; console.log('✓', name); } catch (e) { console.log('✗', name, '\n  ', e.stack); process.exitCode = 1; } };
-t('admin Google login uses GIS OAuth credential instead of Firebase popup/redirect state', () => {
-  assert.ok(admin.includes("google.accounts.oauth2.initTokenClient"), 'GIS token client must be configured');
-  assert.ok(admin.includes("firebase.auth.GoogleAuthProvider.credential(null, response.access_token)"), 'GIS token must be exchanged for Firebase credential');
-  assert.ok(admin.includes("auth.signInWithCredential(credential)"), 'Firebase must sign in with credential');
-  assert.ok(/GOOGLE_OAUTH_CLIENT_ID\s*=/.test(admin), 'OAuth web client ID must be configured');
-  assert.ok(!/auth\.signInWithPopup\(provider\)|auth\.signInWithRedirect\(provider\)/.test(admin), 'Firebase popup/redirect flow must not be used');
+t('admin Google login uses Firebase-managed Google popup and exposes auth errors', () => {
+  assert.ok(admin.includes("new firebase.auth.GoogleAuthProvider()"), 'Firebase Google provider must be used');
+  assert.ok(admin.includes("auth.signInWithPopup(googleProvider)"), 'Firebase popup must complete Google sign-in');
+  assert.ok(admin.includes("googleProvider.setCustomParameters({ prompt: 'select_account' })"), 'account chooser must be requested');
+  assert.ok(admin.includes("Google login failed' + code"), 'Firebase auth error code must be visible');
+  assert.ok(!admin.includes("google.accounts.oauth2.initTokenClient"), 'separate GIS token client must not be used');
+  assert.ok(!admin.includes("auth.signInWithRedirect("), 'redirect flow must not be used');
 });
 t('password unlock updates the actual global Admin V2 scope setter', () => {
   assert.ok(admin.includes("typeof window.v2SetScope !== 'function'"), 'unlock must check the real global setter');
