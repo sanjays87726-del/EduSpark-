@@ -3980,8 +3980,28 @@ function buildAkItems(){
 var _aiExCache = {};
 function aiExKey(it){ return ((curQuiz&&curQuiz.id)||'')+'|'+it.gi+'|'+it.u; }
 function cleanAI(t){ return String(t==null?'':t).trim(); }
+// Gemini kabhi-kabhi raw LaTeX bhejta hai. Use readable Unicode formulas me badlo.
+function normalizeAIMath(value){
+  let s=cleanAI(value);
+  s=s.replace(/\\(?:text|mathrm|mathbf|mathit)\{([^{}]*)\}/g,'$1');
+  s=s.replace(/\\(?:left|right)\b/g,'');
+  s=s.replace(/\\(?:cdot|times)\b/g,' × ')
+     .replace(/\\(?:rightarrow|to)\b/g,' → ')
+     .replace(/\\(?:leq|le)\b/g,' ≤ ')
+     .replace(/\\(?:geq|ge)\b/g,' ≥ ')
+     .replace(/\\neq\b/g,' ≠ ')
+     .replace(/\\approx\b/g,' ≈ ');
+  s=s.replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g,'$1/$2');
+  const sub={'0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉','+':'₊','-':'₋'};
+  const sup={'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻'};
+  s=s.replace(/_\{?([0-9+-]+)\}?/g,(_,v)=>Array.from(v).map(c=>sub[c]||c).join(''));
+  s=s.replace(/\^\{?([0-9+-]+)\}?/g,(_,v)=>Array.from(v).map(c=>sup[c]||c).join(''));
+  return s.replace(/\\\(|\\\)|\\\[|\\\]|\$/g,'')
+          .replace(/\\(?:,|;|:|!)/g,' ')
+          .replace(/[ \t]{2,}/g,' ');
+}
 function formatAIAnswer(value){
-  const safe=escHTML(cleanAI(value));
+  const safe=escHTML(normalizeAIMath(value));
   const lines=safe.split(/\r?\n/); let out='',list='';
   function closeList(){if(list){out+='</'+list+'>';list='';}}
   lines.forEach(function(line){
