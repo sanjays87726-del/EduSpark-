@@ -1690,10 +1690,28 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
     const need = ROLE === 'super' ? GATE_SCOPE : 'staff';
     if((ROLE === 'super' && need !== 'panel' && need !== 'master') || (ROLE !== 'super' && need !== 'staff')){ clearGate(); showGate(); showToast('⚠️ इस account के लिए ' + (ROLE === 'super' ? 'ADMIN_PASS या SUPER_ADMIN_PASS' : 'Staff') + ' password डालें'); return; }
     try{      // Server verification अनिवार्य है; Worker unreachable/invalid हो तो fail closed.
-      const r = await fetch(IK_WORKER + '/admin-verify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ gate: GATE, scope: need }) });
+      const r = await fetch(IK_WORKER + '/admin-verify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ gate: GATE, scope: need }), cache:'no-store' });
       const j = await r.json().catch(function(){ return {}; });
-      if(!r.ok || !j.ok){ clearGate(); showGate(); showToast('⚠️ Session verify नहीं हुआ — दोबारा password डालें'); return; }
-    }catch(e){ clearGate(); showGate(); showToast('⚠️ Security server से संपर्क नहीं हुआ — access बंद है'); return; }
+      // केवल स्पष्ट invalid/expired token पर ही credentials मिटाएँ. Network, CORS,
+      // Worker 5xx या temporary outage में valid gate को बचाकर रखें ताकि retry हो सके.
+      if(r.status === 401 || (r.ok && j.ok === false)){
+        clearGate(); showGate();
+        showToast('⚠️ Admin session expired/invalid है — password दोबारा डालें');
+        return;
+      }
+      if(!r.ok || j.ok !== true){
+        showGate();
+        showToast('⚠️ Session server अभी verify नहीं कर पाया' + (r.status ? ' (HTTP ' + r.status + ')' : '') + ' — दोबारा कोशिश करें');
+        console.warn('EduSpark admin session verification unavailable', { status:r.status, error:j.error || '' });
+        return;
+      }
+    }catch(e){
+      // Transient network failure must not destroy a still-valid signed session.
+      showGate();
+      showToast('⚠️ Security server से संपर्क नहीं हुआ — internet जाँचकर फिर कोशिश करें');
+      console.warn('EduSpark admin session verification network error', e);
+      return;
+    }
     MASTER_UNLOCKED = ROLE === 'super' && GATE_SCOPE === 'master';
     $('gateLoading').style.display = 'none'; $('gate').style.display = 'none'; $('adminApp').style.display = 'block';
     $('tbEmail').textContent = user.email; $('tbRole').textContent = ROLES[ROLE];

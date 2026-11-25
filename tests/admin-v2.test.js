@@ -22,6 +22,13 @@ t('legacy gate token without an explicit scope fails closed instead of assuming 
   assert.ok(admin.includes("let GATE_SCOPE = sessionStorage.getItem('adm_scope') || '';"), 'missing gate scope must remain empty');
   assert.ok(admin.includes("if((ROLE === 'super' && need !== 'panel' && need !== 'master') || (ROLE !== 'super' && need !== 'staff'))"), 'role/scope enforcement must remain');
 });
+t('admin session verification preserves gate on temporary Worker/network failures and clears only invalid tokens', () => {
+  const entry = admin.slice(admin.indexOf('async function enterAdmin(user)'), admin.indexOf('async function loadSecStatus()'));
+  assert.ok(entry.includes("r.status === 401 || (r.ok && j.ok === false)"), 'only an explicit invalid token should clear the gate');
+  assert.ok(entry.includes("if(!r.ok || j.ok !== true)"), 'unexpected Worker responses must fail closed');
+  assert.ok(/catch\(e\)\{[^]*?showGate\(\);[^]*?internet जाँचकर फिर कोशिश करें/.test(entry), 'network failure should preserve the gate and explain retry');
+  assert.ok(!/catch\(e\)\{\s*clearGate\(\)/.test(entry), 'network failure must not erase a potentially valid token');
+});
 
 
 const block = admin.slice(admin.indexOf('// <pure-helpers>'), admin.indexOf('// </pure-helpers>'));
@@ -29,8 +36,11 @@ assert.ok(block.length > 500, 'pure-helpers block not found in ops-portal-7c91e4
 const H = new Function(block + '\nreturn { ROLES, SEC_NAMES, TABS, SOON, MENU, canAccess, parseTarget, secOf, itemVisible, secLockState, buildCountBody, fsVal, istDayStart, csvCell, toCsv, validEmail, relTime, auditInfo, logCategory, verNum, SEC_BY_COLL };')();
 
 t('admin route is renamed and Worker verification fails closed', () => {
-  assert.ok(admin.includes("if(!r.ok || !j.ok){ clearGate(); showGate();"), 'entry token must be server-verified');
-  assert.ok(admin.includes("catch(e){ clearGate(); showGate();"), 'Worker outage must not open the panel');
+  const entry = admin.slice(admin.indexOf('async function enterAdmin(user)'), admin.indexOf('async function loadSecStatus()'));
+  assert.ok(entry.includes("if(r.status === 401 || (r.ok && j.ok === false))"), 'explicitly invalid entry token must be rejected');
+  assert.ok(entry.includes("if(!r.ok || j.ok !== true)"), 'Worker errors and unexpected responses must fail closed');
+  assert.ok(/catch\(e\)\{[^]*?showGate\(\);[^]*?internet जाँचकर फिर कोशिश करें/.test(entry), 'Worker outage must keep the gate closed and allow retry');
+  assert.ok(!/catch\(e\)\{\s*clearGate\(\)/.test(entry), 'temporary Worker outage must not erase the signed gate');
   const verify = admin.slice(admin.indexOf('async function verifySec'), admin.indexOf('function askSectionPassword'));
   assert.ok(verify.includes('Verification unavailable: section locked rahega'));
   assert.ok(verify.includes('saveSec(); return false;'));
