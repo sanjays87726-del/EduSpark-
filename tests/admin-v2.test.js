@@ -22,6 +22,13 @@ t('legacy gate token without an explicit scope fails closed instead of assuming 
   assert.ok(admin.includes("let GATE_SCOPE = sessionStorage.getItem('adm_scope') || '';"), 'missing gate scope must remain empty');
   assert.ok(admin.includes("if((ROLE === 'super' && need !== 'panel' && need !== 'master') || (ROLE !== 'super' && need !== 'staff'))"), 'role/scope enforcement must remain');
 });
+t('admin session verification preserves gate on temporary Worker/network failures and clears only invalid tokens', () => {
+  const entry = admin.slice(admin.indexOf('async function enterAdmin(user)'), admin.indexOf('async function loadSecStatus()'));
+  assert.ok(entry.includes("r.status === 401 || (r.ok && j.ok === false)"), 'only an explicit invalid token should clear the gate');
+  assert.ok(entry.includes("if(!r.ok || j.ok !== true)"), 'unexpected Worker responses must fail closed');
+  assert.ok(/catch\(e\)\{[^]*?showGate\(\);[^]*?internet जाँचकर फिर कोशिश करें/.test(entry), 'network failure should preserve the gate and explain retry');
+  assert.ok(!/catch\(e\)\{\s*clearGate\(\)/.test(entry), 'network failure must not erase a potentially valid token');
+});
 
 
 const block = admin.slice(admin.indexOf('// <pure-helpers>'), admin.indexOf('// </pure-helpers>'));
