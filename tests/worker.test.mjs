@@ -22,7 +22,7 @@ async function token({ kp = kp1, kid = 'k1', uid = 'u1', aud = PROJECT, exp, tam
   return h + '.' + p + '.' + sig.toString('base64url');
 }
 
-let geminiDelay = 0, jwksCalls = 0, jwksFresh = 0, jwksServe = OLD, geminiMode = 'ok';
+let geminiDelay = 0, jwksCalls = 0, jwksFresh = 0, jwksServe = OLD, geminiMode = 'ok', geminiAnswer = 'जवाब';
 globalThis.fetch = async (url, opts = {}) => {
   if (String(url).includes('googleapis.com/service_accounts')) { jwksCalls++; if (opts.cf && opts.cf.cacheTtl === 0) { jwksFresh++; jwksServe = NEW; } return { ok: true, json: async () => jwksServe }; }
   if (String(url).includes('generativelanguage')) {
@@ -66,6 +66,16 @@ await t('valid token -> 200 with unlimited quota metadata and no KV counter writ
   const r = await post({ idToken: await token(), question: Q, board: 'CBSE-10' }); const j = await r.json();
   assert.strictEqual(r.status, 200); assert.strictEqual(j.answer, 'जवाब'); assert.strictEqual(j.left, null); assert.strictEqual(j.unlimited, true);
   assert.strictEqual(kv.size, before);
+});
+await t('AI answer cleanup repairs malformed water formula and strips LaTeX wrappers', async () => {
+  geminiAnswer = 'जल (HWater) और कार्बन डाइऑक्साइड ($CO_2$); \\\\(H_2O\\\\)';
+  const r = await post({ idToken: await token({ uid: 'chemistry-cleanup' }), question: 'Prakash sanshleshan ka sutra?' });
+  const j = await r.json();
+  assert.strictEqual(r.status, 200);
+  assert.match(j.answer, /H₂O/);
+  assert.match(j.answer, /CO₂/);
+  assert.doesNotMatch(j.answer, /HWater|\\\\text|\\\\\(|\\$|_2/);
+  geminiAnswer = 'जवाब';
 });
 await t('Gemini failure -> 502 + rid without consuming a daily counter', async () => {
   const before = kv.size;
