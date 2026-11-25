@@ -13,6 +13,28 @@ async function telegramCall(token, method, payload) {
   return data.result;
 }
 
+// Telegram displays plain text, not LaTeX. Convert common math markup to readable Unicode.
+export function formatTelegramMath(value) {
+  let text = String(value ?? '');
+  const sub = { '0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉','+':'₊','-':'₋','=':'₌','(':'₍',')':'₎','a':'ₐ','e':'ₑ','h':'ₕ','i':'ᵢ','j':'ⱼ','k':'ₖ','l':'ₗ','m':'ₘ','n':'ₙ','o':'ₒ','p':'ₚ','r':'ᵣ','s':'ₛ','t':'ₜ','u':'ᵤ','v':'ᵥ','x':'ₓ' };
+  const sup = { '0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻','=':'⁼','(':'⁽',')':'⁾','n':'ⁿ','i':'ⁱ' };
+  text = text.replace(/\\xrightarrow(?:\[([^\]]*)\])?\{([^}]*)\}/g, (_, below, above) =>
+    ' —(' + [above, below].filter(Boolean).map(v => v.replace(/\\text\s*\{([^}]*)\}/g, '$1').replace(/[{}]/g, '')).join('; ') + ')→ ');
+  text = text.replace(/\\(?:text|mathrm|mathbf|mathit|ce)\s*\{([^{}]*)\}/g, '$1');
+  text = text.replace(/\\(?:times|cdot)/g, ' × ').replace(/\\(?:rightarrow|to)/g, ' → ')
+    .replace(/\\(?:left|right)/g, '').replace(/\\(?:approx|sim)/g, ' ≈ ')
+    .replace(/\\(?:pm)/g, ' ± ').replace(/\\(?:div)/g, ' ÷ ');
+  text = text.replace(/_\{([^{}]+)\}|_([A-Za-z0-9+\-=()])/g, (_, a, b) => [...(a || b)].map(c => sub[c] || c).join(''));
+  text = text.replace(/\^\{([^{}]+)\}|\^([A-Za-z0-9+\-=()])/g, (_, a, b) => [...(a || b)].map(c => sup[c] || c).join(''));
+  text = text.replace(/\\(?:frac)\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g, '($1)/($2)');
+  text = text.replace(/\\(?:sqrt)\s*\{([^{}]*)\}/g, '√($1)');
+  text = text.replace(/\\(?:cdot|,|;|!|quad|qquad)/g, ' ');
+  text = text.replace(/\\(?:text|mathrm|mathbf)\b/g, '').replace(/[{}]/g, '');
+  text = text.replace(/\$\$?|\\\(|\\\)|\\\[|\\\]/g, '');
+  text = text.replace(/\\([#$%&_])/g, '$1').replace(/\\[a-zA-Z]+/g, '');
+  return text.replace(/[ \t]{2,}/g, ' ').replace(/[ \t]*\n[ \t]*/g, '\n').trim();
+}
+
 const send = (token, chat_id, text) => telegramCall(token, 'sendMessage', {
   chat_id, text: String(text).slice(0, 4000), disable_web_page_preview: true
 });
@@ -152,6 +174,7 @@ export async function handleTelegramWebhook(request, env) {
     if (!answer) throw new Error('Empty AI response');
     const needsAdmin = answer.startsWith('[NEED_ADMIN]');
     answer = answer.replace(/^\[NEED_ADMIN\]\s*/, '');
+    answer = formatTelegramMath(answer);
     if (!answer) answer = 'इस मामले में इंसानी सहायता की जरूरत है।';
     if (!/https?:\/\/eduspark\.live/i.test(answer)) answer += '\n\n📱 EduSpark App: ' + APP_LINK;
     await send(token, chatId, answer);
