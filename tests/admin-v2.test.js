@@ -36,8 +36,11 @@ assert.ok(block.length > 500, 'pure-helpers block not found in ops-portal-7c91e4
 const H = new Function(block + '\nreturn { ROLES, SEC_NAMES, TABS, SOON, MENU, canAccess, parseTarget, secOf, itemVisible, secLockState, buildCountBody, fsVal, istDayStart, csvCell, toCsv, validEmail, relTime, auditInfo, logCategory, verNum, SEC_BY_COLL };')();
 
 t('admin route is renamed and Worker verification fails closed', () => {
-  assert.ok(admin.includes("if(!r.ok || !j.ok){ clearGate(); showGate();"), 'entry token must be server-verified');
-  assert.ok(admin.includes("catch(e){ clearGate(); showGate();"), 'Worker outage must not open the panel');
+  const entry = admin.slice(admin.indexOf('async function enterAdmin(user)'), admin.indexOf('async function loadSecStatus()'));
+  assert.ok(entry.includes("if(r.status === 401 || (r.ok && j.ok === false))"), 'explicitly invalid entry token must be rejected');
+  assert.ok(entry.includes("if(!r.ok || j.ok !== true)"), 'Worker errors and unexpected responses must fail closed');
+  assert.ok(/catch\(e\)\{[^]*?showGate\(\);[^]*?internet जाँचकर फिर कोशिश करें/.test(entry), 'Worker outage must keep the gate closed and allow retry');
+  assert.ok(!/catch\(e\)\{\s*clearGate\(\)/.test(entry), 'temporary Worker outage must not erase the signed gate');
   const verify = admin.slice(admin.indexOf('async function verifySec'), admin.indexOf('function askSectionPassword'));
   assert.ok(verify.includes('Verification unavailable: section locked rahega'));
   assert.ok(verify.includes('saveSec(); return false;'));
