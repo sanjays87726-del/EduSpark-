@@ -1258,7 +1258,25 @@ html.es-authed #googleLoginBtn{display:none !important;}
 @keyframes esAiSpin{to{transform:rotate(360deg)}}@keyframes esAiDot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
 @media(prefers-reduced-motion:reduce){.es-ai-spinner,.es-ai-dots i{animation:none}}
 </style>
-        <div id="aiAnswer" data-clarity-mask="True" style="display:none;margin-top:10px;background:#F1F5F9;border:1.5px solid #BFDBFE;border-radius:var(--rsm);padding:12px 14px;font-size:13px;line-height:1.6;"></div>
+        <style id="es-ai-answer-style">
+.es-ai-answer{margin-top:14px;overflow:hidden;border:1px solid #dbeafe;border-radius:18px;background:linear-gradient(160deg,#fff 0%,#f4f8ff 100%);box-shadow:0 8px 24px rgba(30,64,175,.08);color:#172554;font-size:14px;line-height:1.75}
+.es-ai-answer-head{display:flex;align-items:center;gap:10px;padding:13px 15px;background:linear-gradient(110deg,#10264d,#1d4e89);color:#fff}
+.es-ai-answer-avatar{width:34px;height:34px;display:grid;place-items:center;border-radius:11px;background:#ffffff20;font-size:19px}
+.es-ai-answer-title{font-size:14px;font-weight:800;line-height:1.2}
+.es-ai-answer-sub{margin-top:3px;font-size:10px;color:#dbeafe}
+.es-ai-answer-body{padding:15px;overflow-wrap:anywhere}
+.es-ai-answer-body p{margin:0 0 10px}.es-ai-answer-body p:last-child{margin-bottom:0}
+.es-ai-answer-body h2,.es-ai-answer-body h3{margin:15px 0 7px;color:#12366b;font-size:14px;font-weight:800}
+.es-ai-answer-body ul,.es-ai-answer-body ol{margin:6px 0 12px;padding-left:22px}
+.es-ai-answer-body li{margin:4px 0;padding-left:2px}
+.es-ai-answer-body strong{color:#12366b;font-weight:800}
+.es-ai-answer-body code{padding:2px 5px;border-radius:5px;background:#e8eef9;color:#173b70;font-size:12px}
+.es-ai-answer-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;border-top:1px solid #e2e8f0;color:#64748b;font-size:10px}
+.es-ai-copy{border:1px solid #bfdbfe;border-radius:9px;background:#fff;color:#1d4ed8;padding:7px 11px;font:700 11px inherit;cursor:pointer}
+.es-ai-error{padding:13px 15px;color:#991b1b;background:#fff7f7}
+@media(prefers-color-scheme:dark){.es-ai-answer{background:#111d32;color:#e5edff;border-color:#29466f}.es-ai-answer-body h2,.es-ai-answer-body h3,.es-ai-answer-body strong{color:#93c5fd}.es-ai-answer-foot{border-color:#29466f;color:#a8b8d1}.es-ai-copy{background:#182a45;color:#bfdbfe;border-color:#34577f}}
+</style>
+        <div id="aiAnswer" class="es-ai-answer" data-clarity-mask="True" style="display:none;" aria-live="polite"></div>
       </div>
       <div class="sec-t"><span>💬</span> सभी Doubts</div>
       <div style="padding:0 18px 18px;" id="doubtsList"></div>
@@ -3415,8 +3433,7 @@ async function askAI(){
         subject: sel && sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '',
         topic: document.getElementById('dTopic').value.trim()
     });
-    box.innerHTML = '<b>🤖 AI जवाब</b> <span style="font-size:11px;color:#64748B;">(गलत हो सकता है — पक्का जवाब चाहिए तो Doubt submit करें)</span>'
-      + '<div style="margin-top:6px;white-space:pre-wrap;">'+escHTML(cleanAI(data.answer))+'</div>';
+    renderAIAnswer(box,data.answer);
   }catch(e){
     box.textContent = '❌ ' + ES.errMsg(e, true);
   }finally{
@@ -3937,7 +3954,38 @@ function buildAkItems(){
 // ── Quiz review me "AI se samjho" (wahi Cloudflare Worker; roz ki limit doubts ke saath saajhi hai) ──
 var _aiExCache = {};
 function aiExKey(it){ return ((curQuiz&&curQuiz.id)||'')+'|'+it.gi+'|'+it.u; }
-function cleanAI(t){ return String(t==null?'':t).replace(/\*\*/g,'').replace(/^#+\s*/gm,'').replace(/^\s*\*\s+/gm,'• ').trim(); }
+function cleanAI(t){ return String(t==null?'':t).trim(); }
+function formatAIAnswer(value){
+  const safe=escHTML(cleanAI(value));
+  const lines=safe.split(/\r?\n/); let out='',list='';
+  function closeList(){if(list){out+='</'+list+'>';list='';}}
+  lines.forEach(function(line){
+    const s=line.trim();
+    if(!s){closeList();return;}
+    const h=s.match(/^#{1,3}\s+(.+)$/);
+    const bullet=s.match(/^[-*•]\s+(.+)$/);
+    const numbered=s.match(/^\d+[.)]\s+(.+)$/);
+    if(h){closeList();out+='<h3>'+h[1]+'</h3>';return;}
+    if(bullet||numbered){
+      const type=bullet?'ul':'ol';
+      if(list!==type){closeList();list=type;out+='<'+type+'>';}
+      out+='<li>'+((bullet||numbered)[1])+'</li>';return;
+    }
+    closeList();
+    out+='<p>'+s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code>$1</code>')+'</p>';
+  });
+  closeList();return out;
+}
+function renderAIAnswer(box,answer){
+  box.innerHTML='<div class="es-ai-answer-head"><span class="es-ai-answer-avatar">🤖</span><span><span class="es-ai-answer-title">EduSpark AI का जवाब</span><span class="es-ai-answer-sub">आपके सवाल का आसान और विस्तृत समाधान</span></span></div><div class="es-ai-answer-body">'+formatAIAnswer(answer)+'</div><div class="es-ai-answer-foot"><span>⚠️ महत्वपूर्ण जानकारी को किताब/आधिकारिक स्रोत से जाँचें</span><button class="es-ai-copy" type="button" onclick="copyAIAnswer()">जवाब कॉपी करें</button></div>';
+  box.dataset.answer=cleanAI(answer);
+}
+function copyAIAnswer(){
+  const box=document.getElementById('aiAnswer');if(!box||!box.dataset.answer)return;
+  const value=box.dataset.answer;
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(value).then(()=>showToast('✅ जवाब कॉपी हो गया')).catch(()=>showToast('कॉपी नहीं हो पाया'));
+  else showToast('कॉपी सुविधा उपलब्ध नहीं है');
+}
 async function explainQ(gi, pre){
   const it = (pre==='live') ? _liveItem : _akItems[gi-1]; if(!it) return;
   const key = aiExKey(it);
