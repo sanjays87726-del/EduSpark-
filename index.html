@@ -205,7 +205,7 @@ body{font-family:'Poppins',sans-serif;background:var(--g50);color:var(--g800);mi
 .tb-left{display:flex;align-items:center;gap:10px;}
 .tb-brand{font-size:18px;font-weight:800;}
 .tb-brand span{color:var(--saffron);}
-.board-pill{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);border-radius:99px;padding:4px 12px;font-size:11px;font-weight:600;cursor:pointer;}
+.board-pill{display:inline-flex;align-items:center;justify-content:center;max-width:min(42vw,180px);min-width:0;min-height:30px;padding:5px 10px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.28);border-radius:14px;font-size:11px;font-weight:700;line-height:1.25;text-align:center;white-space:normal;overflow-wrap:anywhere;cursor:pointer;}
 
 /* CONTENT */
 .content{flex:1;overflow-y:auto;padding-bottom:80px;}
@@ -712,14 +712,14 @@ html.es-authed #googleLoginBtn{display:none !important;}
   .tb-left{gap:8px;}
   .tb-menu{width:32px;height:32px;}
   .tb-right{gap:6px !important;}
-  .board-pill{max-width:86px !important;}
+   .board-pill{max-width:112px !important;}
   .dn-hero h2{font-size:21px;}
   .dn-costs,.dn-ways{gap:7px;}
 }
 @media (max-width:340px){
   .tb-left{gap:6px;}
   .tb-brand{font-size:14px;}
-  .board-pill{max-width:54px !important;padding:5px 7px !important;}
+   .board-pill{max-width:88px !important;padding:5px 7px !important;font-size:9.5px !important;}
 }
 @media (prefers-reduced-motion:reduce){
   .dn-heart,.dr-donate .dd-ic{animation:none;}
@@ -732,7 +732,7 @@ html.es-authed #googleLoginBtn{display:none !important;}
 @media (max-width:380px){
   .tb-left>.tb-logo{display:none;}
   .tb-brand{font-size:16px;}
-  .board-pill{font-size:10px !important;padding:5px 9px !important;max-width:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+   .board-pill{font-size:10px !important;padding:5px 9px !important;max-width:112px;white-space:normal;}
   .tb-bell,.tb-avatar,.tb-theme{width:32px;height:32px;}
 }
 .notif-empty{font-size:12px;color:var(--g600);text-align:center;padding:30px 10px;}
@@ -3983,6 +3983,8 @@ function cleanAI(t){ return String(t==null?'':t).trim(); }
 // Gemini kabhi-kabhi raw LaTeX bhejta hai. Use readable Unicode formulas me badlo.
 function normalizeAIMath(value){
   let s=cleanAI(value);
+  // Remove common AI disclaimers when it says the selected subject differs from the question.
+  s=s.split(/\\r?\\n/).filter(line=>!(/आपने जो प्रश्न पूछा|selected subject|wrong subject/i.test(line) && /विषय|subject|चुना|selected/i.test(line))).join('\\n');
   // Strip common LaTeX wrappers and convert formula notation to readable Unicode.
   s=s.replace(/\\(?:text|mathrm|mathbf|mathit|operatorname)\{([^{}]*)\}/g,'$1');
   s=s.replace(/\\(?:left|right)\b/g,'');
