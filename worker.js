@@ -26,6 +26,35 @@ const JWKS_REFRESH_GAP_MS = 60 * 1000;
 // roz ki limit cross kar sakti thin. Poori guarantee ke liye Durable Object chahiye; ye uska sasta, safe pehla kadam hai.
 const busyUids = new Set(); // unknown key par JWKS dobara kheenchne ke beech kam se kam itna gap
 
+// Server-side answer cleanup is authoritative: Gemini may ignore the plain-text instruction.
+function normalizeAIAnswer(value) {
+  let s = String(value == null ? '' : value).trim();
+  // Drop entire opening paragraphs that reprimand the student for a subject mismatch.
+  s = s.split(/\\n\\s*\\n/).filter(part =>
+    !(/आपने जो प्रश्न पूछा|selected subject|wrong subject/i.test(part) &&
+      /विषय|subject|चुना|selected/i.test(part))
+  ).join('\\n\\n');
+  s = s.replace(/\\\\xrightarrow(?:\\[([^\\]]*)\\])?\\{([^{}]*)\\}/g,
+    (_, below, above) => ' —(' + [above, below].filter(Boolean).join('; ') + ')→ ');
+  s = s.replace(/\\\\(?:text|mathrm|mathbf|mathit|operatorname)\\{([^{}]*)\\}/g, '$1');
+  s = s.replace(/\\\\(?:left|right)\\b/g, '');
+  s = s.replace(/\\\\(?:cdot|times)\\b/g, ' × ')
+       .replace(/\\\\(?:rightarrow|to)\\b/g, ' → ')
+       .replace(/\\\\(?:leq|le)\\b/g, ' ≤ ')
+       .replace(/\\\\(?:geq|ge)\\b/g, ' ≥ ')
+       .replace(/\\\\neq\\b/g, ' ≠ ')
+       .replace(/\\\\approx\\b/g, ' ≈ ')
+       .replace(/\\\\frac\\{([^{}]+)\\}\\{([^{}]+)\\}/g, '$1/$2');
+  const sub = {'0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉','+':'₊','-':'₋'};
+  const sup = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻'};
+  s = s.replace(/_\\{?([0-9+-]+)\\}?/g, (_, v) => Array.from(v).map(c => sub[c] || c).join(''));
+  s = s.replace(/\\^\\{?([0-9+-]+)\\}?/g, (_, v) => Array.from(v).map(c => sup[c] || c).join(''));
+  return s.replace(/\\\\\\(|\\\\\\)|\\\\\\[|\\\\\\]|\\$/g, '')
+          .replace(/\\\\(?:,|;|:|!)/g, ' ')
+          .replace(/[ \\t]{2,}/g, ' ').trim();
+}
+
+
 const b64uToBytes = s => Uint8Array.from(
   atob(s.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(s.length / 4) * 4, '=')),
   c => c.charCodeAt(0));
@@ -256,7 +285,7 @@ async function handle(request, env, reply, held) {
       if (data) break;
     }
     if (!data) return reply(502, { error: 'AI अभी व्यस्त है। कृपया थोड़ी देर बाद फिर कोशिश करें।' });
-    const answer = ((data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || []).filter(p => !p.thought).map(p => p.text || '').join('').trim();
+    const answer = normalizeAIAnswer(((data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || []).filter(p => !p.thought).map(p => p.text || '').join(''));
     if (!answer) return reply(502, { error: 'AI जवाब नहीं बना पाया, दोबारा कोशिश करें' });
     return reply(200, { answer, left: null, unlimited: true, apiVersion: 1 });
 }
