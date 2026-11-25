@@ -67,6 +67,24 @@ service cloud.firestore {
       allow delete: if isAdmin() || (request.auth != null && resource.data.uid == request.auth.uid);
     }
 
+    // AI Doubts: AI se mila sawaal+jawaab student ke account me save rahe; sirf owner read/create kare.
+    // Students saved AI answers ko overwrite ya kisi doosre user ko expose nahi kar sakte.
+    match /aiDoubts/{doc} {
+      allow read: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow create: if request.auth != null
+        && notBlocked()
+        && request.resource.data.keys().hasOnly(['uid','board','subject','topic','question','answer','createdAt'])
+        && request.resource.data.keys().hasAll(['uid','board','question','answer','createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.board is string && request.resource.data.board.size() <= 40
+        && request.resource.data.question is string && request.resource.data.question.size() >= 1 && request.resource.data.question.size() <= 8000
+        && request.resource.data.answer is string && request.resource.data.answer.size() >= 1 && request.resource.data.answer.size() <= 20000
+        && request.resource.data.createdAt is timestamp
+        && okStr(request.resource.data, 'subject', 100)
+        && okStr(request.resource.data, 'topic', 200);
+      allow update, delete: if false;
+    }
+
     // Students: list sirf admin; student sirf apna doc likh sakta hai
     // (login wale: doc id == uid, bina-login: "dev_..." device id)
     function studentKeys() {
