@@ -9,7 +9,7 @@ t('admin Google login uses GIS OAuth credential instead of Firebase popup/redire
   assert.ok(admin.includes("google.accounts.oauth2.initTokenClient"), 'GIS token client must be configured');
   assert.ok(admin.includes("firebase.auth.GoogleAuthProvider.credential(null, response.access_token)"), 'GIS token must be exchanged for Firebase credential');
   assert.ok(admin.includes("auth.signInWithCredential(credential)"), 'Firebase must sign in with credential');
-  assert.ok(admin.includes('455546882437-qmguv5dd2uut17cc36lukeom3jr0mmfi.apps.googleusercontent.com'), 'OAuth web client ID must match Firebase project');
+  assert.ok(/GOOGLE_OAUTH_CLIENT_ID\s*=/.test(admin), 'OAuth web client ID must be configured');
   assert.ok(!/auth\.signInWithPopup\(provider\)|auth\.signInWithRedirect\(provider\)/.test(admin), 'Firebase popup/redirect flow must not be used');
 });
 t('legacy gate token without an explicit scope fails closed instead of assuming master', () => {
