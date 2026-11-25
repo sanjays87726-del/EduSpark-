@@ -806,26 +806,29 @@ function showToast(msg){
 // SESSION PERSISTENCE — ek baar login hone ke baad, manually logout
 // kiye bina, dubara khud-ba-khud logout nahi hoga
 // ══════════════════════════════════════════
-auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+// Persistence ko login se pehle resolve karna zaroori hai; warna popup ke turant
+// baad auth state reload/redirect par inconsistent ho sakti hai.
+const authPersistenceReady = auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
 // ══════════════════════════════════════════
 // GOOGLE SIGN-IN GATE — sirf ADMIN_EMAIL allow
 // ══════════════════════════════════════════
 const provider = new firebase.auth.GoogleAuthProvider();
 
-document.getElementById('gateGoogleBtn').addEventListener('click', function(){
+document.getElementById('gateGoogleBtn').addEventListener('click', async function(){
   const btn = document.getElementById('gateGoogleBtn');
   btn.disabled = true;
-  auth.signInWithPopup(provider)
-    .then((result)=>{
-      resolveAndEnter(result.user);
-    })
-    .catch((error)=>{
-      btn.disabled = false;
-      if(error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request'){
-        showToast('❌ '+error.message);
-      }
-    });
+  try{
+    await authPersistenceReady;
+    // Auth state listener neeche ek hi jagah resolveAndEnter chalata hai.
+    // Popup callback se dobara entry chalane par /admin-verify parallel hit hota tha.
+    await auth.signInWithPopup(provider);
+  }catch(error){
+    btn.disabled = false;
+    if(error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request'){
+      showToast('❌ '+(error.message || 'Google login failed'));
+    }
+  }
 });
 
 function showAdminApp(user){ resolveAndEnter(user); }   // v2: role (Super Admin / staff) + gate jaanch + menu — neeche ADMIN v2 script me
@@ -1643,16 +1646,29 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
     ['adm_gate','adm_scope','adm_sec','adm_logged'].forEach(function(k){ sessionStorage.removeItem(k); });
     SEC_TOK = {}; GATE_SCOPE = ''; MASTER_UNLOCKED = false; VERIFIED = {};
   }
+  // Firebase auth observer kabhi rapid/repeated callbacks de sakta hai.
+  // Ek user ke liye ek hi role lookup + server gate verification in-flight rakho.
+  let ADMIN_ENTRY_UID = '', ADMIN_ENTRY_PROMISE = null;
   async function resolveAndEnter(user){
     if(!user){ showGate(); return; }
-    const email = String(user.email || '').toLowerCase();
-    let role = '';
-    if(email && email === String(ADMIN_EMAIL).toLowerCase()) role = 'super';
-    else if(email){
-      try{ const d = await db.collection('staff').doc(email).get(); const s = d.exists ? d.data() : null; if(s && s.active === true && s.role && s.role !== 'super' && ROLES[s.role]) role = s.role; }catch(e){}
+    if(ADMIN_ENTRY_PROMISE && ADMIN_ENTRY_UID === user.uid) return ADMIN_ENTRY_PROMISE;
+    ADMIN_ENTRY_UID = user.uid;
+    ADMIN_ENTRY_PROMISE = (async function(){
+      const email = String(user.email || '').toLowerCase();
+      let role = '';
+      if(email && email === String(ADMIN_EMAIL).toLowerCase()) role = 'super';
+      else if(email){
+        try{ const d = await db.collection('staff').doc(email).get(); const s = d.exists ? d.data() : null; if(s && s.active === true && s.role && s.role !== 'super' && ROLES[s.role]) role = s.role; }
+        catch(e){ showToast('❌ Staff access check failed: ' + (e.message || e)); return; }
+      }
+      if(!role){ showDenied(); return; }
+      ROLE = role;
+      await enterAdmin(user);
+    })();
+    try{ await ADMIN_ENTRY_PROMISE; }
+    finally{
+      if(ADMIN_ENTRY_UID === user.uid){ ADMIN_ENTRY_UID = ''; ADMIN_ENTRY_PROMISE = null; }
     }
-    if(!role){ showDenied(); return; }
-    ROLE = role; enterAdmin(user);
   }
   async function enterAdmin(user){
     if(!gateValid()){ showGate(); return; }
