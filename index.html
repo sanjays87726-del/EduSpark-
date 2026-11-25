@@ -4023,7 +4023,7 @@ function formatAIAnswer(value){
 }
 function renderAIAnswer(box,answer){
   box.innerHTML='<div class="es-ai-answer-head"><span class="es-ai-answer-avatar">🤖</span><span><span class="es-ai-answer-title">EduSpark AI का जवाब</span><span class="es-ai-answer-sub">आपके सवाल का आसान और विस्तृत समाधान</span></span></div><div class="es-ai-answer-body">'+formatAIAnswer(answer)+'</div><div class="es-ai-answer-foot"><span>⚠️ महत्वपूर्ण जानकारी को किताब/आधिकारिक स्रोत से जाँचें</span><button class="es-ai-copy" type="button" onclick="copyAIAnswer()">जवाब कॉपी करें</button></div>';
-  box.dataset.answer=cleanAI(answer);
+  box.dataset.answer=normalizeAIMath(answer);
 }
 async function saveAIDoubt(question,answer,subject,topic){
   const user=auth.currentUser;if(!user) throw new Error('login_required');
