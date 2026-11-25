@@ -5,7 +5,7 @@ Browser → Cloudflare Worker. Sirf EduSpark ke allowed origins se (CORS + serve
 ```
 POST https://<worker>/v1/ask          ← canonical
 POST https://<worker>/                ← legacy alias (hamesha chalega — neeche "Versioning" dekho)
-GET  https://<worker>/                ← status: {worker, version, apiVersions, RATE, GEMINI_KEY, IMAGEKIT_PRIVATE_KEY, DAILY_LIMIT}
+GET  https://<worker>/                ← status: {worker, version, apiVersions, RATE, GEMINI_KEY, IMAGEKIT_PRIVATE_KEY}
 Content-Type: application/json         (koi custom header nahi — warna CORS preflight fail hota hai)
 
 { "idToken": "<Firebase ID token>", "question": "…", "board": "CBSE-10", "subject": "Science", "topic": "Light" }
@@ -13,7 +13,7 @@ Content-Type: application/json         (koi custom header nahi — warna CORS pr
 
 ## Response
 ```
-200  { "answer": "…", "left": 3, "apiVersion": 1 }
+200  { "answer": "…", "left": null, "unlimited": true, "apiVersion": 1 }
 4xx/5xx  { "error": "<student ko dikhane layak Hindi message>" }     (5xx par extra "rid": "ab12cd34")
 ```
 
@@ -23,13 +23,13 @@ Content-Type: application/json         (koi custom header nahi — warna CORS pr
 | 401 | token missing / invalid / expired | dobara Sign In |
 | 403 | origin allowed nahi | — |
 | 404 | path `/` ya `/v1/ask` nahi | — |
-| 413 | body 16 KB se bada | — |
-| 429 | (a) roz ki limit khatam (b) isi student ka pichhla sawal abhi chal raha hai | message dikhao, retry nahi |
+| 413 | body 32 KB se bada | — |
+| 429 | isi student ka pichhla sawal abhi chal raha hai | message dikhao; parallel request ko retry kar sakte hain |
 | 500 | Worker setup/exception | breaker failure; `rid` log karo |
-| 502 | Gemini fail (quota wapas kar di jaati hai) | retry **nahi** (har attempt KV writes lagata hai); breaker failure |
-| 503 | KV daily write quota khatam | message dikhao; breaker par asar nahi |
+| 502 | Gemini primary + fallback dono fail | Worker apne aap retry/fallback karta hai; breaker failure |
+| 503 | upstream AI service unavailable | message dikhao; breaker par asar nahi |
 
-Client (`ES.aiRequest`) ye sab handle karta hai: timeout 30 s, sirf network error par retry, 3 failures par circuit breaker.
+Student-facing daily AI request limit removed. Server still requires Firebase sign-in, caps a single question payload at 8,000 characters, and allows only one in-flight request per student. Google AI Studio / Cloudflare / account-level quotas, service availability, and billing limits still apply. Client (`ES.aiRequest`) uses a 60 s timeout and circuit breaker for repeated outages.
 
 ## Versioning policy
 - **Additive change (naya field, naya optional input)** = v1 me allowed. Clients unknown fields ignore karte hain.

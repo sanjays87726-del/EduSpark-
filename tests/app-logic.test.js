@@ -152,5 +152,20 @@ const mkStore = () => { const s = {}; return { getItem: k => (k in s ? s[k] : nu
   await t('firestore.rules: offers collection is publicly readable, admin-only write', () => {
     assert.ok(/match \/offers\/\{doc\}\s*\{ allow read: if true; allow write: if isAdmin\(\); \}/.test(read('firestore.rules')));
   });
+  await t('AI answer UI: explicit light/dark theme styles and saved history are present', () => {
+    assert.ok(html.includes('html[data-theme="dark"] .es-ai-answer'));
+    assert.ok(html.includes('html[data-theme="light"] .es-ai-answer'));
+    assert.ok(html.includes('id="aiDoubtHistory"'));
+    assert.ok(html.includes('async function loadAIDoubtHistory()'));
+  });
+  await t('AI answers are saved under the signed-in student UID; rules keep history private and immutable', () => {
+    assert.ok(html.includes("db.collection('aiDoubts').add({"));
+    assert.ok(html.includes('uid:user.uid'));
+    assert.ok(html.includes('await saveAIDoubt(text,data.answer'));
+    const rules = read('firestore.rules');
+    assert.ok(/match \/aiDoubts\/\{doc\}/.test(rules));
+    assert.ok(rules.includes('resource.data.uid == request.auth.uid'));
+    assert.ok(rules.includes('allow update, delete: if false;'));
+  });
   console.log(n + ' app-logic tests passed');
 })();

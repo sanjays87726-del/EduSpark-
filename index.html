@@ -1244,10 +1244,54 @@ html.es-authed #googleLoginBtn{display:none !important;}
         </div>
         <label>Subject</label><select id="dSubj"></select>
         <label>Topic / Chapter</label><input type="text" id="dTopic" maxlength="200" placeholder="Chapter 5 – Light" data-clarity-mask="True"/>
-        <label>Doubt लिखें</label><textarea id="dText" maxlength="2000" placeholder="अपना doubt विस्तार से लिखें..." data-clarity-mask="True"></textarea>
+        <label>Doubt लिखें</label><textarea id="dText" maxlength="8000" placeholder="अपना doubt विस्तार से लिखें..." data-clarity-mask="True"></textarea>
         <button class="sub-btn" onclick="submitDoubt()">📤 Submit Doubt</button>
         <button class="sub-btn" id="aiBtn" onclick="askAI()" style="margin-top:8px;background:linear-gradient(90deg,#0EA5E9,#2563EB);">🤖 AI से तुरंत जवाब</button>
-        <div id="aiAnswer" data-clarity-mask="True" style="display:none;margin-top:10px;background:#F1F5F9;border:1.5px solid #BFDBFE;border-radius:var(--rsm);padding:12px 14px;font-size:13px;line-height:1.6;"></div>
+        <style id="es-ai-thinking-style">
+.es-ai-thinking{display:flex;align-items:center;gap:12px;padding:10px 4px;color:#1e40af}
+.es-ai-spinner{width:24px;height:24px;flex:0 0 24px;border:3px solid #bfdbfe;border-top-color:#2563eb;border-radius:50%;animation:esAiSpin .8s linear infinite}
+.es-ai-thinking b{display:inline-block;font-size:13px}
+.es-ai-thinking small{display:block;margin-top:4px;color:#64748b;font-size:11px}
+.es-ai-dots{display:inline-flex;gap:3px;margin-left:5px;vertical-align:middle}
+.es-ai-dots i{width:4px;height:4px;border-radius:50%;background:#2563eb;animation:esAiDot 1s infinite ease-in-out}
+.es-ai-dots i:nth-child(2){animation-delay:.15s}.es-ai-dots i:nth-child(3){animation-delay:.3s}
+@keyframes esAiSpin{to{transform:rotate(360deg)}}@keyframes esAiDot{0%,80%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+@media(prefers-reduced-motion:reduce){.es-ai-spinner,.es-ai-dots i{animation:none}}
+</style>
+        <style id="es-ai-answer-style">
+.es-ai-answer{margin-top:14px;overflow:hidden;border:1px solid #dbeafe;border-radius:18px;background:linear-gradient(160deg,#fff 0%,#f4f8ff 100%);box-shadow:0 8px 24px rgba(30,64,175,.08);color:#172554;font-size:14px;line-height:1.75}
+.es-ai-answer-head{display:flex;align-items:center;gap:10px;padding:13px 15px;background:linear-gradient(110deg,#10264d,#1d4e89);color:#fff}
+.es-ai-answer-avatar{width:34px;height:34px;display:grid;place-items:center;border-radius:11px;background:#ffffff20;font-size:19px}
+.es-ai-answer-title{font-size:14px;font-weight:800;line-height:1.2}
+.es-ai-answer-sub{margin-top:3px;font-size:10px;color:#dbeafe}
+.es-ai-answer-body{padding:15px;overflow-wrap:anywhere}
+.es-ai-answer-body p{margin:0 0 10px}.es-ai-answer-body p:last-child{margin-bottom:0}
+.es-ai-answer-body h2,.es-ai-answer-body h3{margin:15px 0 7px;color:#12366b;font-size:14px;font-weight:800}
+.es-ai-answer-body ul,.es-ai-answer-body ol{margin:6px 0 12px;padding-left:22px}
+.es-ai-answer-body li{margin:4px 0;padding-left:2px}
+.es-ai-answer-body strong{color:#12366b;font-weight:800}
+.es-ai-answer-body code{padding:2px 5px;border-radius:5px;background:#e8eef9;color:#173b70;font-size:12px}
+.es-ai-answer-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;border-top:1px solid #e2e8f0;color:#64748b;font-size:10px}
+.es-ai-copy{border:1px solid #bfdbfe;border-radius:9px;background:#fff;color:#1d4ed8;padding:7px 11px;font:inherit;font-size:11px;font-weight:700;cursor:pointer}
+.es-ai-error{padding:13px 15px;color:#991b1b;background:#fff7f7}
+html[data-theme="dark"] .es-ai-answer{background:#111d32;color:#e5edff;border-color:#29466f}
+html[data-theme="dark"] .es-ai-answer-body h2,html[data-theme="dark"] .es-ai-answer-body h3,html[data-theme="dark"] .es-ai-answer-body strong{color:#93c5fd}
+html[data-theme="dark"] .es-ai-answer-foot{border-color:#29466f;color:#a8b8d1}
+html[data-theme="dark"] .es-ai-copy{background:#182a45;color:#bfdbfe;border-color:#34577f}
+html[data-theme="light"] .es-ai-answer{background:linear-gradient(160deg,#fff 0%,#f4f8ff 100%);color:#172554;border-color:#dbeafe}
+html[data-theme="light"] .es-ai-answer-body h2,html[data-theme="light"] .es-ai-answer-body h3,html[data-theme="light"] .es-ai-answer-body strong{color:#12366b}
+html[data-theme="light"] .es-ai-answer-foot{border-color:#e2e8f0;color:#64748b}
+html[data-theme="light"] .es-ai-copy{background:#fff;color:#1d4ed8;border-color:#bfdbfe}
+.es-ai-history{margin-top:14px;padding:13px;border:1px solid var(--cardline);border-radius:14px;background:var(--white);color:var(--g800)}
+.es-ai-history h3{font-size:13px;color:var(--ink);margin-bottom:9px}
+.es-ai-history-item{padding:10px 0;border-top:1px solid var(--cardline)}
+.es-ai-history-item:first-of-type{border-top:0}
+.es-ai-history-item summary{font-size:12px;font-weight:700;color:var(--ink);cursor:pointer;overflow-wrap:anywhere}
+.es-ai-history-item p{font-size:12px;line-height:1.65;color:var(--g600);margin-top:8px;white-space:pre-wrap;overflow-wrap:anywhere}
+.es-ai-history-meta{font-size:10px;color:var(--g600);margin-top:4px}
+</style>
+        <div id="aiAnswer" class="es-ai-answer" data-clarity-mask="True" style="display:none;" aria-live="polite"></div>
+        <div id="aiDoubtHistory" class="es-ai-history" aria-live="polite"><h3>🗂️ आपके पुराने AI Doubts</h3><div class="es-ai-history-list">सवाल पूछने के बाद यहाँ सेव हुए जवाब दिखेंगे।</div></div>
       </div>
       <div class="sec-t"><span>💬</span> सभी Doubts</div>
       <div style="padding:0 18px 18px;" id="doubtsList"></div>
@@ -1782,33 +1826,31 @@ Sahmati wapas lene ke liye Profile → Logout karein; agli baar login par checkb
     return new Promise(function (_, rej) { setTimeout(function () { rej(coded('timeout', 'timeout')); }, ms); });    // ai-slow
   }
 
-  /* ── 9) AI request: flag → breaker → rate limit → timeout → retry ── */
+  /* ── 9) AI request: flag → breaker → timeout → retry ── */
   var aiBreaker = new Breaker('ai', { threshold: 3, cooldownMs: 30000 });
-  var aiBucket = new Bucket(5, 1 / 6);          // burst 5, phir har 6 sec me 1 (server par alag se 5/din ki limit hai)
+  // No student-facing AI request cap; server still authenticates users and serializes each user's in-flight request.
   var doubtBucket = new Bucket(3, 1 / 10);
-  // Sirf network error retry hota hai (request server tak pahunchi hi nahi). Worker ke 502 (Gemini fail)
-  // aur 503 (KV daily quota) retry nahi hote: har attempt Worker ke KV me 2 writes lagata hai (free: 1000/din).
+  // Worker already performs Gemini model retry/fallback; client retries only network failures.
   function transient(e) { return !!(online() && e && e.code === 'network'); }
   async function aiRequest(url, body, o) {
     o = o || {};
     if (!flag('ai')) throw coded('ai_disabled', 'AI अभी बंद है — थोड़ी देर बाद कोशिश करें');
     if (!online()) throw coded('offline', 'Internet बंद है — चालू करके दोबारा कोशिश करें');
     if (!aiBreaker.canPass()) throw coded('circuit_open', 'AI अभी जवाब नहीं दे रहा — ' + aiBreaker.retryInSec() + ' सेकंड बाद कोशिश करें');
-    if (!aiBucket.take()) { aiBreaker.release(); throw coded('rate_limited', 'थोड़ा रुकें — ' + aiBucket.waitSec() + ' सेकंड बाद दोबारा कोशिश करें'); }
     var t0 = now();
     try {
       var out = await retry(function () {
         var cm = chaosMode();
-        if (cm) return chaosFetch(cm, o.timeoutMs || 30000);
-        return fetchJSON(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }, o.timeoutMs || 30000);
+        if (cm) return chaosFetch(cm, o.timeoutMs || 60000);
+        return fetchJSON(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }, o.timeoutMs || 60000);
       }, { op: 'ai', retries: o.retries == null ? 2 : o.retries, baseMs: o.baseMs || 600, capMs: 5000, shouldRetry: transient });
       var ms = now() - t0;
-      // 503 = Worker ka "aaj ka AI quota khatam" (outage nahi) — 4xx ki tarah: server zinda hai, message student ko dikhao
+      // 503 = upstream AI service unavailable; Worker has already tried its configured model fallback
       if (out.res.status >= 500 && out.res.status !== 503) {         // server kharab — breaker ko batao
         aiBreaker.failure(); record('ai', false, ms); log('error', 'ai', { status: out.res.status, ms: Math.round(ms), rid: (out.data && out.data.rid) || '' });   // rid = Worker log wala request ID
         throw coded('http_' + out.res.status, (out.data && out.data.error) || 'AI जवाब नहीं दे पाया');
       }
-      aiBreaker.success(); record('ai', true, ms);                   // 2xx/4xx/503(quota): server zinda hai
+      aiBreaker.success(); record('ai', true, ms);                   // 2xx/4xx/503(upstream unavailable): Worker zinda hai
       log('info', 'ai', { status: out.res.status, ms: Math.round(ms) });
       if (!out.res.ok) { var e4 = coded('http_' + out.res.status, (out.data && out.data.error) || 'AI जवाब नहीं दे पाया'); e4.status = out.res.status; throw e4; }
       return out.data;
@@ -1928,7 +1970,7 @@ Sahmati wapas lene ke liye Profile → Logout karein; agli baar login par checkb
   ES.aiRequest = aiRequest; ES.errMsg = errMsg; ES.health = health; ES.debug = debug;
   ES.takeDoubt = function () { return doubtBucket.take(); };
   ES.doubtWait = function () { return doubtBucket.waitSec(); };
-  ES._internals = { Breaker: Breaker, Bucket: Bucket, aiBreaker: aiBreaker, aiBucket: aiBucket, record: record, SLO: SLO };
+  ES._internals = { Breaker: Breaker, Bucket: Bucket, aiBreaker: aiBreaker, record: record, SLO: SLO };
 })(typeof window !== 'undefined' ? window : globalThis);
 
 </script>
@@ -3395,8 +3437,9 @@ async function askAI(){
   if(_aiBusy) return;
   _aiBusy = true;
   const box = document.getElementById('aiAnswer'), btn = document.getElementById('aiBtn');
-  btn.disabled = true; btn.textContent = '⏳ सोच रहा हूँ...';
-  box.style.display = 'block'; box.textContent = '';
+  btn.disabled = true; btn.textContent = '⏳ जवाब तैयार हो रहा है...';
+  box.style.display = 'block';
+  box.innerHTML = '<div class="es-ai-thinking" role="status" aria-live="polite"><span class="es-ai-spinner" aria-hidden="true"></span><span><b>EduSpark AI जवाब तैयार कर रहा है</b><span class="es-ai-dots" aria-hidden="true"><i></i><i></i><i></i></span><small>आपका सवाल समझकर सही जवाब बनाया जा रहा है...</small></span></div>';
   try{
     const sel = document.getElementById('dSubj');
     const idToken = await auth.currentUser.getIdToken();
@@ -3405,8 +3448,17 @@ async function askAI(){
         subject: sel && sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '',
         topic: document.getElementById('dTopic').value.trim()
     });
-    box.innerHTML = '<b>🤖 AI जवाब</b> <span style="font-size:11px;color:#64748B;">(गलत हो सकता है — पक्का जवाब चाहिए तो Doubt submit करें)</span>'
-      + '<div style="margin-top:6px;white-space:pre-wrap;">'+escHTML(cleanAI(data.answer))+'</div>';
+    renderAIAnswer(box,data.answer);
+    try{
+      await saveAIDoubt(text,data.answer,
+        sel && sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : '',
+        document.getElementById('dTopic').value.trim());
+      showToast('✅ AI जवाब आपके Doubts में सेव हो गया');
+      await loadAIDoubtHistory();
+    }catch(saveErr){
+      console.warn('AI answer could not be saved',saveErr);
+      showToast('⚠️ जवाब मिल गया, लेकिन save नहीं हुआ।');
+    }
   }catch(e){
     box.textContent = '❌ ' + ES.errMsg(e, true);
   }finally{
@@ -3927,7 +3979,65 @@ function buildAkItems(){
 // ── Quiz review me "AI se samjho" (wahi Cloudflare Worker; roz ki limit doubts ke saath saajhi hai) ──
 var _aiExCache = {};
 function aiExKey(it){ return ((curQuiz&&curQuiz.id)||'')+'|'+it.gi+'|'+it.u; }
-function cleanAI(t){ return String(t==null?'':t).replace(/\*\*/g,'').replace(/^#+\s*/gm,'').replace(/^\s*\*\s+/gm,'• ').trim(); }
+function cleanAI(t){ return String(t==null?'':t).trim(); }
+function formatAIAnswer(value){
+  const safe=escHTML(cleanAI(value));
+  const lines=safe.split(/\r?\n/); let out='',list='';
+  function closeList(){if(list){out+='</'+list+'>';list='';}}
+  lines.forEach(function(line){
+    const s=line.trim();
+    if(!s){closeList();return;}
+    const h=s.match(/^#{1,3}\s+(.+)$/);
+    const bullet=s.match(/^[-*•]\s+(.+)$/);
+    const numbered=s.match(/^\d+[.)]\s+(.+)$/);
+    if(h){closeList();out+='<h3>'+h[1]+'</h3>';return;}
+    if(bullet||numbered){
+      const type=bullet?'ul':'ol';
+      if(list!==type){closeList();list=type;out+='<'+type+'>';}
+      out+='<li>'+((bullet||numbered)[1])+'</li>';return;
+    }
+    closeList();
+    out+='<p>'+s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code>$1</code>')+'</p>';
+  });
+  closeList();return out;
+}
+function renderAIAnswer(box,answer){
+  box.innerHTML='<div class="es-ai-answer-head"><span class="es-ai-answer-avatar">🤖</span><span><span class="es-ai-answer-title">EduSpark AI का जवाब</span><span class="es-ai-answer-sub">आपके सवाल का आसान और विस्तृत समाधान</span></span></div><div class="es-ai-answer-body">'+formatAIAnswer(answer)+'</div><div class="es-ai-answer-foot"><span>⚠️ महत्वपूर्ण जानकारी को किताब/आधिकारिक स्रोत से जाँचें</span><button class="es-ai-copy" type="button" onclick="copyAIAnswer()">जवाब कॉपी करें</button></div>';
+  box.dataset.answer=cleanAI(answer);
+}
+async function saveAIDoubt(question,answer,subject,topic){
+  const user=auth.currentUser;if(!user) throw new Error('login_required');
+  const ref=await db.collection('aiDoubts').add({
+    uid:user.uid,board:String(curBoard||'').slice(0,40),
+    subject:String(subject||'').slice(0,100),topic:String(topic||'').slice(0,200),
+    question:String(question||'').slice(0,8000),answer:String(answer||'').slice(0,20000),
+    createdAt:firebase.firestore.FieldValue.serverTimestamp()
+  });
+  return ref.id;
+}
+async function loadAIDoubtHistory(){
+  const root=document.getElementById('aiDoubtHistory');if(!root)return;
+  const list=root.querySelector('.es-ai-history-list');if(!list)return;
+  const user=auth.currentUser;if(!user){list.textContent='AI Doubts देखने के लिए Google से Sign In करें।';return;}
+  try{
+    const snap=await db.collection('aiDoubts').where('uid','==',user.uid).limit(25).get();
+    const docs=snap.docs.map(doc=>({id:doc.id,...doc.data()})).sort((a,b)=>{
+      const at=a.createdAt&&a.createdAt.toMillis?a.createdAt.toMillis():0;
+      const bt=b.createdAt&&b.createdAt.toMillis?b.createdAt.toMillis():0;return bt-at;
+    });
+    if(!docs.length){list.textContent='अभी कोई saved AI doubt नहीं है।';return;}
+    list.innerHTML=docs.map((d,i)=>{
+      const date=d.createdAt&&d.createdAt.toDate?d.createdAt.toDate().toLocaleString('hi-IN'):'अभी-अभी';
+      return '<details class="es-ai-history-item"><summary>'+escHTML(d.question||'पुराना सवाल')+'</summary><div class="es-ai-history-meta">'+escHTML([d.subject,d.topic,date].filter(Boolean).join(' • '))+'</div><p>'+escHTML(d.answer||'')+'</p></details>';
+    }).join('');
+  }catch(e){list.textContent='Saved doubts अभी load नहीं हो पाए।';console.warn('AI doubt history load failed',e);}
+}
+function copyAIAnswer(){
+  const box=document.getElementById('aiAnswer');if(!box||!box.dataset.answer)return;
+  const value=box.dataset.answer;
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(value).then(()=>showToast('✅ जवाब कॉपी हो गया')).catch(()=>showToast('कॉपी नहीं हो पाया'));
+  else showToast('कॉपी सुविधा उपलब्ध नहीं है');
+}
 async function explainQ(gi, pre){
   const it = (pre==='live') ? _liveItem : _akItems[gi-1]; if(!it) return;
   const key = aiExKey(it);

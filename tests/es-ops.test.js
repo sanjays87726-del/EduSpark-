@@ -4,7 +4,6 @@ let pass = 0;
 async function t(name, fn) {
   // har test se pehle state reset
   I.aiBreaker.state = 'closed'; I.aiBreaker.fails = 0; I.aiBreaker.probing = false; I.aiBreaker.cooldownMs = 30000;
-  I.aiBucket.tokens = I.aiBucket.cap; I.aiBucket.t = Date.now();
   try { await fn(); pass++; console.log('✓', name); }
   catch (e) { console.log('✗', name, '\n  ', e && e.stack || e); process.exitCode = 1; }
 }
@@ -113,17 +112,14 @@ const rejects = async (p, code) => { try { await p; } catch (e) { assert.strictE
     await rejects(ES.aiRequest('u', {}, { timeoutMs: 30, baseMs: 5 }), 'timeout');
   });
 
-  await t('rate limit: 5 burst allowed, 6th rejected without fetch and without breaker side-effect', async () => {
+  await t('AI requests are not blocked by the removed client-side token bucket', async () => {
     let calls = 0; globalThis.fetch = async () => { calls++; return resp(200, { answer: 'a' }); };
-    for (let i = 0; i < 5; i++) await ES.aiRequest('u', {}, FAST);
-    const e = await rejects(ES.aiRequest('u', {}, FAST), 'rate_limited');
-    assert.strictEqual(calls, 5); assert.ok(/सेकंड/.test(e.message)); assert.strictEqual(I.aiBreaker.state, 'closed');
-  });
-
-  await t('rate limit rejection in half-open releases the probe', async () => {
-    I.aiBreaker.state = 'half'; I.aiBreaker.probing = false; I.aiBucket.tokens = 0; I.aiBucket.t = Date.now();
-    await rejects(ES.aiRequest('u', {}, FAST), 'rate_limited');
-    assert.strictEqual(I.aiBreaker.probing, false);
+    for (let i = 0; i < 12; i++) {
+      const d = await ES.aiRequest('u', {}, FAST);
+      assert.strictEqual(d.answer, 'a');
+    }
+    assert.strictEqual(calls, 12);
+    assert.strictEqual(I.aiBreaker.state, 'closed');
   });
 
   await t('feature flag off -> ai_disabled; only explicit false disables', async () => {

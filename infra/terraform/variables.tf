@@ -21,8 +21,3 @@ variable "gemini_key" {
   sensitive   = true
 }
 
-variable "daily_limit" {
-  description = "Har student ke liye roz ke AI jawab"
-  type        = number
-  default     = 5
-}

@@ -6,7 +6,7 @@ fs.copyFileSync(new URL('../telegram.js', import.meta.url), modulePath);
 const { handleTelegramWebhook } = await import(pathToFileURL(modulePath).href);
 const env = { TELEGRAM_BOT_TOKEN: 'bot-test', TELEGRAM_WEBHOOK_SECRET: 'hook-secret', GEMINI_KEY: 'gem-test', TELEGRAM_CHAT_ID: 'admin-chat' };
 const headers = { 'X-Telegram-Bot-Api-Secret-Token': 'hook-secret', 'Content-Type': 'application/json' };
-let sent = [], geminiCalls = 0, geminiUrl = '', primaryCalls = 0, fallbackCalls = 0;
+let sent = [], geminiCalls = 0, geminiUrl = '', primaryCalls = 0, fallbackCalls = 0, geminiDelay = 0;
 const hostnameOf = value => { try { return new URL(String(value)).hostname; } catch { return ''; } };
 globalThis.fetch = async (url, opts = {}) => {
   if (hostnameOf(url) === 'api.telegram.org') {
@@ -14,6 +14,7 @@ globalThis.fetch = async (url, opts = {}) => {
     return { ok: true, json: async () => ({ ok: true, result: {} }) };
   }
   if (hostnameOf(url) === 'generativelanguage.googleapis.com') {
+    if (geminiDelay) await new Promise(resolve => setTimeout(resolve, geminiDelay));
     geminiCalls++; geminiUrl = String(url);
     assert.equal(JSON.parse(opts.body).generationConfig.temperature, undefined);
     if (String(url).includes('/models/gemini-3.5-flash-lite:generateContent')) {
@@ -55,6 +56,15 @@ const run = async () => {
   assert.match(lastMessage().text, /eduspark\.live/); assert.match(geminiUrl, /gemini-3\.8-flash/);
   assert.ok(sent.slice(beforeAi).some(x => x.method === 'sendChatAction' && x.action === 'typing' && x.chat_id === 12));
 
+  // A long model response must refresh Telegram's short-lived typing action.
+  geminiDelay = 4200;
+  const beforeTypingRefresh = sent.filter(x => x.method === 'sendChatAction' && x.chat_id === 19).length;
+  r = await handleTelegramWebhook(request(message(19, 'Explain photosynthesis in detail')), env);
+  geminiDelay = 0;
+  assert.equal(r.status, 200);
+  const afterTypingRefresh = sent.filter(x => x.method === 'sendChatAction' && x.chat_id === 19).length;
+  assert.ok(afterTypingRefresh - beforeTypingRefresh >= 2, 'typing action should refresh while AI is generating');
+
   r = await handleTelegramWebhook(request(message(13, '/admin login issue')), env);
   assert.equal(r.status, 200);
   const adminMessages = sent.filter(x => x.method === 'sendMessage' && x.chat_id === 'admin-chat');
@@ -62,8 +72,9 @@ const run = async () => {
 
   r = await handleTelegramWebhook(request(message(14, 'Hi'), 'wrong'), env);
   assert.equal(r.status, 403);
+  const callsBeforeGroup = geminiCalls;
   r = await handleTelegramWebhook(request(message(15, 'Hi', 'group')), env);
-  assert.equal(r.status, 200); assert.equal(geminiCalls, 3);
+  assert.equal(r.status, 200); assert.equal(geminiCalls, callsBeforeGroup);
   const incomplete = { ...env }; delete incomplete.TELEGRAM_WEBHOOK_SECRET;
   r = await handleTelegramWebhook(request(message(16, 'Hi')), incomplete);
   assert.equal(r.status, 503);
