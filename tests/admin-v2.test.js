@@ -5,6 +5,18 @@ const path = require('path');
 const R = f => fs.readFileSync(path.join(__dirname, '..', f), 'utf8');
 const admin = R('ops-portal-7c91e4.html'), worker = R('worker.js'), rules = R('firestore.rules'), app = R('index.html');
 let n = 0; const t = (name, fn) => { try { fn(); n++; console.log('✓', name); } catch (e) { console.log('✗', name, '\n  ', e.stack); process.exitCode = 1; } };
+t('admin Google login uses GIS OAuth credential instead of Firebase popup/redirect state', () => {
+  assert.ok(admin.includes("google.accounts.oauth2.initTokenClient"), 'GIS token client must be configured');
+  assert.ok(admin.includes("firebase.auth.GoogleAuthProvider.credential(null, response.access_token)"), 'GIS token must be exchanged for Firebase credential');
+  assert.ok(admin.includes("auth.signInWithCredential(credential)"), 'Firebase must sign in with credential');
+  assert.ok(admin.includes('455546882437-qmguv5dd2uut17cc36lukeom3jr0mmfi.apps.googleusercontent.com'), 'OAuth web client ID must match Firebase project');
+  assert.ok(!/auth\.signInWithPopup\(provider\)|auth\.signInWithRedirect\(provider\)/.test(admin), 'Firebase popup/redirect flow must not be used');
+});
+t('legacy gate token without an explicit scope fails closed instead of assuming master', () => {
+  assert.ok(admin.includes("let GATE_SCOPE = sessionStorage.getItem('adm_scope') || '';"), 'missing gate scope must remain empty');
+  assert.ok(admin.includes("if((ROLE === 'super' && need !== 'panel' && need !== 'master') || (ROLE !== 'super' && need !== 'staff'))"), 'role/scope enforcement must remain');
+});
+
 
 const block = admin.slice(admin.indexOf('// <pure-helpers>'), admin.indexOf('// </pure-helpers>'));
 assert.ok(block.length > 500, 'pure-helpers block not found in ops-portal-7c91e4.html');
