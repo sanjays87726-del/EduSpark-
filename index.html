@@ -1843,7 +1843,7 @@ Sahmati wapas lene ke liye Profile → Logout karein; agli baar login par checkb
         var cm = chaosMode();
         if (cm) return chaosFetch(cm, o.timeoutMs || 60000);
         return fetchJSON(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }, o.timeoutMs || 60000);
-      }, { op: 'ai', retries: o.retries == null ? 0 : o.retries, baseMs: o.baseMs || 600, capMs: 5000, shouldRetry: transient });
+      }, { op: 'ai', retries: o.retries == null ? 2 : o.retries, baseMs: o.baseMs || 600, capMs: 5000, shouldRetry: transient });
       var ms = now() - t0;
       // 503 = upstream AI service unavailable; Worker has already tried its configured model fallback
       if (out.res.status >= 500 && out.res.status !== 503) {         // server kharab — breaker ko batao
