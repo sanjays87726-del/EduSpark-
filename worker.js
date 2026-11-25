@@ -50,9 +50,13 @@ function normalizeAIAnswer(value) {
   const sup = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','+':'⁺','-':'⁻'};
   s = s.replace(/_\{?([0-9+-]+)\}?/g, (_, v) => Array.from(v).map(c => sub[c] || c).join(''));
   s = s.replace(/\^\{?([0-9+-]+)\}?/g, (_, v) => Array.from(v).map(c => sup[c] || c).join(''));
-  return s.replace(/\\\(|\\\)|\\\[|\\\]|\$/g, '')
-          .replace(/\\(?:,|;|:|!)/g, ' ')
-          .replace(/[ \t]{2,}/g, ' ').trim();
+  s = s.replace(/\\\(|\\\)|\\\[|\\\]|\$/g, '')
+       .replace(/\\(?:,|;|:|!)/g, ' ')
+       .replace(/[ \t]{2,}/g, ' ').trim();
+  // Repair a common Gemini chemistry hallucination without changing ordinary prose.
+  s = s.replace(/\\bH\\s*Water\\b/gi, 'H₂O')
+       .replace(/शैाल/g, 'शैवाल');
+  return s;
 }
 
 const b64uToBytes = s => Uint8Array.from(
@@ -254,6 +258,7 @@ async function handle(request, env, reply, held) {
       'Understand the exact question and answer it directly. Reply in the language and script the student used: simple Hindi in Devanagari for Hindi/Hinglish, English for English.',
       'Treat the selected subject as context, not a restriction. Infer the actual subject from the question. If the question clearly belongs to another subject, answer it normally without refusing, scolding, or saying the student selected the wrong subject. Only ask a clarifying question when the subject genuinely changes the answer.',
       'Write chemical formulas and mathematical expressions in readable Unicode plain text (for example CO₂, H₂O, C₆H₁₂O₆, x²). Avoid LaTeX commands, dollar-sign math delimiters, and raw markup because the student app displays plain text.',
+      'For chemistry, verify every formula before answering: water is H₂O (never HWater), carbon dioxide is CO₂, oxygen is O₂, and glucose is C₆H₁₂O₆. Do not invent or corrupt chemical symbols. Re-read the final answer and correct formula typos before sending.',
       'Give a complete, well-structured explanation at the level the student needs. Use headings, steps, formulas, worked examples or bullet points when helpful. Do not impose an arbitrary word limit or give a vague one-line answer.',
       'For PYQ or important-question requests, ask only for missing class/exam, subject, board or year; never claim a document/link exists unless verified. For current scholarship dates or official notices, clearly say when information needs verification.',
       'Do not unnecessarily send students to an admin. Never request passwords, OTPs, or sensitive personal/payment information. If uncertain, state what is uncertain and give the best safe next step.',
