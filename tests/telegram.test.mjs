@@ -6,7 +6,7 @@ fs.copyFileSync(new URL('../telegram.js', import.meta.url), modulePath);
 const { handleTelegramWebhook } = await import(pathToFileURL(modulePath).href);
 const env = { TELEGRAM_BOT_TOKEN: 'bot-test', TELEGRAM_WEBHOOK_SECRET: 'hook-secret', GEMINI_KEY: 'gem-test', TELEGRAM_CHAT_ID: 'admin-chat' };
 const headers = { 'X-Telegram-Bot-Api-Secret-Token': 'hook-secret', 'Content-Type': 'application/json' };
-let sent = [], geminiCalls = 0, geminiUrl = '', primaryCalls = 0, fallbackCalls = 0;
+let sent = [], geminiCalls = 0, geminiUrl = '', primaryCalls = 0, fallbackCalls = 0, geminiDelay = 0;
 const hostnameOf = value => { try { return new URL(String(value)).hostname; } catch { return ''; } };
 globalThis.fetch = async (url, opts = {}) => {
   if (hostnameOf(url) === 'api.telegram.org') {
@@ -14,6 +14,7 @@ globalThis.fetch = async (url, opts = {}) => {
     return { ok: true, json: async () => ({ ok: true, result: {} }) };
   }
   if (hostnameOf(url) === 'generativelanguage.googleapis.com') {
+    if (geminiDelay) await new Promise(resolve => setTimeout(resolve, geminiDelay));
     geminiCalls++; geminiUrl = String(url);
     assert.equal(JSON.parse(opts.body).generationConfig.temperature, undefined);
     if (String(url).includes('/models/gemini-3.5-flash-lite:generateContent')) {
