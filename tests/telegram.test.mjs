@@ -72,8 +72,9 @@ const run = async () => {
 
   r = await handleTelegramWebhook(request(message(14, 'Hi'), 'wrong'), env);
   assert.equal(r.status, 403);
+  const callsBeforeGroup = geminiCalls;
   r = await handleTelegramWebhook(request(message(15, 'Hi', 'group')), env);
-  assert.equal(r.status, 200); assert.equal(geminiCalls, 3);
+  assert.equal(r.status, 200); assert.equal(geminiCalls, callsBeforeGroup);
   const incomplete = { ...env }; delete incomplete.TELEGRAM_WEBHOOK_SECRET;
   r = await handleTelegramWebhook(request(message(16, 'Hi')), incomplete);
   assert.equal(r.status, 503);
