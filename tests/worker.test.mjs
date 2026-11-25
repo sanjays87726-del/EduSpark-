@@ -30,7 +30,7 @@ globalThis.fetch = async (url, opts = {}) => {
     assert.ok(!String(url).includes('secret'));
     if (geminiDelay) await new Promise(r => setTimeout(r, geminiDelay));
     if (geminiMode === 'fail') return { ok: false, status: 500, text: async () => 'boom' };
-    return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: 'जवाब' }] } }] }) };
+    return { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: geminiAnswer }] } }] }) };
   }
   throw new Error('unexpected fetch ' + url);
 };
