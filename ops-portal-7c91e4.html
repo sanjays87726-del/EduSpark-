@@ -856,7 +856,7 @@ document.getElementById('gateGoogleBtn').addEventListener('click', async functio
     }
     // GIS OAuth popup issues a Google access token directly; Firebase consumes it
     // with signInWithCredential, avoiding Firebase redirect state/sessionStorage.
-    googleTokenClient.requestAccessToken({prompt: ''});
+    googleTokenClient.requestAccessToken({prompt: 'select_account'});
   }catch(error){
     setGoogleLoginBusy(false);
     if(error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request'){
