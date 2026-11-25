@@ -12,6 +12,11 @@ t('admin Google login uses GIS OAuth credential instead of Firebase popup/redire
   assert.ok(/GOOGLE_OAUTH_CLIENT_ID\s*=/.test(admin), 'OAuth web client ID must be configured');
   assert.ok(!/auth\.signInWithPopup\(provider\)|auth\.signInWithRedirect\(provider\)/.test(admin), 'Firebase popup/redirect flow must not be used');
 });
+t('password unlock updates the actual global Admin V2 scope setter', () => {
+  assert.ok(admin.includes("typeof window.v2SetScope !== 'function'"), 'unlock must check the real global setter');
+  assert.ok(admin.includes("window.v2SetScope(j.scope || 'panel')"), 'unlock must update in-memory GATE_SCOPE');
+  assert.ok(!admin.includes('window.ES_ADMIN_V2.v2SetScope'), 'must not call a nonexistent namespace');
+});
 t('legacy gate token without an explicit scope fails closed instead of assuming master', () => {
   assert.ok(admin.includes("let GATE_SCOPE = sessionStorage.getItem('adm_scope') || '';"), 'missing gate scope must remain empty');
   assert.ok(admin.includes("if((ROLE === 'super' && need !== 'panel' && need !== 'master') || (ROLE !== 'super' && need !== 'staff'))"), 'role/scope enforcement must remain');
