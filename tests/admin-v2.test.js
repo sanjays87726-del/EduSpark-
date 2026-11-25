@@ -24,6 +24,7 @@ const H = new Function(block + '\nreturn { ROLES, SEC_NAMES, TABS, SOON, MENU, c
 
 t('admin route is renamed and Worker verification fails closed', () => {
   assert.ok(admin.includes("if(!r.ok || !j.ok){ clearGate(); showGate();"), 'entry token must be server-verified');
+  assert.ok(admin.includes("window.ES_ADMIN_V2.v2SetScope(j.scope || 'panel')"), 'password unlock must update the v2 in-memory gate scope');
   assert.ok(admin.includes("catch(e){ clearGate(); showGate();"), 'Worker outage must not open the panel');
   const verify = admin.slice(admin.indexOf('async function verifySec'), admin.indexOf('function askSectionPassword'));
   assert.ok(verify.includes('Verification unavailable: section locked rahega'));
