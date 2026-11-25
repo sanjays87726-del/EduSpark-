@@ -54,7 +54,7 @@ function normalizeAIAnswer(value) {
        .replace(/\\(?:,|;|:|!)/g, ' ')
        .replace(/[ \t]{2,}/g, ' ').trim();
   // Repair a common Gemini chemistry hallucination without changing ordinary prose.
-  s = s.replace(/\\bH\\s*Water\\b/gi, 'H₂O')
+  s = s.replace(/\bH\s*Water\b/gi, 'H₂O')
        .replace(/शैाल/g, 'शैवाल');
   return s;
 }
