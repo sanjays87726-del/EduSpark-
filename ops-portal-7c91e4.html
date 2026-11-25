@@ -1036,7 +1036,7 @@ async function unlockGate(){
     const j = await r.json();
     if(!r.ok || !j.gate) throw new Error(j.error || 'Password गलत है');
     GATE = j.gate; sessionStorage.setItem('adm_gate', GATE); inp.value = '';
-    sessionStorage.setItem('adm_scope', j.scope || 'panel'); if(window.ES_ADMIN_V2 && typeof window.ES_ADMIN_V2.v2SetScope === 'function') window.ES_ADMIN_V2.v2SetScope(j.scope || 'panel');   // panel (ADMIN_PASS), master (SUPER_ADMIN_PASS) ya staff
+    sessionStorage.setItem('adm_scope', j.scope || 'panel'); if(typeof window.v2SetScope !== 'function') throw new Error('Admin session module load नहीं हुआ'); window.v2SetScope(j.scope || 'panel');   // panel (ADMIN_PASS), master (SUPER_ADMIN_PASS) ya staff
     if(auth.currentUser) showAdminApp(auth.currentUser); else showGate();
   }catch(e){ showToast('❌ ' + e.message); }
   btn.disabled = false;
