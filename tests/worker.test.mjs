@@ -227,6 +227,7 @@ await t('admin v2: duplicate entry passwords are rejected instead of silently is
     const duplicate = await gate({ password: ADMIN_PASS });
     assert.strictEqual(duplicate.status, 409);
     assert.strictEqual(duplicate.j.reason, 'ambiguous_secret');
+    assert.deepStrictEqual(duplicate.j.matched_scopes, ['panel', 'staff']);
     assert.ok(!JSON.stringify(duplicate).includes(ADMIN_PASS));
   } finally { env.PASS_STAFF = oldStaff; }
 });
