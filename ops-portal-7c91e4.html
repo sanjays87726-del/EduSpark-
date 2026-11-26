@@ -1708,8 +1708,9 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
         clearGate(); showGate();
         const why = j && j.reason;   // Worker v17+: wajah batata hai
         const msg = why === 'expired' ? 'Admin session (12 घंटे) expire हो गया'
-          : why === 'not_configured' ? 'Worker में ADMIN_PASS / SUPER_ADMIN_PASS secret नहीं मिला'
-          : why === 'bad_signature' ? 'Password/secret बदल गया है या scope mismatch (' + need + ')'
+          : why === 'not_configured' ? 'Worker में जरूरी password secret नहीं मिला'
+          : why === 'scope_mismatch' ? 'यह password ' + (j.actual_scope || 'दूसरे') + ' scope के लिए है, जबकि इस account को ' + need + ' चाहिए'
+          : why === 'bad_signature' ? 'Password/secret verify नहीं हुआ (' + need + ') — Cloudflare Worker secrets जाँचें'
           : 'Admin session expired/invalid है';
         console.warn('EduSpark admin session rejected', { status:r.status, reason:why || '', scope:need });
         showToast('⚠️ ' + msg + ' — password दोबारा डालें');
