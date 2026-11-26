@@ -220,11 +220,22 @@ await t('admin v2: tampered/garbage token and unknown section/scope are rejected
   assert.strictEqual((await gate({ password: 'x', section: 'hacking' })).status, 400);
   assert.strictEqual((await post({ gate: 'x', scope: 'root' }, { path: '/admin-verify' })).status, 400);
 });
+await t('admin v2: duplicate entry passwords are rejected instead of silently issuing the wrong role scope', async () => {
+  const oldStaff = env.PASS_STAFF;
+  try {
+    env.PASS_STAFF = ADMIN_PASS;
+    const duplicate = await gate({ password: ADMIN_PASS });
+    assert.strictEqual(duplicate.status, 409);
+    assert.strictEqual(duplicate.j.reason, 'ambiguous_secret');
+    assert.ok(!JSON.stringify(duplicate).includes(ADMIN_PASS));
+  } finally { env.PASS_STAFF = oldStaff; }
+});
 await t('admin v2: /admin-verify tells WHY a token is rejected (expired / bad_signature / not_configured / format), never leaks secrets', async () => {
   const vj = async (g, scope) => (await post({ gate: g, scope }, { path: '/admin-verify' })).json();
   const p = await gate({ password: ADMIN_PASS }); assert.deepStrictEqual(await vj(p.j.gate, 'panel'), { ok: true });
   const expired = await vj('1000.' + 'a'.repeat(64), 'panel'); assert.strictEqual(expired.ok, false); assert.strictEqual(expired.reason, 'expired');
-  const wrongScope = await vj(p.j.gate, 'master'); assert.strictEqual(wrongScope.reason, 'bad_signature');
+  const wrongScope = await vj(p.j.gate, 'master'); assert.deepStrictEqual(wrongScope, { ok: false, reason: 'scope_mismatch', expected_scope: 'master', actual_scope: 'panel' });
+  const staffMismatch = await vj(p.j.gate, 'staff'); assert.deepStrictEqual(staffMismatch, { ok: false, reason: 'scope_mismatch', expected_scope: 'staff', actual_scope: 'panel' });
   const tam = p.j.gate.slice(0, -1) + (p.j.gate.endsWith('0') ? '1' : '0'); assert.strictEqual((await vj(tam, 'panel')).reason, 'bad_signature');
   assert.strictEqual((await vj('', 'panel')).reason, 'format'); assert.strictEqual((await vj('abc', 'panel')).reason, 'format');
   const saved = env.PASS_STAFF; const st = await gate({ password: saved }); delete env.PASS_STAFF;
