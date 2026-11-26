@@ -1710,6 +1710,7 @@ function verNum(v){ const p = String(v || '0').split('.').map(function(x){ retur
         const msg = why === 'expired' ? 'Admin session (12 घंटे) expire हो गया'
           : why === 'not_configured' ? 'Worker में जरूरी password secret नहीं मिला'
           : why === 'scope_mismatch' ? 'यह password ' + (j.actual_scope || 'दूसरे') + ' scope के लिए है, जबकि इस account को ' + need + ' चाहिए'
+          : why === 'ambiguous_secret' ? 'Worker ने एक से अधिक entry secrets match किए: ' + (Array.isArray(j.matched_scopes) ? j.matched_scopes.join(', ') : 'scope details unavailable') + '. Production Worker bindings जाँचें'
           : why === 'bad_signature' ? 'Password/secret verify नहीं हुआ (' + need + ') — Cloudflare Worker secrets जाँचें'
           : 'Admin session expired/invalid है';
         console.warn('EduSpark admin session rejected', { status:r.status, reason:why || '', scope:need });

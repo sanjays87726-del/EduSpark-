@@ -199,8 +199,9 @@ async function adminGate(request, env, reply) {
       if (await sameSecret(pw, secret)) matches.push({ scope: candidate, secret });
     }
     if (matches.length > 1) return reply(409, {
-      error: 'Admin passwords overlap. ADMIN_PASS, SUPER_ADMIN_PASS aur PASS_STAFF ke liye alag passwords rakhein.',
-      reason: 'ambiguous_secret'
+      error: 'Admin password matched more than one configured entry secret.',
+      reason: 'ambiguous_secret',
+      matched_scopes: matches.map(match => match.scope)
     });
     if (matches.length === 1) { scope = matches[0].scope; signingSecret = matches[0].secret; }
   }
