@@ -163,6 +163,15 @@ async function gateWhy(env, gate, scope = 'master') {
   for (const key of keys) if (key && (await hmacHex(key, gateMsg(scope, exp))) === sig) return '';
   return 'bad_signature';
 }
+async function matchingEntryGateScope(env, gate, expectedScope) {
+  const [exp, sig] = String(gate || '').split('.');
+  if (!sig || !exp || !Number.isFinite(+exp) || !(+exp > Date.now())) return '';
+  for (const [candidate, secret] of [['panel', env.ADMIN_PASS], ['master', env.SUPER_ADMIN_PASS], ['staff', env.PASS_STAFF]]) {
+    if (candidate === expectedScope || !secret) continue;
+    if ((await hmacHex(secret, gateMsg(candidate, exp))) === sig) return candidate;
+  }
+  return '';
+}
 const gateOk = async (env, gate, scope = 'master') => !(await gateWhy(env, gate, scope));
 async function sameSecret(a, b) { return typeof a === 'string' && typeof b === 'string' && b.length > 0 && (await hmacHex('cmp', a)) === (await hmacHex('cmp', b)); }
 async function adminGate(request, env, reply) {
@@ -182,9 +191,19 @@ async function adminGate(request, env, reply) {
   if (section) {
     if (await sameSecret(pw, env.SUPER_ADMIN_PASS)) { scope = section; signingSecret = env.SUPER_ADMIN_PASS; }
     else if (await sameSecret(pw, sectionSecret(env, section))) { scope = section; signingSecret = sectionSecret(env, section); }
-  } else if (await sameSecret(pw, env.ADMIN_PASS)) scope = 'panel';
-  else if (await sameSecret(pw, env.SUPER_ADMIN_PASS)) scope = 'master';
-  else if (await sameSecret(pw, env.PASS_STAFF)) scope = 'staff';
+  } else {
+    // Entry passwords must be unique. If two roles share one value, choosing the
+    // first match silently issues a token for the wrong scope (e.g. staff -> panel).
+    const matches = [];
+    for (const [candidate, secret] of [['panel', env.ADMIN_PASS], ['master', env.SUPER_ADMIN_PASS], ['staff', env.PASS_STAFF]]) {
+      if (await sameSecret(pw, secret)) matches.push({ scope: candidate, secret });
+    }
+    if (matches.length > 1) return reply(409, {
+      error: 'Admin passwords overlap. ADMIN_PASS, SUPER_ADMIN_PASS aur PASS_STAFF ke liye alag passwords rakhein.',
+      reason: 'ambiguous_secret'
+    });
+    if (matches.length === 1) { scope = matches[0].scope; signingSecret = matches[0].secret; }
+  }
   if (!scope) {
     if (env.RATE) { try { await env.RATE.put(fk, String(fails + 1), { expirationTtl: 86400 }); } catch {} }
     return reply(401, { error: 'गलत password' });
@@ -199,7 +218,11 @@ async function adminVerify(request, env, reply) {
   const scope = body && typeof body.scope === 'string' ? body.scope : 'master';
   if (scope !== 'master' && scope !== 'panel' && scope !== 'staff' && !SECTIONS.includes(scope)) return reply(400, { error: 'Unknown scope' });
   const why = await gateWhy(env, body && body.gate, scope);
-  // reason sirf diagnosis ke liye (ops-portal toast me dikhta hai); secret/signature kuch leak nahi hota
+  if (why === 'bad_signature') {
+    const actualScope = await matchingEntryGateScope(env, body && body.gate, scope);
+    if (actualScope) return reply(200, { ok: false, reason: 'scope_mismatch', expected_scope: scope, actual_scope: actualScope });
+  }
+  // Reason aur scope labels diagnosis ke liye hain; secret/signature kabhi response me nahi jaate.
   if (why) console.warn('admin-verify rejected', scope, why);
   return reply(200, why ? { ok: false, reason: why } : { ok: true });
 }
