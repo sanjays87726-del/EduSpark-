@@ -291,6 +291,7 @@ button,input,select,textarea{max-width:100%}
       <div id="aQuizWrap" style="display:none;">
         <label>Questions (JSON) — बिना question-count limit</label>
         <textarea id="aQuizQs" placeholder='[{"q":"Question?","options":["A","B","C","D"],"ans":0,"exp":"Explanation..."}]'></textarea>
+        <label>या पूरी JSON/TXT फाइल चुनें</label><input type="file" accept=".json,.txt,application/json,text/plain" onchange="loadQuizJsonFile(this,'aQuizQs')"/>
         <div style="background:var(--blue-l);border-radius:8px;padding:10px;margin-bottom:10px;font-size:11px;color:var(--blue);">
           📌 ans: 0=A, 1=B, 2=C, 3=D<br>
           📌 Image ke liye: {"q":"Question?","img":"https://image-url.com/img.jpg","options":["A","B","C","D"],"ans":0}<br>
@@ -369,6 +370,7 @@ button,input,select,textarea{max-width:100%}
       <div id="qFlatQsWrap">
         <label>Questions (JSON) — बिना question-count limit</label>
         <textarea id="qQs" placeholder='[{"q":"Question?","options":["A","B","C","D"],"ans":0,"exp":"Explanation..."}]'></textarea>
+        <label>या पूरी JSON/TXT फाइल चुनें</label><input type="file" accept=".json,.txt,application/json,text/plain" onchange="loadQuizJsonFile(this,'qQs')"/>
         <div style="background:var(--blue-l);border-radius:8px;padding:10px;margin-bottom:10px;font-size:11px;color:var(--blue);">
           📌 ans: 0=A, 1=B, 2=C, 3=D<br>
           📌 Image ke liye: {"q":"Question?","img":"https://image-url.com/img.jpg","options":["A","B","C","D"],"ans":0}<br>
@@ -380,6 +382,7 @@ button,input,select,textarea{max-width:100%}
       <div id="qSectionalQsWrap" style="display:none;">
         <label>Sections (JSON) — हर section का अपना नाम, समय (मिनट) और questions</label>
         <textarea id="qSectionsJson" placeholder='[{"name":"Reasoning","timeMinutes":15,"questions":[{"q":"...","options":["A","B","C","D"],"ans":0,"exp":"..."}]},{"name":"Maths","timeMinutes":15,"questions":[...]}]'></textarea>
+        <label>या पूरी JSON/TXT फाइल चुनें</label><input type="file" accept=".json,.txt,application/json,text/plain" onchange="loadQuizJsonFile(this,'qSectionsJson')"/>
         <div style="background:var(--blue-l);border-radius:8px;padding:10px;margin-bottom:10px;font-size:11px;color:var(--blue);">
           📌 हर section: name, timeMinutes, questions[] (सभी sections के questions)<br>
           📌 हर question में optional "exp" field डाल सकते हैं — यह Answer Key में explanation की तरह दिखेगा
@@ -1125,6 +1128,27 @@ function showQuizErrors(errs){
 // ══════════════════════════════════════════
 // ADD CONTENT / QUIZ / PYQ / LIVE
 // ══════════════════════════════════════════
+function loadQuizJsonFile(input, targetId){
+  const file = input && input.files && input.files[0];
+  if(!file) return;
+  if(!/\.(json|txt)$/i.test(file.name) && !['application/json','text/plain'].includes(file.type)){
+    showToast('❌ केवल .json या .txt फाइल चुनें'); input.value=''; return;
+  }
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    const content = String(reader.result || '');
+    if(!content.trim()){ showToast('❌ चुनी हुई फाइल खाली है'); input.value=''; return; }
+    const target = document.getElementById(targetId);
+    if(!target){ showToast('❌ JSON बॉक्स नहीं मिला'); input.value=''; return; }
+    target.value = content;
+    target.dispatchEvent(new Event('input', {bubbles:true}));
+    showToast('✅ पूरी फाइल JSON बॉक्स में लोड हो गई (' + Math.ceil(file.size/1024) + ' KB)');
+    input.value='';
+  };
+  reader.onerror = ()=>{ showToast('❌ फाइल पढ़ने में समस्या हुई'); input.value=''; };
+  reader.readAsText(file);
+}
+
 function addContent(){
   const title=document.getElementById('aTitle').value.trim();
   if(!title){ showToast('❌ Title खाली है!'); return; }
