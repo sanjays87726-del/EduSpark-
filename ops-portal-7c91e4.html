@@ -289,7 +289,7 @@ button,input,select,textarea{max-width:100%}
         <label>Link (Drive/YouTube)</label><input type="url" id="aLink" placeholder="https://..."/>
       </div>
       <div id="aQuizWrap" style="display:none;">
-        <label>Questions (JSON) — अधिकतम 100 प्रश्न</label>
+        <label>Questions (JSON) — बिना question-count limit</label>
         <textarea id="aQuizQs" placeholder='[{"q":"Question?","options":["A","B","C","D"],"ans":0,"exp":"Explanation..."}]'></textarea>
         <div style="background:var(--blue-l);border-radius:8px;padding:10px;margin-bottom:10px;font-size:11px;color:var(--blue);">
           📌 ans: 0=A, 1=B, 2=C, 3=D<br>
@@ -367,7 +367,7 @@ button,input,select,textarea{max-width:100%}
       </div>
 
       <div id="qFlatQsWrap">
-        <label>Questions (JSON) — अधिकतम 100 प्रश्न</label>
+        <label>Questions (JSON) — बिना question-count limit</label>
         <textarea id="qQs" placeholder='[{"q":"Question?","options":["A","B","C","D"],"ans":0,"exp":"Explanation..."}]'></textarea>
         <div style="background:var(--blue-l);border-radius:8px;padding:10px;margin-bottom:10px;font-size:11px;color:var(--blue);">
           📌 ans: 0=A, 1=B, 2=C, 3=D<br>
@@ -381,7 +381,7 @@ button,input,select,textarea{max-width:100%}
         <label>Sections (JSON) — हर section का अपना नाम, समय (मिनट) और questions</label>
         <textarea id="qSectionsJson" placeholder='[{"name":"Reasoning","timeMinutes":15,"questions":[{"q":"...","options":["A","B","C","D"],"ans":0,"exp":"..."}]},{"name":"Maths","timeMinutes":15,"questions":[...]}]'></textarea>
         <div style="background:var(--blue-l);border-radius:8px;padding:10px;margin-bottom:10px;font-size:11px;color:var(--blue);">
-          📌 हर section: name, timeMinutes, questions[] (कुल मिलाकर अधिकतम 100 प्रश्न)<br>
+          📌 हर section: name, timeMinutes, questions[] (सभी sections के questions)<br>
           📌 हर question में optional "exp" field डाल सकते हैं — यह Answer Key में explanation की तरह दिखेगा
         </div>
       </div>
@@ -1149,7 +1149,6 @@ function addContent(){
     let questions;
     try{ questions=JSON.parse(raw); } catch{ showToast('❌ JSON format गलत है!'); return; }
     if(!Array.isArray(questions) || questions.length===0){ showToast('❌ कोई questions नहीं मिले!'); return; }
-    if(questions.length>100){ showToast('❌ अधिकतम 100 प्रश्न allowed हैं (अभी '+questions.length+' हैं)!'); return; }
     const qErr=validateQs(questions); if(qErr.length){ showQuizErrors(qErr); return; }
     payload.questions = questions;
     const t=parseInt(document.getElementById('aQuizTime').value);
@@ -1201,7 +1200,6 @@ function addQuiz(){
     if(!Array.isArray(sections)){ showToast('❌ Sections JSON array होना चाहिए!'); return; }
     const totalQ = sections.reduce((a,s)=>a+((s.questions||[]).length),0);
     if(totalQ===0){ showToast('❌ कोई questions नहीं मिले!'); return; }
-    if(totalQ>100){ showToast('❌ अधिकतम 100 प्रश्न allowed हैं (अभी '+totalQ+' हैं)!'); return; }
     const sErr=[]; sections.forEach((sec,si)=>{ validateQs(sec.questions||[], (sec.name||('Section '+(si+1)))+' · ').forEach(e=>sErr.push(e)); });
     if(sErr.length){ showQuizErrors(sErr); return; }
     quizData.sections = sections;
@@ -1213,7 +1211,6 @@ function addQuiz(){
     let questions;
     try{ questions = JSON.parse(raw); } catch{ showToast('❌ JSON format गलत है!'); return; }
     if(!Array.isArray(questions) || questions.length===0){ showToast('❌ कोई questions नहीं मिले!'); return; }
-    if(questions.length>100){ showToast('❌ अधिकतम 100 प्रश्न allowed हैं (अभी '+questions.length+' हैं)!'); return; }
     const qErr=validateQs(questions); if(qErr.length){ showQuizErrors(qErr); return; }
     quizData.questions = questions;
     const timeLimit = parseInt(document.getElementById('qTimeLimit').value);
