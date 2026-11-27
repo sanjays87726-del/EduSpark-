@@ -3800,7 +3800,7 @@ function selOpt(el,idx,ans){
   if(answered && !sscCbtMode)return; answered=true;
   userAnswers[globalQIndex()-1]=idx;
   document.querySelectorAll('.q-opt').forEach(o=>o.classList.remove('sel','corr','wrong'));
-  if(sscCbtMode){ el.classList.add('sel'); renderSSCCbtPalette(); return; }
+  if(sscCbtMode){ el.classList.add('sel'); renderSSCCbtPalette();renderSSCTopStrip();if(document.getElementById('sscPaletteOverlay').style.display==='flex')renderSSCPaletteGrid(); return; }
   if(curQuiz.type==='mock'){
     el.classList.add('sel'); // Mock test — result तक सही/गलत नहीं दिखेगा
   } else {
@@ -3842,11 +3842,11 @@ function saveSSCNext(){
   if(next>=userAnswers.length){ showResult(); return; }
   jumpSSCQuestion(next);
 }
-function markSSCReview(){ _sscReview[sscGlobalPosition()]=true; renderSSCCbtPalette(); saveSSCNext(); }
+function markSSCReview(){ _sscReview[sscGlobalPosition()]=true; renderSSCCbtPalette();renderSSCTopStrip(); saveSSCNext(); }
 function clearSSCResponse(){
   const i=sscGlobalPosition(); userAnswers[i]=null; answered=false;
   document.querySelectorAll('#qOpts .q-opt').forEach(o=>o.classList.remove('sel','corr','wrong'));
-  renderSSCCbtPalette();
+  renderSSCCbtPalette();renderSSCTopStrip();if(document.getElementById('sscPaletteOverlay').style.display==='flex')renderSSCPaletteGrid();
 }
 
 function nextQ(){
