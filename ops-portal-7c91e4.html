@@ -1107,7 +1107,10 @@ function validateQs(list, prefix){
     if(!x || typeof x.q!=='string'){ errs.push(n+': q (सवाल) missing'); return; }
     if(!x.q.trim() && !(typeof x.img==='string' && x.img.trim())){ errs.push(n+': q खाली है (बिना सवाल लिखे सिर्फ़ तब चलेगा जब img हो)'); return; }
     const qKey = x.q.trim();
-    if(qKey){ if(seen.has(qKey)) errs.push(n+': duplicate question'); seen.add(qKey); }
+    // Same generic prompt can be used for image-based questions when each has a different image.
+    // Treat it as duplicate only when both question text and image reference match.
+    const duplicateKey = qKey + '\\u0000' + String(x.img || '').trim();
+    if(qKey){ if(seen.has(duplicateKey)) errs.push(n+': duplicate question'); seen.add(duplicateKey); }
     if(!Array.isArray(x.options) || x.options.length<2){ errs.push(n+': options कम से कम 2 होने चाहिए'); return; }
     if(x.options.some(o=>!((typeof o==='string' && o.trim()) || typeof o==='number'))) errs.push(n+': कोई option खाली है');
     if(new Set(x.options.map(o=>String(o).trim())).size!==x.options.length) errs.push(n+': duplicate options');
