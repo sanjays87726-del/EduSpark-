@@ -420,6 +420,15 @@ html,body{touch-action:manipulation;}
 .qp-num.qp-active{outline:3px solid var(--saffron);outline-offset:2px;}
 #qpDetail{margin-top:14px;}
 .q-btn.q-theme{flex:0 0 46px;background:var(--g100);color:var(--ink);padding:12px 0;}
+.ssc-mode-modal{position:fixed;inset:0;z-index:10020;background:rgba(5,12,28,.78);display:grid;place-items:center;padding:18px;}
+.ssc-mode-card{width:min(100%,430px);background:var(--white);color:var(--ink);border-radius:20px;padding:22px;box-shadow:0 18px 60px #0005;}
+.ssc-mode-kicker{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--blue);}.ssc-mode-card h3{font-size:20px;margin:6px 0}.ssc-mode-card p{font-size:12px;color:var(--g600);margin-bottom:14px;}
+.ssc-mode-choice{display:block;width:100%;text-align:left;border:1px solid var(--g200);border-radius:13px;background:var(--g50);color:var(--ink);padding:14px;margin-top:10px;font:inherit;cursor:pointer;}.ssc-mode-choice b,.ssc-mode-choice small{display:block}.ssc-mode-choice small{font-size:11px;color:var(--g600);margin-top:4px}.ssc-mode-choice:first-of-type{border-color:var(--blue);}
+.ssc-cbt-panel{margin-top:16px;padding:12px;border:1px solid var(--g200);border-radius:14px;background:var(--white);}.ssc-cbt-legend{display:flex;flex-wrap:wrap;gap:8px 12px;font-size:10px;color:var(--g600);margin-bottom:12px}.ssc-cbt-legend span{display:flex;align-items:center;gap:4px}.ssc-cbt-legend i{width:10px;height:10px;border-radius:3px;background:#94a3b8;display:inline-block}.ssc-cbt-legend i.not-answered{background:#ef4444}.ssc-cbt-legend i.answered{background:#16a34a}.ssc-cbt-legend i.review{background:#8b5cf6}
+.ssc-cbt-palette{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:7px}.ssc-cbt-num{min-height:36px;border:0;border-radius:7px;background:#94a3b8;color:#fff;font-weight:800;font-size:12px}.ssc-cbt-num.not-answered{background:#ef4444}.ssc-cbt-num.answered{background:#16a34a}.ssc-cbt-num.review{background:#8b5cf6}.ssc-cbt-num.answered-review{background:#7c3aed;outline:2px solid #16a34a;outline-offset:1px}.ssc-cbt-num.current{box-shadow:0 0 0 3px var(--saffron);}
+.ssc-cbt-actions{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:7px;margin-top:14px}.ssc-cbt-actions button{border:1px solid var(--g200);border-radius:8px;padding:10px 5px;background:var(--g100);color:var(--ink);font-family:inherit;font-size:10px;font-weight:700;cursor:pointer}.ssc-cbt-actions button.primary{background:#2563eb;color:#fff;border-color:#2563eb}
+body.ssc-cbt-mode .q-nav .q-prev,body.ssc-cbt-mode .q-nav .q-next{display:none}
+@media(max-width:380px){.ssc-cbt-palette{grid-template-columns:repeat(6,minmax(0,1fr))}.ssc-cbt-actions{grid-template-columns:1fr}.ssc-cbt-actions button{font-size:12px}}
 /* NOTES */
 .notes-hero{background:linear-gradient(135deg,#F59E0B,#D97706);padding:22px 18px;color:#fff;border-radius:0 0 22px 22px;}
 .note-item{background:var(--white);border-radius:var(--rsm);padding:13px;margin-bottom:10px;box-shadow:var(--shsm);border-left:3px solid var(--saffron);}
@@ -1306,6 +1315,12 @@ html[data-theme="light"] .es-ai-copy{background:#fff;color:#1d4ed8;border-color:
       <div id="quizListSec" style="padding:16px 18px 0;"></div>
       <!-- Paste AdSense <ins class="adsbygoogle">...</ins> or AdMob code inside #adSlotQuizReturn, then remove the inline display:none below -->
       <div id="adSlotQuizReturn" class="ad-slot" style="display:none;"></div>
+      <div id="sscModeModal" class="ssc-mode-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="sscModeTitle">
+        <div class="ssc-mode-card"><div class="ssc-mode-kicker">SSC CHSL / SSC CGL</div><h3 id="sscModeTitle">Quiz कैसे देना चाहते हैं?</h3><p>अपना test mode चुनें।</p>
+          <button class="ssc-mode-choice" onclick="startSSCQuizMode('cbt')"><b>🖥️ SSC CBT Exam Mode</b><small>Question palette, review, timer और Save & Next</small></button>
+          <button class="ssc-mode-choice" onclick="startSSCQuizMode('practice')"><b>📝 सामान्य Practice Mode</b><small>मौजूदा EduSpark quiz interface</small></button>
+        </div>
+      </div>
       <div id="quizActive">
         <div class="q-corner-timer" id="qCornerTimer">⏱ 0s</div>
         <div class="q-timerbar" id="qTimerBar" style="display:none;">
@@ -1318,6 +1333,11 @@ html[data-theme="light"] .es-ai-copy{background:#fff;color:#1d4ed8;border-color:
         <img class="q-img" id="qImg" alt="Question image"/>
         <div class="q-opts" id="qOpts"></div>
         <div class="q-fb" id="qFeedback" style="display:none;"></div>
+        <div id="sscCbtPanel" class="ssc-cbt-panel" style="display:none;">
+          <div class="ssc-cbt-legend"><span><i class="not-visited"></i>Not Visited</span><span><i class="not-answered"></i>Not Answered</span><span><i class="answered"></i>Answered</span><span><i class="review"></i>Review</span></div>
+          <div class="ssc-cbt-palette" id="sscCbtPalette"></div>
+          <div class="ssc-cbt-actions"><button onclick="clearSSCResponse()">Clear Response</button><button onclick="markSSCReview()">Mark for Review &amp; Next</button><button class="primary" onclick="saveSSCNext()">Save &amp; Next</button></div>
+        </div>
         <div class="q-nav">
           <button class="q-btn q-exit2" onclick="requestExitQuiz()">✕ छोड़ें</button>
           <button class="q-btn q-theme" id="qThemeBtn" onclick="quizToggleTheme()" aria-label="Dark mode">🌙</button>
@@ -2685,6 +2705,7 @@ let allContent = [], allQuizzes = [], allPYQ = [];
 let curQuiz=null, curQ=0, score=0, answered=false;
 let quizSections=[], curSection=0;
 let userAnswers=[];
+let sscCbtMode=false, _sscVisited=[], _sscReview=[];
 let ovTimerInt=null, secTimerInt=null, qStopInt=null;
 let ovSecondsLeft=0, secSecondsLeft=0, qSecondsElapsed=0;
 
@@ -3573,6 +3594,17 @@ function startChapterQuiz(contentId){
 }
 function launchQuiz(){
   syncQuizThemeBtn();
+  if(curBoard==='SSC-CHSL' || curBoard==='SSC-CGL'){
+    document.getElementById('sscModeModal').style.display='grid'; return;
+  }
+  sscCbtMode=false; document.body.classList.remove('ssc-cbt-mode');
+  if(curQuiz && curQuiz.sectional){ openTimingChoice(); return; }
+  beginQuiz();
+}
+function startSSCQuizMode(mode){
+  sscCbtMode=mode==='cbt';
+  document.getElementById('sscModeModal').style.display='none';
+  document.body.classList.toggle('ssc-cbt-mode',sscCbtMode);
   if(curQuiz && curQuiz.sectional){ openTimingChoice(); return; }
   beginQuiz();
 }
@@ -3617,6 +3649,8 @@ function beginQuiz(){
   quizSections=normalizeQuiz(curQuiz); curSection=0; curQ=0; score=0; answered=false;
   qTimeSpent=[]; _qCurGi=0; _qShownAt=0; _histSaved=false;
   userAnswers=new Array(quizSections.reduce((a,s)=>a+s.questions.length,0)).fill(null);
+  _sscVisited=new Array(userAnswers.length).fill(false); _sscReview=new Array(userAnswers.length).fill(false);
+  document.getElementById('sscCbtPanel').style.display=sscCbtMode?'block':'none';
   document.getElementById('quizListSec').style.display='none';
   const adQR=document.getElementById('adSlotQuizReturn'); if(adQR) adQR.style.display='none';
   document.getElementById('quizActive').style.display='block';
@@ -3699,6 +3733,7 @@ function showQ(){
   const q=sec.questions[curQ];
   if(!q){ showResult(); return; }
   const totalAll=totalQuestionsCount(), globalIdx=globalQIndex();
+  if(sscCbtMode){ _sscVisited[globalIdx-1]=true; renderSSCCbtPalette(); }
   document.getElementById('qNum').textContent = curQuiz.sectional
     ? `${sec.name} • प्रश्न ${curQ+1}/${sec.questions.length}  (कुल ${globalIdx}/${totalAll})`
     : `Question ${globalIdx} of ${totalAll}`;
@@ -3715,7 +3750,8 @@ function showQ(){
   if(prevAns!==null && prevAns!==undefined){
     answered=true;
     const optEls=document.querySelectorAll('#qOpts .q-opt');
-    if(curQuiz.type==='mock'){
+    if(sscCbtMode){ if(optEls[prevAns]) optEls[prevAns].classList.add('sel'); }
+    else if(curQuiz.type==='mock'){
       if(optEls[prevAns]) optEls[prevAns].classList.add('sel');
     } else {
       if(optEls[prevAns]) optEls[prevAns].classList.add(prevAns===q.ans?'corr':'wrong');
@@ -3757,9 +3793,10 @@ function showLiveFeedback(q, idx){
   try{ box.scrollIntoView({behavior:'smooth', block:'nearest'}); }catch(e){}
 }
 function selOpt(el,idx,ans){
-  if(answered)return; answered=true;
+  if(answered && !sscCbtMode)return; answered=true;
   userAnswers[globalQIndex()-1]=idx;
   document.querySelectorAll('.q-opt').forEach(o=>o.classList.remove('sel','corr','wrong'));
+  if(sscCbtMode){ el.classList.add('sel'); renderSSCCbtPalette(); return; }
   if(curQuiz.type==='mock'){
     el.classList.add('sel'); // Mock test — result तक सही/गलत नहीं दिखेगा
   } else {
@@ -3769,7 +3806,47 @@ function selOpt(el,idx,ans){
   }
   if(idx===ans)score++;
 }
+
+function sscGlobalPosition(){ return globalQIndex()-1; }
+function renderSSCCbtPalette(){
+  if(!sscCbtMode) return;
+  const box=document.getElementById('sscCbtPalette'); if(!box) return;
+  box.innerHTML='';
+  for(let i=0;i<userAnswers.length;i++){
+    const hasAnswer=userAnswers[i]!==null&&userAnswers[i]!==undefined;
+    const review=!!_sscReview[i];
+    const cls=review?(hasAnswer?'answered-review':'review'):(hasAnswer?'answered':(_sscVisited[i]?'not-answered':''));
+    const b=document.createElement('button'); b.type='button'; b.className='ssc-cbt-num '+cls+(i===sscGlobalPosition()?' current':'');
+    b.textContent=String(i+1); b.setAttribute('aria-label','Question '+(i+1));
+    b.onclick=()=>jumpSSCQuestion(i); box.appendChild(b);
+  }
+}
+function jumpSSCQuestion(globalIndex){
+  let offset=0;
+  for(let s=0;s<quizSections.length;s++){
+    const len=quizSections[s].questions.length;
+    if(globalIndex<offset+len){
+      const sectionChanged=s!==curSection; commitQTime(); curSection=s; curQ=globalIndex-offset;
+      if(sectionChanged) startQuizTimers();
+      showQ(); return;
+    }
+    offset+=len;
+  }
+}
+function saveSSCNext(){
+  commitQTime(); const next=sscGlobalPosition()+1;
+  if(next>=userAnswers.length){ showResult(); return; }
+  jumpSSCQuestion(next);
+}
+function markSSCReview(){ _sscReview[sscGlobalPosition()]=true; renderSSCCbtPalette(); saveSSCNext(); }
+function clearSSCResponse(){
+  const i=sscGlobalPosition(); userAnswers[i]=null; answered=false;
+  document.querySelectorAll('#qOpts .q-opt').forEach(o=>o.classList.remove('sel','corr','wrong'));
+  renderSSCCbtPalette();
+}
+
 function nextQ(){
+  if(sscCbtMode){ saveSSCNext(); return; }
   commitQTime();
   const sec=quizSections[curSection];
   curQ++;
@@ -4158,7 +4235,8 @@ function confirmExitQuiz(){
   exitQuiz();
 }
 function exitQuiz(){
-  clearAllTimers();
+  clearAllTimers(); sscCbtMode=false; document.body.classList.remove('ssc-cbt-mode');
+  const sm=document.getElementById('sscModeModal'); if(sm) sm.style.display='none';
   restoreQuizTheme();
   quizSections=[]; curSection=0;
   curQuiz=null; userAnswers=[]; qTimeSpent=[]; _qCurGi=0; _qShownAt=0;
