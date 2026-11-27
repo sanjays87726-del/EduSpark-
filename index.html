@@ -3603,7 +3603,7 @@ function launchQuiz(){
 }
 function startSSCQuizMode(mode){
   sscCbtMode=mode==='cbt';document.getElementById('sscModeModal').style.display='none';document.body.classList.toggle('ssc-cbt-mode',sscCbtMode);
-  if(sscCbtMode){const total=curQuiz.questions?curQuiz.questions.length:(curQuiz.sections||[]).reduce((n,s)=>n+(s.questions||[]).length,0);document.getElementById('sscInstQuizName').textContent=curQuiz.title||'SSC Practice Test';document.getElementById('sscInstTotal').textContent=total;document.getElementById('sscInstructions').style.display='flex';return;}
+  if(sscCbtMode){const total=curQuiz.questions?curQuiz.questions.length:(curQuiz.sections||[]).reduce((n,s)=>n+(s.questions||[]).length,0);document.getElementById('quizListSec').style.display='none';const adQR=document.getElementById('adSlotQuizReturn');if(adQR)adQR.style.display='none';document.getElementById('quizActive').style.display='block';document.getElementById('quizResult').style.display='none';document.getElementById('sscInstQuizName').textContent=curQuiz.title||'SSC Practice Test';document.getElementById('sscInstTotal').textContent=total;document.getElementById('sscInstructions').style.display='flex';return;}
   if(curQuiz&&curQuiz.sectional){openTimingChoice();return;}beginQuiz();
 }
 function continueSSCExam(){document.getElementById('sscInstructions').style.display='none';if(curQuiz&&curQuiz.sectional){openTimingChoice();return;}beginQuiz();}
